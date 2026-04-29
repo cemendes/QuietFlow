@@ -404,7 +404,7 @@ class TasksManager {
         }
     }
 
-    private static func parseDate(_ raw: String?) -> Date? {
+    nonisolated private static func parseDate(_ raw: String?) -> Date? {
         guard let raw, !raw.isEmpty else { return nil }
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "en_US_POSIX")
