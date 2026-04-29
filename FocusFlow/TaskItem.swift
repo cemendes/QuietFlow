@@ -183,13 +183,17 @@ class TasksManager {
             object: eventStore,
             queue: .main
         ) { [weak self] _ in
-            guard let self else { return }
-            self.calendarReloadDebounceTask?.cancel()
-            self.calendarReloadDebounceTask = Task { @MainActor in
-                try? await Task.sleep(for: .seconds(2))
-                guard !Task.isCancelled else { return }
-                print("[Calendar] Reloading after external change (debounced)")
-                self.fetchCalendarEvents()
+            // Hop to @MainActor so we can safely touch @MainActor-isolated properties.
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.calendarReloadDebounceTask?.cancel()
+                self.calendarReloadDebounceTask = Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    try? await Task.sleep(for: .seconds(2))
+                    guard !Task.isCancelled else { return }
+                    print("[Calendar] Reloading after external change (debounced)")
+                    self.fetchCalendarEvents()
+                }
             }
         }
     }
@@ -376,18 +380,19 @@ class TasksManager {
                     }
                 }
 
+                // Sort outside the MainActor hop so `newTasks` (a var) is
+                // fully consumed before crossing the isolation boundary.
+                let sortedTasks = newTasks.sorted { a, b in
+                    let dateA = Self.parseDate(a.date)
+                    let dateB = Self.parseDate(b.date)
+                    if let da = dateA, let db = dateB {
+                        if da != db { return da > db }
+                    } else if dateA != nil { return true  }
+                    else if dateB != nil { return false }
+                    return false
+                }
                 await MainActor.run {
-                    // Sort: newest manual tasks first, then by date descending,
-                    // parent tasks before subtasks of the same date
-                    self.tasks = newTasks.sorted { a, b in
-                        let dateA = Self.parseDate(a.date)
-                        let dateB = Self.parseDate(b.date)
-                        if let da = dateA, let db = dateB {
-                            if da != db { return da > db }  // newer first
-                        } else if dateA != nil { return true  } // dated before undated
-                        else if dateB != nil { return false }
-                        return false
-                    }
+                    self.tasks = sortedTasks
                     self.errorMessage = nil
                 }
             } catch {
@@ -693,13 +698,9 @@ class TasksManager {
                 
                 concurrentEvents.sort { ($0.startHour * 60 + $0.startMinute) < ($1.startHour * 60 + $1.startMinute) }
                 
-                var displayColumn = 0
-                for ce in concurrentEvents {
-                    if ce.id == event.id {
-                        break
-                    }
-                    displayColumn += 1
-                }
+                // Use value-equality (CalendarEvent: Equatable) to avoid
+                // accessing the computed `id` property in a detached task.
+                let displayColumn = concurrentEvents.firstIndex(of: event) ?? 0
                 
                 var updatedEvent = event
                 updatedEvent.displayColumn = displayColumn
@@ -707,8 +708,10 @@ class TasksManager {
                 finalEvents.append(updatedEvent)
             }
             
+            // Snapshot the var before crossing the MainActor boundary.
+            let eventsSnapshot = finalEvents
             await MainActor.run {
-                self.calendarEvents = finalEvents
+                self.calendarEvents = eventsSnapshot
             }
         }
     }

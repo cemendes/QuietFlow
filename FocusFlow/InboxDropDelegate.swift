@@ -31,7 +31,7 @@ struct InboxDropDelegate: DropDelegate {
             else if let s = item as? String { taskId = s }
             if let id = taskId, !id.isEmpty {
                 Task { @MainActor in
-                    tasksManager.unscheduleTask(id: taskId!)
+                    tasksManager.unscheduleTask(id: id)
                 }
             }
         }
