@@ -14,6 +14,9 @@ struct ContentView: View {
     @State private var selectedEvent:   CalendarEvent? = nil
     @State private var draggedTask:     TaskItem?      = nil
     @State private var searchText       = ""
+    @State private var geminiKeyInput   = ""
+    @State private var geminiKeySaved   = false
+    @State private var geminiKeyIsSet   = false
 
     var body: some View {
         @Bindable var tasksManager = tasksManager
@@ -200,13 +203,66 @@ struct ContentView: View {
                     }
                 }
 
+                Divider()
+
+                // ── AI ─────────────────────────────────────────────────────
+                settingsSection("AI (GEMINI)") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Gemini API Key")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.textSecondary)
+                        Text("Used for task breakdown & subtask suggestions. Stored securely in your system Keychain.")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.textSecondary.opacity(0.7))
+
+                        HStack(spacing: 8) {
+                            SecureField(geminiKeyIsSet ? "•••••••• (key already set — paste to replace)" : "Paste your Gemini API key…",
+                                        text: $geminiKeyInput)
+                                .textFieldStyle(.roundedBorder)
+                                .font(.system(size: 12, design: .monospaced))
+
+                            Button {
+                                let trimmed = geminiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                                guard !trimmed.isEmpty else { return }
+                                KeychainHelper.shared.save(trimmed, service: "FocusFlow", account: "GeminiAPIKey")
+                                geminiKeyInput = ""
+                                geminiKeyIsSet = true
+                                withAnimation { geminiKeySaved = true }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                    withAnimation { geminiKeySaved = false }
+                                }
+                            } label: {
+                                Text(geminiKeySaved ? "Saved ✓" : "Save")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .frame(width: 56)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(geminiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+
+                        // Live status badge
+                        HStack(spacing: 4) {
+                            Image(systemName: geminiKeyIsSet ? "checkmark.shield.fill" : "exclamationmark.shield")
+                                .font(.system(size: 10))
+                                .foregroundStyle(geminiKeyIsSet ? Color.successGreen : Color.staleAmber)
+                            Text(geminiKeyIsSet ? "API key stored in Keychain" : "No key stored yet — subtask breakdown won’t work")
+                                .font(.system(size: 10))
+                                .foregroundStyle(geminiKeyIsSet ? Color.successGreen : Color.staleAmber)
+                        }
+                        .animation(.easeInOut(duration: 0.2), value: geminiKeyIsSet)
+                    }
+                }
+
                 Spacer()
             }
             .padding(24)
         }
-        .frame(width: 460, height: 420)
+        .frame(width: 460, height: 560)
         .background(Color.surfaceBackground)
-        .onAppear { tasksManager.fetchAvailableCalendars() }
+        .onAppear {
+            tasksManager.fetchAvailableCalendars()
+            geminiKeyIsSet = KeychainHelper.shared.readString(service: "FocusFlow", account: "GeminiAPIKey") != nil
+        }
     }
 
     @ViewBuilder
