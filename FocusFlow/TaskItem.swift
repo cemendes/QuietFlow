@@ -149,7 +149,7 @@ class TasksManager {
     
     private let eventStore = EKEventStore()
     private var fileMonitor: DispatchSourceFileSystemObject?
-    private var csvReloadDebounceTask: Task<Void, Never>?  // debounce rapid CSV writes
+    private var jsonReloadDebounceTask: Task<Void, Never>?  // debounce rapid JSON writes
     private var calendarReloadDebounceTask: Task<Void, Never>?  // debounce EK notifications
 
     // MARK: - Local Tasks Cache
@@ -204,7 +204,7 @@ class TasksManager {
         // Show cached tasks instantly; Drive fetch updates them in the background.
         loadTasksFromCache()
         fetchTasks()
-        startMonitoringCSV()
+        startMonitoringJSON()
         // Calendar access is requested from ContentView.onAppear so the
         // permission dialog fires after the window is visible, not during launch.
         
@@ -255,182 +255,78 @@ class TasksManager {
     }
 
     
-    private func getCsvURL() -> URL? {
-        return URL(fileURLWithPath: "/Users/cemolive/My Drive/tasks.csv")
+    // MARK: - JSON Persistence
+
+    /// Google Drive path — same cross-device accessibility as the old CSV.
+    private nonisolated func getJSONURL() -> URL? {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("My Drive/tasks.json")
     }
-    
-    func startMonitoringCSV() {
-        guard let url = getCsvURL() else { return }
+
+    func startMonitoringJSON() {
+        guard let url = getJSONURL() else { return }
+
+        // Create the file if absent so the descriptor open succeeds.
+        if !FileManager.default.fileExists(atPath: url.path) {
+            try? JSONEncoder().encode([TaskItem]()).write(to: url, options: .atomic)
+        }
 
         let fileDescriptor = open(url.path, O_EVTONLY)
         guard fileDescriptor >= 0 else { return }
 
-        let monitor = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fileDescriptor, eventMask: .write, queue: DispatchQueue.global())
+        let monitor = DispatchSource.makeFileSystemObjectSource(
+            fileDescriptor: fileDescriptor, eventMask: .write, queue: .global())
 
         monitor.setEventHandler { [weak self] in
             guard let self else { return }
-            // Debounce: multiple subtask writes fire in rapid succession;
-            // only reload 1 second after the LAST write.
-            self.csvReloadDebounceTask?.cancel()
-            self.csvReloadDebounceTask = Task { @MainActor in
+            // Debounce: only reload 1 s after the LAST write.
+            self.jsonReloadDebounceTask?.cancel()
+            self.jsonReloadDebounceTask = Task { @MainActor in
                 try? await Task.sleep(for: .seconds(1))
                 guard !Task.isCancelled else { return }
-                print("[CSV] Reloading after file change (debounced)")
+                print("[JSON] Reloading after file change (debounced)")
                 self.fetchTasks()
             }
         }
 
-        monitor.setCancelHandler {
-            close(fileDescriptor)
-        }
-
+        monitor.setCancelHandler { close(fileDescriptor) }
         monitor.resume()
         self.fileMonitor = monitor
     }
-    
-    func parseCSVLine(_ line: String) -> [String] {
-        var result: [String] = []
-        var currentField = ""
-        var inQuotes = false
-        
-        let characters = Array(line)
-        var i = 0
-        while i < characters.count {
-            let char = characters[i]
-            if char == "\"" {
-                if inQuotes && i + 1 < characters.count && characters[i+1] == "\"" {
-                    currentField.append("\"")
-                    i += 1
-                } else {
-                    inQuotes.toggle()
-                }
-            } else if char == "," && !inQuotes {
-                result.append(currentField)
-                currentField = ""
-            } else {
-                currentField.append(char)
-            }
-            i += 1
-        }
-        result.append(currentField)
-        return result
-    }
-    
+
     func fetchTasks() {
-        guard let url = getCsvURL() else { return }
-        
-        print("Fetching tasks from CSV at: \(url.path)")
-        
+        guard let url = getJSONURL() else { return }
+        print("[JSON] Fetching tasks from: \(url.path)")
+
         Task.detached(priority: .background) {
             do {
+                // Bootstrap: create an empty JSON array if the file is absent.
                 if !FileManager.default.fileExists(atPath: url.path) {
-                    print("CSV file does not exist, creating it...")
-                    let header = "id,title,details,link,status\n"
-                    try header.write(to: url, atomically: true, encoding: .utf8)
-                }
-                
-                let content = try String(contentsOf: url, encoding: .utf8)
-                print("Read \(content.count) characters from CSV.")
-                
-                var newTasks: [TaskItem] = []
-                var currentField = ""
-                var inQuotes = false
-                var columns: [String] = []
-                
-                let characters = Array(content)
-                var i = 0
-                
-                // Skip header line
-                while i < characters.count && characters[i] != "\n" {
-                    i += 1
-                }
-                if i < characters.count { i += 1 } // skip the newline
-                
-                while i < characters.count {
-                    let char = characters[i]
-                    
-                    if char == "\"" {
-                        if inQuotes && i + 1 < characters.count && characters[i+1] == "\"" {
-                            currentField.append("\"")
-                            i += 1
-                        } else {
-                            inQuotes.toggle()
-                        }
-                    } else if char == "," && !inQuotes {
-                        columns.append(currentField)
-                        currentField = ""
-                    } else if (char == "\n" || char == "\r") && !inQuotes {
-                        // Handle potential \r\n
-                        if char == "\r" && i + 1 < characters.count && characters[i+1] == "\n" {
-                            i += 1
-                        }
-                        
-                        columns.append(currentField)
-                        currentField = ""
-                        
-                        if columns.count >= 5 && UUID(uuidString: columns[0]) != nil {
-                            let task = TaskItem(
-                                id: columns[0],
-                                title: columns[1],
-                                details: columns[2],
-                                link: columns[3],
-                                status: columns.count >= 5 ? columns[4] : "needsAction",
-                                duration: columns.count >= 6 ? Int(columns[5]) : nil,
-                                priority: columns.count >= 7 ? columns[6] : nil,
-                                category: columns.count >= 8 ? columns[7] : nil,
-                                date: columns.count >= 9 ? columns[8] : nil,
-                                parentTaskId: columns.count >= 10 ? (columns[9].isEmpty ? nil : columns[9]) : nil
-                            )
-                            newTasks.append(task)
-                        } else {
-                            print("Skipping invalid CSV line (invalid ID): \(columns.first ?? "nil")")
-                        }
-                        columns = []
-                    } else {
-                        currentField.append(char)
-                    }
-                    i += 1
-                }
-                
-                // Handle last line if it doesn't end with newline
-                if !currentField.isEmpty || !columns.isEmpty {
-                    columns.append(currentField)
-                    if columns.count >= 5 {
-                        let task = TaskItem(
-                            id: columns[0],
-                            title: columns[1],
-                            details: columns[2],
-                            link: columns[3],
-                            status: columns.count >= 5 ? columns[4] : "needsAction",
-                            duration: columns.count >= 6 ? Int(columns[5]) : nil,
-                            priority: columns.count >= 7 ? columns[6] : nil,
-                            category: columns.count >= 8 ? columns[7] : nil,
-                            date: columns.count >= 9 ? columns[8] : nil,
-                            parentTaskId: columns.count >= 10 ? (columns[9].isEmpty ? nil : columns[9]) : nil
-                        )
-                        newTasks.append(task)
-                    }
+                    print("[JSON] File absent — creating empty tasks.json")
+                    try JSONEncoder().encode([TaskItem]()).write(to: url, options: .atomic)
                 }
 
-                // Sort outside the MainActor hop so `newTasks` (a var) is
-                // fully consumed before crossing the isolation boundary.
-                let sortedTasks = newTasks.sorted { a, b in
+                let data = try Data(contentsOf: url)
+                print("[JSON] Read \(data.count) bytes")
+
+                let decoded = try JSONDecoder().decode([TaskItem].self, from: data)
+
+                let sortedTasks = decoded.sorted { a, b in
                     let dateA = Self.parseDate(a.date)
                     let dateB = Self.parseDate(b.date)
-                    if let da = dateA, let db = dateB {
-                        if da != db { return da > db }
-                    } else if dateA != nil { return true  }
-                    else if dateB != nil { return false }
+                    if let da = dateA, let db = dateB, da != db { return da > db }
+                    if dateA != nil { return true }
+                    if dateB != nil { return false }
                     return false
                 }
+
                 await MainActor.run {
                     self.tasks = sortedTasks
                     self.errorMessage = nil
                 }
-                // Persist fresh data so next launch reads from local cache.
                 self.saveTasksToCache(sortedTasks)
             } catch {
-                print("Error reading CSV: \(error.localizedDescription)")
+                print("[JSON] Error reading tasks: \(error)")
                 await MainActor.run {
                     self.errorMessage = "Failed to read tasks file."
                 }
@@ -457,86 +353,46 @@ class TasksManager {
         return fmt.string(from: d)
     }
     
-    func escapeCSVField(_ field: String) -> String {
-        if field.contains(",") || field.contains("\"") || field.contains("\n") {
-            let escaped = field.replacingOccurrences(of: "\"", with: "\"\"")
-            return "\"\(escaped)\""
-        }
-        return field
-    }
-    
     func createTask(title: String, details: String? = nil, link: String? = nil, duration: Int? = nil, priority: String? = nil, parentTaskId: String? = nil) {
-        guard let url = getCsvURL() else { return }
-
-        let id = UUID().uuidString
-        let eTitle        = escapeCSVField(title)
-        let eDetails      = escapeCSVField(details ?? "")
-        let eLink         = escapeCSVField(link ?? "")
-        let eParentTaskId = escapeCSVField(parentTaskId ?? "")
-        let durationStr   = duration != nil ? String(duration!) : ""
-        let priorityStr   = priority ?? "low"
-
-        // Stamp today's date so new tasks sort to the top and display "MMM d"
         let todayISO: String = {
             let fmt = DateFormatter()
             fmt.dateFormat = "yyyy-MM-dd"
             return fmt.string(from: Date())
         }()
 
-        // id,title,details,link,status,duration,priority,category,date,parentTaskId
-        let line = "\(id),\(eTitle),\(eDetails),\(eLink),needsAction,\(durationStr),\(priorityStr),,\(todayISO),\(eParentTaskId)\n"
+        let newTask = TaskItem(
+            id: UUID().uuidString,
+            title: title,
+            details: details,
+            link: link,
+            status: "needsAction",
+            duration: duration,
+            priority: priority ?? "low",
+            category: nil,
+            date: todayISO,
+            parentTaskId: parentTaskId
+        )
 
-        do {
-            if let fileHandle = try? FileHandle(forWritingTo: url) {
-                fileHandle.seekToEndOfFile()
-                fileHandle.write(line.data(using: .utf8)!)
-                fileHandle.closeFile()
-            } else {
-                try line.write(to: url, atomically: true, encoding: .utf8)
-            }
-            print("[CreateTask] Created '\(title)' priority=\(priorityStr) date=\(todayISO)")
-            fetchTasks()
-        } catch {
-            print("[CreateTask] Error writing to CSV: \(error.localizedDescription)")
-        }
+        var updated = self.tasks
+        updated.insert(newTask, at: 0)
+        saveTasksToJSON(updated)
+        self.tasks = updated
+        print("[CreateTask] Created '\(title)' priority=\(priority ?? "low") date=\(todayISO)")
     }
-    
-    private func saveTasksToCsv(_ tasksToSave: [TaskItem]) {
-        guard let url = getCsvURL() else { return }
-        
+
+    private func saveTasksToJSON(_ tasksToSave: [TaskItem]) {
+        guard let url = getJSONURL() else { return }
         do {
-            var header = "id,title,details,link,status,duration,priority,category,date,parentTaskId\n"
-            
-            if let content = try? String(contentsOf: url, encoding: .utf8),
-               let firstLine = content.components(separatedBy: .newlines).first,
-               firstLine.contains("id,") {
-                header = firstLine + "\n"
-            }
-            
-            var newContent = header
-            for task in tasksToSave {
-                let eTitle = escapeCSVField(task.title)
-                let eDetails = escapeCSVField(task.details ?? "")
-                let eLink = escapeCSVField(task.link ?? "")
-                let duration = task.duration != nil ? String(task.duration!) : ""
-                let priority = task.priority ?? ""
-                let category = task.category ?? ""
-                let date = task.date ?? ""
-                let parentTaskId = task.parentTaskId ?? ""
-                
-                let line = "\(task.id),\(eTitle),\(eDetails),\(eLink),\(task.status),\(duration),\(priority),\(category),\(date),\(parentTaskId)\n"
-                newContent += line
-            }
-            
-            try newContent.write(to: url, atomically: true, encoding: .utf8)
+            let data = try JSONEncoder().encode(tasksToSave)
+            try data.write(to: url, options: .atomic)
         } catch {
-            print("Error saving tasks to CSV: \(error.localizedDescription)")
+            print("[JSON] Error saving tasks: \(error)")
         }
     }
 
     func deleteTask(id: String) {
         let updatedTasks = self.tasks.filter { $0.id != id }
-        saveTasksToCsv(updatedTasks)
+        saveTasksToJSON(updatedTasks)
         self.tasks = updatedTasks
     }
     
@@ -557,7 +413,7 @@ class TasksManager {
                 parentTaskId: current.parentTaskId
             )
             updatedTasks[index] = updated
-            saveTasksToCsv(updatedTasks)
+            saveTasksToJSON(updatedTasks)
             self.tasks = updatedTasks
         }
     }
@@ -578,7 +434,7 @@ class TasksManager {
                 category: t.category, date: tomorrowStr, parentTaskId: t.parentTaskId
             )
         }
-        saveTasksToCsv(updatedTasks)
+        saveTasksToJSON(updatedTasks)
         self.tasks = updatedTasks
     }
 
@@ -589,8 +445,8 @@ class TasksManager {
                 mergedTasks.append(task)
             }
         }
-        
-        saveTasksToCsv(mergedTasks)
+
+        saveTasksToJSON(mergedTasks)
         self.tasks = mergedTasks
     }
 
@@ -1034,50 +890,38 @@ class TasksManager {
         subtaskSuggestions[taskId]?[idx] = suggestion
     }
     
-    /// Commits the in-memory suggestions to the CSV as actual sub-tasks.
+    /// Commits the in-memory suggestions to the JSON store as actual sub-tasks.
     /// Each sub-task gets a concise title + the full description in details.
     func createSubTasks(from suggestions: [SubtaskSuggestion], for task: TaskItem) {
         guard !suggestions.isEmpty else { return }
 
-        var contentToAppend = ""
-        for suggestion in suggestions {
-            let id            = UUID().uuidString
-            let eTitle        = escapeCSVField(suggestion.title)
-            let eDetails      = escapeCSVField(suggestion.details.isEmpty
-                ? "Sub-task of: \(task.title)"
-                : suggestion.details)
-            let eLink         = escapeCSVField(task.link ?? "")
-            let eParentTaskId = escapeCSVField(task.id)
-            let eDuration     = suggestion.duration != nil ? "\(suggestion.duration!)" : ""
-            let line = "\(id),\(eTitle),\(eDetails),\(eLink),needsAction,,,\(eDuration),,\(eParentTaskId)\n"
-            contentToAppend += line
+        let newSubtasks: [TaskItem] = suggestions.map { suggestion in
             print("[Subtask] Creating: \(suggestion.title)")
+            return TaskItem(
+                id: UUID().uuidString,
+                title: suggestion.title,
+                details: suggestion.details.isEmpty ? "Sub-task of: \(task.title)" : suggestion.details,
+                link: task.link,
+                status: "needsAction",
+                duration: suggestion.duration,
+                priority: nil,
+                category: nil,
+                date: nil,
+                parentTaskId: task.id
+            )
         }
 
-        guard let url = getCsvURL() else { return }
-
-        do {
-            if let fileHandle = try? FileHandle(forWritingTo: url) {
-                fileHandle.seekToEndOfFile()
-                fileHandle.write(contentToAppend.data(using: .utf8)!)
-                fileHandle.closeFile()
-            } else {
-                try contentToAppend.write(to: url, atomically: true, encoding: .utf8)
-            }
-            // Clear the draft suggestion cards immediately so they don't linger
-            DispatchQueue.main.async {
-                self.subtaskSuggestions[task.id] = nil
-            }
-            fetchTasks()
-        } catch {
-            print("Error writing to CSV: \(error.localizedDescription)")
-        }
+        var updated = self.tasks
+        updated.append(contentsOf: newSubtasks)
+        saveTasksToJSON(updated)
+        self.tasks = updated
+        subtaskSuggestions[task.id] = nil
     }
     
     func completeTask(id: String) {
         print("completeTask called for id: \(id)")
-        
-        // 1. Update CSV status to "completed"
+
+        // 1. Update JSON status to "completed"
         guard let task = tasks.first(where: { $0.id == id }) else { return }
         updateTask(id: id, title: task.title, details: task.details, link: task.link, status: "completed")
         
@@ -1114,8 +958,8 @@ class TasksManager {
     
     func uncompleteTask(id: String) {
         print("uncompleteTask called for id: \(id)")
-        
-        // 1. Update CSV status to "needsAction"
+
+        // 1. Update JSON status to "needsAction"
         guard let task = tasks.first(where: { $0.id == id }) else { return }
         updateTask(id: id, title: task.title, details: task.details, link: task.link, status: "needsAction")
         
