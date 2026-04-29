@@ -151,6 +151,35 @@ class TasksManager {
     private var fileMonitor: DispatchSourceFileSystemObject?
     private var csvReloadDebounceTask: Task<Void, Never>?  // debounce rapid CSV writes
     private var calendarReloadDebounceTask: Task<Void, Never>?  // debounce EK notifications
+
+    // MARK: - Local Tasks Cache
+    /// App-local path — never goes through Google Drive, reads in microseconds.
+    private var taskCacheURL: URL? {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+            .first?.appendingPathComponent("com.focusflow.tasks.json")
+    }
+
+    /// Loads the last-known task list synchronously (local file, no network).
+    /// Called at init so the UI is already populated while the Drive fetch runs.
+    private func loadTasksFromCache() {
+        guard let url = taskCacheURL,
+              let data = try? Data(contentsOf: url),
+              let cached = try? JSONDecoder().decode([TaskItem].self, from: data),
+              !cached.isEmpty else { return }
+        self.tasks = cached
+        print("[Cache] Restored \(cached.count) tasks from local cache")
+    }
+
+    /// Persists tasks to the local cache off the main thread.
+    /// Call after every successful Drive fetch so the next launch is fast.
+    private func saveTasksToCache(_ tasks: [TaskItem]) {
+        guard let url = taskCacheURL else { return }
+        Task.detached(priority: .utility) {
+            guard let data = try? JSONEncoder().encode(tasks) else { return }
+            try? data.write(to: url, options: .atomic)
+            print("[Cache] Saved \(tasks.count) tasks to local cache")
+        }
+    }
     
     init() {
         self.userName = UserDefaults.standard.string(forKey: "userName") ?? "Eduardo Oliveira"
@@ -172,9 +201,12 @@ class TasksManager {
             self.isMorningRitualComplete = false
         }
         
-        requestCalendarAccess()
+        // Show cached tasks instantly; Drive fetch updates them in the background.
+        loadTasksFromCache()
         fetchTasks()
         startMonitoringCSV()
+        // Calendar access is requested from ContentView.onAppear so the
+        // permission dialog fires after the window is visible, not during launch.
         
         // Debounce EK change notifications — Google Calendar sync can fire dozens
         // of notifications in a row; only reload 2 seconds after the LAST one.
@@ -395,6 +427,8 @@ class TasksManager {
                     self.tasks = sortedTasks
                     self.errorMessage = nil
                 }
+                // Persist fresh data so next launch reads from local cache.
+                self.saveTasksToCache(sortedTasks)
             } catch {
                 print("Error reading CSV: \(error.localizedDescription)")
                 await MainActor.run {
@@ -562,7 +596,7 @@ class TasksManager {
 
 
     
-    private func requestCalendarAccess() {
+    func requestCalendarAccess() {
 
 
         eventStore.requestFullAccessToEvents { granted, error in
