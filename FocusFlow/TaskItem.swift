@@ -154,7 +154,7 @@ class TasksManager {
 
     // MARK: - Local Tasks Cache
     /// App-local path — never goes through Google Drive, reads in microseconds.
-    private var taskCacheURL: URL? {
+    private nonisolated var taskCacheURL: URL? {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
             .first?.appendingPathComponent("com.focusflow.tasks.json")
     }
@@ -172,7 +172,7 @@ class TasksManager {
 
     /// Persists tasks to the local cache off the main thread.
     /// Call after every successful Drive fetch so the next launch is fast.
-    private func saveTasksToCache(_ tasks: [TaskItem]) {
+    private nonisolated func saveTasksToCache(_ tasks: [TaskItem]) {
         guard let url = taskCacheURL else { return }
         Task.detached(priority: .utility) {
             guard let data = try? JSONEncoder().encode(tasks) else { return }
