@@ -94,6 +94,8 @@ struct ContentView: View {
             if isSignedIn { tasksManager.fetchTasks() }
         }
         .onAppear {
+            // Calendar permission dialog fires here — window is already visible.
+            tasksManager.requestCalendarAccess()
             if authManager.isSignedIn { tasksManager.fetchTasks() }
         }
     }
