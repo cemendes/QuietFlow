@@ -128,11 +128,11 @@ struct ContentView: View {
                 // ── Database ───────────────────────────────────────────
                 settingsSection("DATABASE") {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Tasks file (CSV)")
+                        Text("Tasks file (JSON)")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.textSecondary)
                         HStack(spacing: 8) {
-                            Text("/Users/cemolive/My Drive/tasks.csv")
+                            Text((FileManager.default.homeDirectoryForCurrentUser.path) + "/My Drive/tasks.json")
                                 .font(.system(size: 11, design: .monospaced))
                                 .foregroundStyle(.textPrimary)
                                 .padding(.horizontal, 10).padding(.vertical, 6)
@@ -143,12 +143,11 @@ struct ContentView: View {
                                 .truncationMode(.middle)
                             Button {
                                 let panel = NSOpenPanel()
-                                panel.allowedContentTypes = [.commaSeparatedText]
+                                panel.allowedContentTypes = [.json]
                                 panel.canChooseFiles = true
                                 panel.canChooseDirectories = false
                                 panel.begin { response in
-                                    // File path change would be wired to tasksManager.csvFilePath
-                                    // when that property is added to TasksManager
+                                    // Future: wire to tasksManager.jsonFilePath
                                     _ = response
                                 }
                             } label: {
@@ -157,7 +156,7 @@ struct ContentView: View {
                             }
                             .buttonStyle(.bordered)
                         }
-                        Text("Your external script writes tasks to this file. FocusFlow watches it for changes.")
+                        Text("Your AppScript poller writes tasks here. FocusFlow watches it for changes.")
                             .font(.system(size: 10))
                             .foregroundStyle(.textSecondary.opacity(0.7))
                     }
@@ -483,7 +482,7 @@ struct TaskListPanel: View {
                         .foregroundStyle(.textSecondary)
                 }
                 .buttonStyle(.plain)
-                .help("Reload tasks from the CSV database")
+                .help("Reload tasks from tasks.json")
                 .accessibilityLabel("Refresh Tasks")
             }
             .padding(.horizontal, 16)
@@ -815,7 +814,6 @@ struct CalendarPanel: View {
                     let date    = weekDates[idx]
                     // dayOffset relative to today (may be negative for past days in week)
                     let dayOff  = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: Date()), to: date).day ?? 0
-                    let nowHour = Calendar.current.component(.hour, from: Date())
 
                     VStack(alignment: .leading) {
                         Text(weekDayLabel(date))
@@ -851,10 +849,11 @@ struct CalendarPanel: View {
                                     }
                                     .frame(height: 2880)
 
-                                    // Anchor: VStack spacer pushes the id'd view to the
-                                    // correct Y so scrollTo(anchor:.top) hits the right hour.
+                                    // Week view: anchor to 8 am so morning events
+                                    // are visible regardless of the current time.
+                                    let weekAnchorHour = 8
                                     VStack(spacing: 0) {
-                                        Color.clear.frame(height: CGFloat(max(0, nowHour - 1)) * 120)
+                                        Color.clear.frame(height: CGFloat(weekAnchorHour) * 120)
                                         Color.clear.frame(height: 1).id("week-anchor-\(idx)")
                                     }
                                     .frame(width: 1, height: 2880, alignment: .top)
