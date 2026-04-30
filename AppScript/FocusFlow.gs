@@ -5,6 +5,7 @@
 //   MY_NAME         — your full name as it appears in emails, e.g. "Jane Smith"
 //   MY_EMAIL        — your full email address, e.g. "jane@example.com"
 //   GEMINI_API_KEY  — your Gemini API key
+//   DAYS_BACK       — (optional) how many days of email to scan, default 1
 //   GMAIL_LABEL     — (optional) label applied to processed threads, default "FocusFlow-Processed"
 //   EXTRA_FILTERS   — (optional) space-separated Gmail query tokens to add, e.g. "-label:internal -from:noreply@someservice.com"
 
@@ -15,7 +16,8 @@ const PROPS = PropertiesService.getScriptProperties();
 function doGet(e) {
   const action   = e.parameter.action;
   const name     = e.parameter.name || PROPS.getProperty("MY_NAME") || "";
-  const daysBack = e.parameter.daysBack || "1";
+  // Priority: URL param → Script Property → hardcoded fallback
+  const daysBack = e.parameter.daysBack || PROPS.getProperty("DAYS_BACK") || "1";
 
   if (action === "pollEmails") {
     const logs = pollAllEmails(name, daysBack);
@@ -69,7 +71,7 @@ function writeTasks(file, tasks) {
 
 function pollAllEmails(targetName, daysBack) {
   if (!targetName) targetName = PROPS.getProperty("MY_NAME") || "";
-  if (!daysBack)   daysBack   = "1";
+  if (!daysBack)   daysBack   = PROPS.getProperty("DAYS_BACK") || "1";
 
   let logs = "Starting poll for all emails...\n";
   console.log("pollAllEmails — name: " + targetName + ", daysBack: " + daysBack);
@@ -257,7 +259,10 @@ If there are tasks, output each on its own line (no bullets, no numbering):
 Project | Title | Duration | Priority | Category | Details
 
 Where:
-- Project: short customer/project name (e.g. "Privia", "Internal")
+- Project: the shortest recognisable customer or team name — ONE word if possible
+  (e.g. "Privia", "Pythian", "Internal", "Clear Channel").
+  Do NOT copy the email subject or full meeting title. Never include company
+  suffixes like "Health", "Inc", or co-presenter names like "+ Google".
 - Title: concise action-oriented title, max 5 words
 - Duration: estimated minutes (15, 30, 45, 60, 90, or 120)
 - Priority: High, Medium, or Low

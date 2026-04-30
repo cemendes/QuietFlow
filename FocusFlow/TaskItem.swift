@@ -490,14 +490,20 @@ class TasksManager {
         let localViewMode = currentViewMode
         let sharedStore = eventStore   // reuse shared store — creating new ones fires EKEventStoreChangedNotification
         Task.detached(priority: .userInitiated) {
-            let today = Date()
+            let today    = Date()
             let calendar = Calendar.current
             let startOfDay = calendar.startOfDay(for: today)
-            let endOfDay: Date
+            let fetchStart: Date
+            let endOfDay:   Date
             if localViewMode == .week {
-                endOfDay = calendar.date(byAdding: .day, value: 7, to: startOfDay)!
+                // Start from Monday of the current week so past days are included.
+                // weekday: Sun=1…Sat=7  →  shift so Mon=0
+                let wd = (calendar.component(.weekday, from: today) + 5) % 7
+                fetchStart = calendar.date(byAdding: .day, value: -wd, to: startOfDay)!
+                endOfDay   = calendar.date(byAdding: .day, value: 7, to: fetchStart)!
             } else {
-                endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: today)!
+                fetchStart = startOfDay
+                endOfDay   = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: today)!
             }
 
             let allCals = sharedStore.calendars(for: .event)
@@ -507,7 +513,7 @@ class TasksManager {
                 return
             }
             print("Fetching events for calendars: \(calendars.map { $0.title })")
-            let predicate = sharedStore.predicateForEvents(withStart: startOfDay, end: endOfDay, calendars: calendars)
+            let predicate = sharedStore.predicateForEvents(withStart: fetchStart, end: endOfDay, calendars: calendars)
             let events = sharedStore.events(matching: predicate)
             
             let formatter = DateFormatter()
@@ -566,10 +572,12 @@ class TasksManager {
             }
             
             func eventsOverlap(_ e1: CalendarEvent, _ e2: CalendarEvent) -> Bool {
-                let s1 = e1.startHour * 60 + e1.startMinute
-                let s2 = e2.startHour * 60 + e2.startMinute
-                let end1 = e1.endHour * 60 + e1.endMinute
-                let end2 = e2.endHour * 60 + e2.endMinute
+                // Events on different days can never overlap in the UI.
+                guard e1.dayOffset == e2.dayOffset else { return false }
+                let s1   = e1.startHour * 60 + e1.startMinute
+                let s2   = e2.startHour * 60 + e2.startMinute
+                let end1 = e1.endHour   * 60 + e1.endMinute
+                let end2 = e2.endHour   * 60 + e2.endMinute
                 return s1 < end2 && s2 < end1
             }
             
