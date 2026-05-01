@@ -49,6 +49,9 @@ enum TaskSource: String, Equatable, CaseIterable {
 struct TaskItem: Identifiable, Codable, Hashable {
     let id: String
     let title: String
+    /// Top-level project field written by AppScript. Optional so older
+    /// tasks without this key decode cleanly (JSONDecoder sets it to nil).
+    let project: String?
     let details: String?
     let link: String?
     let status: String
@@ -77,7 +80,34 @@ struct TaskItem: Identifiable, Codable, Hashable {
         let days = Calendar.current.dateComponents([.day], from: taskDate, to: Date()).day ?? 0
         return days >= 3
     }
+
+    // MARK: - Phase 2A: Project & Notes
+
+    /// The project name — prefers the stored JSON field (set by AppScript),
+    /// falls back to parsing "[Project] Title" for older tasks.
+    var resolvedProject: String? {
+        if let stored = project, !stored.isEmpty { return stored }
+        guard title.hasPrefix("["),
+              let end = title.firstIndex(of: "]") else { return nil }
+        let proj = String(title[title.index(after: title.startIndex)..<end])
+        return proj.isEmpty ? nil : proj
+    }
+
+    /// Title stripped of the "[Project] " prefix, or the raw title if no prefix.
+    var cleanTitle: String {
+        guard let proj = resolvedProject else { return title }
+        let prefixLength = proj.count + 3  // "[" + proj + "] "
+        guard title.count > prefixLength else { return title }
+        return String(title.dropFirst(prefixLength))
+    }
+
+    /// True when a note file exists on Drive for this task.
+    var hasNote: Bool { NoteManager.shared.hasNote(for: id) }
+
+    /// URL of this task's note file on Drive (may not exist yet).
+    var noteURL: URL { NoteManager.shared.noteURL(for: id) }
 }
+
 
 // MARK: - Subtask Suggestion
 /// An in-memory, editable suggestion produced by the AI breakdown engine.
@@ -363,6 +393,7 @@ class TasksManager {
         let newTask = TaskItem(
             id: UUID().uuidString,
             title: title,
+            project: nil,          // manually created tasks have no project prefix yet
             details: details,
             link: link,
             status: "needsAction",
@@ -394,6 +425,8 @@ class TasksManager {
         let updatedTasks = self.tasks.filter { $0.id != id }
         saveTasksToJSON(updatedTasks)
         self.tasks = updatedTasks
+        // Archive note — never hard-delete (PRD decision #2)
+        NoteManager.shared.archiveNote(for: id)
     }
     
     func updateTask(id: String, title: String, details: String?, link: String?, status: String? = nil, duration: Int? = nil, priority: String? = nil) {
@@ -403,6 +436,7 @@ class TasksManager {
             let updated = TaskItem(
                 id: id,
                 title: title,
+                project: current.project,  // preserve project through edits
                 details: details,
                 link: link,
                 status: status ?? current.status,
@@ -429,7 +463,7 @@ class TasksManager {
             guard ids.contains(updatedTasks[i].id) else { continue }
             let t = updatedTasks[i]
             updatedTasks[i] = TaskItem(
-                id: t.id, title: t.title, details: t.details, link: t.link,
+                id: t.id, title: t.title, project: t.project, details: t.details, link: t.link,
                 status: t.status, duration: t.duration, priority: t.priority,
                 category: t.category, date: tomorrowStr, parentTaskId: t.parentTaskId
             )
@@ -908,6 +942,7 @@ class TasksManager {
             return TaskItem(
                 id: UUID().uuidString,
                 title: suggestion.title,
+                project: nil,          // subtasks don't carry a project prefix
                 details: suggestion.details.isEmpty ? "Sub-task of: \(task.title)" : suggestion.details,
                 link: task.link,
                 status: "needsAction",
@@ -932,6 +967,8 @@ class TasksManager {
         // 1. Update JSON status to "completed"
         guard let task = tasks.first(where: { $0.id == id }) else { return }
         updateTask(id: id, title: task.title, details: task.details, link: task.link, status: "completed")
+        // Archive note — preserve context, never hard-delete (PRD decision #2)
+        NoteManager.shared.archiveNote(for: id)
         
         // 2. Update Apple Calendar event title
         let status = EKEventStore.authorizationStatus(for: .event)
