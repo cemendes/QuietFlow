@@ -30,7 +30,7 @@ class AuthManager {
             HTTPCookieStorage.shared.setCookie(cookie)
         }
         
-        print("Saved \(cookies.count) cookies.")
+        FFLogger.log("Saved \(cookies.count) cookies.")
     }
     
     func signOut() {

@@ -1,5 +1,4 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct MorningRitualView: View {
     @Environment(TasksManager.self) var tasksManager: TasksManager

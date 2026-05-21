@@ -1102,10 +1102,10 @@ struct StatusBarView: View {
     @Environment(TasksManager.self) var tasksManager
 
     private var inboxCount: Int {
-        tasksManager.tasks.filter {
-            $0.status != "completed" &&
-            $0.parentTaskId == nil &&
-            !tasksManager.calendarEvents.contains { $0.taskId == $0.id }
+        tasksManager.tasks.filter { task in
+            task.status != "completed" &&
+            task.parentTaskId == nil &&
+            !tasksManager.calendarEvents.contains { $0.taskId == task.id }
         }.count
     }
     private var scheduledCount: Int { tasksManager.calendarEvents.filter { $0.taskId != nil }.count }

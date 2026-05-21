@@ -1,5 +1,4 @@
 import SwiftUI
-import AppKit
 
 struct TaskFormView: View {
     @Environment(TasksManager.self) var tasksManager: TasksManager
@@ -270,7 +269,7 @@ struct TaskFormView: View {
         guard let task = taskToEdit else { return }
         title         = task.title
         details       = task.details ?? ""
-        durationInput = task.duration != nil ? "\(task.duration!)" : "30"
+        durationInput = task.duration.map { "\($0)" } ?? "30"
         priority      = task.priority?.lowercased() ?? "low"
         // Split link field into urls array
         if let link = task.link, !link.isEmpty {
