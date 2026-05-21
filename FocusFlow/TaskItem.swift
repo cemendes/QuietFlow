@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 import Combine
 import EventKit
-import AppKit
+
 
 // MARK: - Task Source
 enum TaskSource: String, Equatable, CaseIterable {
@@ -139,10 +139,6 @@ class TasksManager {
     var calendarEvents: [CalendarEvent] = []
     var errorMessage: String? = nil
 
-    // Drag-and-drop state tracking
-    var isDragging: Bool = false
-    var draggedTaskId: String? = nil
-
     // ── Subtask Suggestions ─────────────────────────────────────────────
     // Keyed by parent task ID. Stored in memory so the user can edit,
     // delete, and recreate suggestions before committing them to the CSV.
@@ -218,19 +214,6 @@ class TasksManager {
     }
     
     init() {
-        // AppKit mouse monitor to guarantee that our global dragging state is safely reset,
-        // even if SwiftUI's onDrag gesture is aborted, cancelled, or drops outside the window.
-        NSEvent.addLocalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] event in
-            DispatchQueue.main.async {
-                if self?.isDragging == true {
-                    FFLogger.log("[Drag] Local mouse-up captured. Resetting global drag state for task \(String(describing: self?.draggedTaskId))")
-                    self?.isDragging = false
-                    self?.draggedTaskId = nil
-                }
-            }
-            return event
-        }
-
         self.userName = UserDefaults.standard.string(forKey: "userName") ?? "Eduardo Oliveira"
         self.daysBack = UserDefaults.standard.integer(forKey: "daysBack")
         if self.daysBack == 0 { self.daysBack = 1 }
@@ -698,8 +681,8 @@ class TasksManager {
         
         scheduleTask(id: id, hour: 9, minute: 0)
     }
-        func scheduleTask(id: String, hour: Int, minute: Int, dayOffset: Int = 0) {
-            FFLogger.log("[Schedule] DROP received → id=\(id) hour=\(hour) minute=\(minute) dayOffset=\(dayOffset)")
+    func scheduleTask(id: String, hour: Int, minute: Int, dayOffset: Int = 0) {
+        FFLogger.log("[Schedule] DROP received → id=\(id) hour=\(hour) minute=\(minute) dayOffset=\(dayOffset)")
         guard let task = tasks.first(where: { $0.id == id }) else {
             FFLogger.log("[Schedule] Error: Task with ID \(id) not found in active task list.")
             return

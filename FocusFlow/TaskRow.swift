@@ -3,7 +3,6 @@ import SwiftUI
 // MARK: - Task Row  (Medium rows, expandable — Linear style)
 struct TaskRow: View {
     let task: TaskItem
-    @Binding var draggedTask: TaskItem?
     /// Called when the user taps the note icon. Nil-safe — existing callsites unchanged.
     var onOpenEditor: ((TaskItem) -> Void)? = nil
 
@@ -190,7 +189,7 @@ struct TaskRow: View {
                     if !childTasks.isEmpty {
                         VStack(alignment: .leading, spacing: 2) {
                             ForEach(childTasks) { child in
-                                TaskRow(task: child, draggedTask: $draggedTask)
+                                TaskRow(task: child)
                                     .padding(.leading, 14)
                             }
                         }
@@ -222,12 +221,18 @@ struct TaskRow: View {
                 .frame(height: 1),
             alignment: .bottom
         )
-        .onDrag {
-            FFLogger.log("[Drag] TaskRow drag started for task: \(task.title), id: \(task.id)")
-            tasksManager.isDragging = true
-            tasksManager.draggedTaskId = task.id
-            self.draggedTask = task
-            return NSItemProvider(object: task.id as NSString)
+        .draggable(task.id) {
+            HStack(spacing: 6) {
+                Image(systemName: "timer")
+                Text(task.title)
+                    .lineLimit(1)
+            }
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.white)
+            .padding(.vertical, 5).padding(.horizontal, 10)
+            .background(Color.googleBlue)
+            .clipShape(.rect(cornerRadius: 6))
+            .frame(maxWidth: 200)
         }
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) { isHovered = hovering }
