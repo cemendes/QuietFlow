@@ -3,7 +3,7 @@ import Foundation
 /// Thread-safe file logger. Uses a serial DispatchQueue for writes.
 /// Declared as a caseless enum so it never acquires @MainActor inference.
 public enum FFLogger {
-    private nonisolated(unsafe) static let logQueue = DispatchQueue(label: "com.focusflow.logger", qos: .utility)
+    private static let logQueue = DispatchQueue(label: "com.focusflow.logger", qos: .utility)
 
     private static var logURL: URL {
         FileManager.default.homeDirectoryForCurrentUser
