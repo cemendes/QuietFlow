@@ -12,7 +12,6 @@ struct ContentView: View {
     @State private var showingSettings  = false
     @State private var showingTaskForm  = false
     @State private var selectedEvent:   CalendarEvent? = nil
-    @State private var draggedTask:     TaskItem?      = nil
     @State private var searchText       = ""
     @State private var geminiKeyInput   = ""
     @State private var geminiKeySaved   = false
@@ -59,7 +58,6 @@ struct ContentView: View {
                     TaskListPanel(
                         selectedSource: selectedSource,
                         selectedProject: selectedProject,
-                        draggedTask: $draggedTask,
                         searchText: $searchText,
                         isEditorOpen: $isEditorOpen,
                         onOpenEditor: { task in
@@ -75,7 +73,7 @@ struct ContentView: View {
                     Divider()
 
                     // ── Panel 3: Calendar ─────────────────────────────────
-                    CalendarPanel(selectedEvent: $selectedEvent, draggedTask: $draggedTask)
+                    CalendarPanel(selectedEvent: $selectedEvent)
                         .frame(maxWidth: .infinity)
 
                     // ── Panel 4: Markdown Editor (Phase 2A/2B) ────────────
@@ -671,7 +669,6 @@ struct TaskListPanel: View {
     @Environment(TasksManager.self) var tasksManager
     let selectedSource:  TaskSource?
     let selectedProject: ProjectItem?    // Phase 2B
-    @Binding var draggedTask:   TaskItem?
     @Binding var searchText:    String
     /// Reflects and toggles the editor panel open/closed state.
     @Binding var isEditorOpen: Bool
@@ -791,21 +788,27 @@ struct TaskListPanel: View {
                             ForEach(filteredTasks) { task in
                                 TaskRow(
                                     task: task,
-                                    draggedTask: $draggedTask,
                                     onOpenEditor: onOpenEditor
                                 )
-                                    .onDrop(of: [.plainText, .text],
-                                            delegate: TaskDropDelegate(
-                                                item: task,
-                                                tasks: $tasksManager.tasks,
-                                                draggedItem: $draggedTask,
-                                                tasksManager: tasksManager
-                                            ) { reordered in
-                                                var all = tasksManager.tasks
-                                                all.removeAll { t in reordered.contains { $0.id == t.id } }
-                                                all.insert(contentsOf: reordered, at: 0)
-                                                tasksManager.persistTaskOrder(newTasks: all)
-                                            })
+                                    .dropDestination(for: String.self) { items, _ in
+                                        guard let draggedId = items.first, !draggedId.isEmpty else { return false }
+                                        // If dropping a scheduled task, unschedule it
+                                        if tasksManager.calendarEvents.contains(where: { $0.taskId == draggedId }) {
+                                            tasksManager.unscheduleTask(id: draggedId)
+                                            return true
+                                        }
+                                        // Otherwise reorder within the inbox
+                                        guard let draggedItem = tasksManager.tasks.first(where: { $0.id == draggedId }),
+                                              draggedItem.id != task.id else { return false }
+                                        var all = tasksManager.tasks
+                                        if let from = all.firstIndex(where: { $0.id == draggedId }),
+                                           let to = all.firstIndex(where: { $0.id == task.id }) {
+                                            all.remove(at: from)
+                                            all.insert(draggedItem, at: to)
+                                            tasksManager.persistTaskOrder(newTasks: all)
+                                        }
+                                        return true
+                                    }
                             }
                         }
                     }
@@ -813,8 +816,15 @@ struct TaskListPanel: View {
             }
             .frame(maxHeight: .infinity)
             .contentShape(Rectangle())
-            .onDrop(of: [.plainText, .text],
-                    delegate: InboxDropDelegate(tasksManager: tasksManager))
+            .dropDestination(for: String.self) { items, _ in
+                guard let taskId = items.first, !taskId.isEmpty else { return false }
+                if tasksManager.calendarEvents.contains(where: { $0.taskId == taskId }) {
+                    FFLogger.log("[Drop] Inbox container accepted unschedule for taskId: \(taskId)")
+                    tasksManager.unscheduleTask(id: taskId)
+                    return true
+                }
+                return false
+            }
         }
         .background(Color.surfaceBackground)
     }
@@ -849,7 +859,6 @@ struct InboxZeroView: View {
 struct CalendarPanel: View {
     @Environment(TasksManager.self) var tasksManager
     @Binding var selectedEvent: CalendarEvent?
-    @Binding var draggedTask:   TaskItem?
     @AppStorage("showWeekends") private var showWeekends = false
     @State private var scrollTrigger = 0   // incrementing this re-triggers scroll-to-now
 

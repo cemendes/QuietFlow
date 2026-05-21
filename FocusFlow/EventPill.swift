@@ -1,10 +1,10 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct EventPill: View {
     let event: CalendarEvent
     let onTap: () -> Void
     @Environment(TasksManager.self) var tasksManager: TasksManager
+    @State private var isDropTargeted = false
 
     private var isScheduledTask: Bool { event.taskId != nil && !event.taskId!.isEmpty }
 
@@ -142,22 +142,21 @@ struct EventPill: View {
         .contextMenu { contextMenuItems }
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel("\(event.title) — tap to view details")
-        .onDrag(if: isDraggable, taskId: event.taskId ?? "", tasksManager: tasksManager)
-        .onDrop(of: [.plainText, .text], isTargeted: .none) { providers in
-            guard let provider = providers.first else { return false }
-            if provider.canLoadObject(ofClass: NSString.self) {
-                provider.loadObject(ofClass: NSString.self) { item, _ in
-                    guard let taskId = item as? String, !taskId.isEmpty else { return }
-                    Task { @MainActor in
-                        FFLogger.log("[Drop] EventPill accepted drop of taskId: \(taskId) at hour:\(event.startHour) minute:\(event.startMinute)")
-                        tasksManager.scheduleTask(id: taskId, hour: event.startHour,
-                                                  minute: event.startMinute, dayOffset: event.dayOffset)
-                    }
-                }
-                return true
-            }
-            return false
+        .conditionalDraggable(isDraggable, payload: event.taskId ?? "")
+        .dropDestination(for: String.self) { items, _ in
+            guard let taskId = items.first, !taskId.isEmpty else { return false }
+            FFLogger.log("[Drop] EventPill accepted drop of taskId: \(taskId) at hour:\(event.startHour) minute:\(event.startMinute)")
+            tasksManager.scheduleTask(id: taskId, hour: event.startHour,
+                                      minute: event.startMinute, dayOffset: event.dayOffset)
+            return true
+        } isTargeted: { targeted in
+            isDropTargeted = targeted
         }
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(Color.googleBlue.opacity(0.8), lineWidth: 2)
+                .opacity(isDropTargeted ? 1 : 0)
+        )
     }
 
     // ── Borders ───────────────────────────────────────────────────────────
@@ -226,20 +225,15 @@ struct EventPill: View {
     }
 }
 
-// MARK: - Conditional onDrag helper
+// MARK: - Conditional draggable helper
 extension View {
     @ViewBuilder
-    func onDrag(if condition: Bool, taskId: String, tasksManager: TasksManager) -> some View {
+    func conditionalDraggable(_ condition: Bool, payload: String) -> some View {
         if condition {
-            self.onDrag({
-                FFLogger.log("[Drag] EventPill drag started for taskId: \(taskId)")
-                tasksManager.isDragging = true
-                tasksManager.draggedTaskId = taskId
-                return NSItemProvider(object: taskId as NSString)
-            }, preview: {
+            self.draggable(payload) {
                 HStack(spacing: 6) {
                     Image(systemName: "timer")
-                    Text(taskId)
+                    Text(payload)
                 }
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.white)
@@ -247,7 +241,7 @@ extension View {
                 .background(Color.googleBlue)
                 .clipShape(.rect(cornerRadius: 6))
                 .frame(maxWidth: 180)
-            })
+            }
         } else {
             self
         }
