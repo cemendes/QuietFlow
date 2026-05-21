@@ -6,6 +6,8 @@ struct EventPill: View {
     let onTap: () -> Void
     @Environment(TasksManager.self) var tasksManager: TasksManager
 
+    @State private var isDropTargeted = false
+
     private var isScheduledTask: Bool { event.taskId != nil && !event.taskId!.isEmpty }
 
     // Live completion status from task model
@@ -72,6 +74,11 @@ struct EventPill: View {
                     colors: [.white.opacity(0.12), .clear],
                     startPoint: .topLeading, endPoint: .bottomTrailing
                 )
+            }
+
+            // Drop target overlay
+            if isDropTargeted {
+                Color.googleBlue.opacity(0.15)
             }
 
             VStack(alignment: .leading, spacing: 0) {
@@ -143,21 +150,53 @@ struct EventPill: View {
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel("\(event.title) — tap to view details")
         .onDrag(if: isDraggable, taskId: event.taskId ?? "")
+        .onDrop(of: [.plainText, .text], isTargeted: $isDropTargeted) { providers in
+            guard let provider = providers.first else { return false }
+            
+            if provider.canLoadObject(ofClass: NSString.self) {
+                provider.loadObject(ofClass: NSString.self) { item, _ in
+                    guard let taskId = item as? String, !taskId.isEmpty else { return }
+                    Task { @MainActor in
+                        tasksManager.scheduleTask(id: taskId, hour: event.startHour,
+                                                  minute: event.startMinute, dayOffset: event.dayOffset)
+                    }
+                }
+                return true
+            }
+            
+            provider.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { item, _ in
+                var taskId: String?
+                if let data = item as? Data  { taskId = String(data: data, encoding: .utf8) }
+                else if let s = item as? String { taskId = s }
+                if let id = taskId, !id.isEmpty {
+                    Task { @MainActor in
+                        tasksManager.scheduleTask(id: id, hour: event.startHour,
+                                                  minute: event.startMinute, dayOffset: event.dayOffset)
+                    }
+                }
+            }
+            return true
+        }
     }
 
     // ── Borders ───────────────────────────────────────────────────────────
     @ViewBuilder private var pillBorder: some View {
-        switch event.rsvpStatus {
-        case .maybe:
+        if isDropTargeted {
             RoundedRectangle(cornerRadius: 6)
-                .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
-                .foregroundStyle(Color(hex: "#FF9800").opacity(0.6))
-        case .declined:
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.borderGray.opacity(0.5), lineWidth: 1)
-        default:
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.white.opacity(isScheduledTask ? 0.15 : 0.1), lineWidth: 0.5)
+                .strokeBorder(Color.googleBlue, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+        } else {
+            switch event.rsvpStatus {
+            case .maybe:
+                RoundedRectangle(cornerRadius: 6)
+                    .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                    .foregroundStyle(Color(hex: "#FF9800").opacity(0.6))
+            case .declined:
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.borderGray.opacity(0.5), lineWidth: 1)
+            default:
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.white.opacity(isScheduledTask ? 0.15 : 0.1), lineWidth: 0.5)
+            }
         }
     }
 
