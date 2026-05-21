@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct MorningRitualView: View {
     @Environment(TasksManager.self) var tasksManager: TasksManager
@@ -490,7 +491,7 @@ struct MorningRitualView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .onDrop(of: ["public.plain-text"], isTargeted: $isUnscheduleTargeted) { providers in
+            .onDrop(of: [.plainText, .text], isTargeted: $isUnscheduleTargeted) { providers in
                 providers.first?.loadObject(ofClass: NSString.self) { item, _ in
                     if let taskId = item as? String {
                         DispatchQueue.main.async {

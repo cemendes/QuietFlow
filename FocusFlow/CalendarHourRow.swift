@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// A single hour row in the Step 2 calendar sidebar.
 /// Owns its own @State for drop-target highlight (required — can't use @State
@@ -72,7 +73,7 @@ struct CalendarHourRow: View {
         .frame(height: 34)
         .padding(.horizontal, 10)
         .contentShape(Rectangle())
-        .onDrop(of: ["public.plain-text"], isTargeted: $isDropTargeted) { providers in
+        .onDrop(of: [.plainText, .text], isTargeted: $isDropTargeted) { providers in
             providers.first?.loadObject(ofClass: NSString.self) { item, _ in
                 if let taskId = item as? String {
                     DispatchQueue.main.async { onDrop(taskId) }
