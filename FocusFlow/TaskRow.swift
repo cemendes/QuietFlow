@@ -223,6 +223,9 @@ struct TaskRow: View {
             alignment: .bottom
         )
         .onDrag {
+            FFLogger.log("[Drag] TaskRow drag started for task: \(task.title), id: \(task.id)")
+            tasksManager.isDragging = true
+            tasksManager.draggedTaskId = task.id
             self.draggedTask = task
             return NSItemProvider(object: task.id as NSString)
         }

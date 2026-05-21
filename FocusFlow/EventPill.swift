@@ -142,7 +142,7 @@ struct EventPill: View {
         .contextMenu { contextMenuItems }
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel("\(event.title) — tap to view details")
-        .onDrag(if: isDraggable, taskId: event.taskId ?? "")
+        .onDrag(if: isDraggable, taskId: event.taskId ?? "", tasksManager: tasksManager)
     }
 
     // ── Borders ───────────────────────────────────────────────────────────
@@ -214,10 +214,13 @@ struct EventPill: View {
 // MARK: - Conditional onDrag helper
 extension View {
     @ViewBuilder
-    func onDrag(if condition: Bool, taskId: String) -> some View {
+    func onDrag(if condition: Bool, taskId: String, tasksManager: TasksManager) -> some View {
         if condition {
             self.onDrag({
-                NSItemProvider(object: taskId as NSString)
+                FFLogger.log("[Drag] EventPill drag started for taskId: \(taskId)")
+                tasksManager.isDragging = true
+                tasksManager.draggedTaskId = taskId
+                return NSItemProvider(object: taskId as NSString)
             }, preview: {
                 HStack(spacing: 6) {
                     Image(systemName: "timer")

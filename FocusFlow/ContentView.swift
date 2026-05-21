@@ -965,6 +965,7 @@ struct CalendarPanel: View {
                                 EventPill(event: event) { selectedEvent = event }
                                     .frame(width: w, height: event.calculateHeight(), alignment: .top)
                                     .offset(x: x, y: calOffset(event))
+                                    .allowsHitTesting(!tasksManager.isDragging || event.taskId == tasksManager.draggedTaskId)
                             }
                         }
                     }
@@ -1038,6 +1039,7 @@ struct CalendarPanel: View {
                                                 EventPill(event: ev) { selectedEvent = ev }
                                                     .frame(width: w, height: ev.calculateHeight(), alignment: .top)
                                                     .offset(x: 47, y: calOffset(ev))
+                                                    .allowsHitTesting(!tasksManager.isDragging || ev.taskId == tasksManager.draggedTaskId)
                                             }
                                         }
                                     }
