@@ -142,6 +142,7 @@ struct EventPill: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .contentShape(Rectangle())
         // RSVP border
         .overlay(pillBorder)
         .clipShape(.rect(cornerRadius: 6))

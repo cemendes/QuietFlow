@@ -962,11 +962,8 @@ struct CalendarPanel: View {
                                 let aw = geo.size.width - 47.0
                                 let w  = event.totalColumns == 1 ? aw : aw / CGFloat(event.totalColumns)
                                 let x  = 47.0 + CGFloat(event.displayColumn) * (aw / CGFloat(event.totalColumns))
-                                Color.clear
-                                    .frame(width: w, height: event.calculateHeight())
-                                    .overlay(alignment: .top) {
-                                        EventPill(event: event) { selectedEvent = event }
-                                    }
+                                EventPill(event: event) { selectedEvent = event }
+                                    .frame(width: w, height: event.calculateHeight(), alignment: .top)
                                     .offset(x: x, y: calOffset(event))
                             }
                         }
@@ -1038,11 +1035,8 @@ struct CalendarPanel: View {
 
                                             ForEach(tasksManager.calendarEvents.filter { $0.dayOffset == dayOff }) { ev in
                                                 let w = geo.size.width - 47.0
-                                                Color.clear
-                                                    .frame(width: w, height: ev.calculateHeight())
-                                                    .overlay(alignment: .top) {
-                                                        EventPill(event: ev) { selectedEvent = ev }
-                                                    }
+                                                EventPill(event: ev) { selectedEvent = ev }
+                                                    .frame(width: w, height: ev.calculateHeight(), alignment: .top)
                                                     .offset(x: 47, y: calOffset(ev))
                                             }
                                         }
