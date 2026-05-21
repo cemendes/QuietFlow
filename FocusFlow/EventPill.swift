@@ -143,6 +143,21 @@ struct EventPill: View {
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel("\(event.title) — tap to view details")
         .onDrag(if: isDraggable, taskId: event.taskId ?? "", tasksManager: tasksManager)
+        .onDrop(of: [.plainText, .text], isTargeted: .none) { providers in
+            guard let provider = providers.first else { return false }
+            if provider.canLoadObject(ofClass: NSString.self) {
+                provider.loadObject(ofClass: NSString.self) { item, _ in
+                    guard let taskId = item as? String, !taskId.isEmpty else { return }
+                    Task { @MainActor in
+                        FFLogger.log("[Drop] EventPill accepted drop of taskId: \(taskId) at hour:\(event.startHour) minute:\(event.startMinute)")
+                        tasksManager.scheduleTask(id: taskId, hour: event.startHour,
+                                                  minute: event.startMinute, dayOffset: event.dayOffset)
+                    }
+                }
+                return true
+            }
+            return false
+        }
     }
 
     // ── Borders ───────────────────────────────────────────────────────────
