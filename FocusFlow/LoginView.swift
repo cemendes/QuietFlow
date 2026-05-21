@@ -31,7 +31,7 @@ struct LoginView: NSViewRepresentable {
         
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             if let url = webView.url {
-                print("Loaded URL: \(url.absoluteString)")
+                FFLogger.log("Loaded URL: \(url.absoluteString)")
                 
                 if url.absoluteString.contains("script.google.com") && !url.absoluteString.contains("ServiceLogin") {
                     webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in

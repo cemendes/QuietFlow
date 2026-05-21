@@ -22,11 +22,11 @@ struct FocusFlowApp: App {
                            let queryItems = components.queryItems,
                            let cookies = queryItems.first(where: { $0.name == "value" })?.value {
                             tasksManager.cookieString = cookies
-                            print("Cookies updated from URL scheme!")
+                            FFLogger.log("Cookies updated from URL scheme!")
                         }
                     } else if url.scheme == "focusflow" && url.host == "ritual" {
                         tasksManager.isMorningRitualComplete = false
-                        print("Morning Ritual manually triggered from URL scheme!")
+                        FFLogger.log("Morning Ritual manually triggered from URL scheme!")
                     }
                 }
         }

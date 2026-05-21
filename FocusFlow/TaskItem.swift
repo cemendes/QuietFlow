@@ -199,7 +199,7 @@ class TasksManager {
               let cached = try? JSONDecoder().decode([TaskItem].self, from: data),
               !cached.isEmpty else { return }
         self.tasks = cached
-        print("[Cache] Restored \(cached.count) tasks from local cache")
+        FFLogger.log("[Cache] Restored \(cached.count) tasks from local cache")
     }
 
     /// Persists tasks to the local cache off the main thread.
@@ -209,7 +209,7 @@ class TasksManager {
         Task.detached(priority: .utility) {
             guard let data = try? JSONEncoder().encode(tasks) else { return }
             try? data.write(to: url, options: .atomic)
-            print("[Cache] Saved \(tasks.count) tasks to local cache")
+            FFLogger.log("[Cache] Saved \(tasks.count) tasks to local cache")
         }
     }
     
@@ -316,7 +316,7 @@ class TasksManager {
             self.jsonReloadDebounceTask = Task { @MainActor in
                 try? await Task.sleep(for: .seconds(1))
                 guard !Task.isCancelled else { return }
-                print("[JSON] Reloading after file change (debounced)")
+                FFLogger.log("[JSON] Reloading after file change (debounced)")
                 self.fetchTasks()
             }
         }
@@ -328,18 +328,18 @@ class TasksManager {
 
     func fetchTasks() {
         guard let url = getJSONURL() else { return }
-        print("[JSON] Fetching tasks from: \(url.path)")
+        FFLogger.log("[JSON] Fetching tasks from: \(url.path)")
 
         Task.detached(priority: .background) {
             do {
                 // Bootstrap: create an empty JSON array if the file is absent.
                 if !FileManager.default.fileExists(atPath: url.path) {
-                    print("[JSON] File absent — creating empty tasks.json")
+                    FFLogger.log("[JSON] File absent — creating empty tasks.json")
                     try JSONEncoder().encode([TaskItem]()).write(to: url, options: .atomic)
                 }
 
                 let data = try Data(contentsOf: url)
-                print("[JSON] Read \(data.count) bytes")
+                FFLogger.log("[JSON] Read \(data.count) bytes")
 
                 let decoded = try JSONDecoder().decode([TaskItem].self, from: data)
 
@@ -358,7 +358,7 @@ class TasksManager {
                 }
                 self.saveTasksToCache(sortedTasks)
             } catch {
-                print("[JSON] Error reading tasks: \(error)")
+                FFLogger.log("[JSON] Error reading tasks: \(error)")
                 await MainActor.run {
                     self.errorMessage = "Failed to read tasks file."
                 }
@@ -410,7 +410,7 @@ class TasksManager {
         updated.insert(newTask, at: 0)
         saveTasksToJSON(updated)
         self.tasks = updated
-        print("[CreateTask] Created '\(title)' priority=\(priority ?? "low") date=\(todayISO)")
+        FFLogger.log("[CreateTask] Created '\(title)' priority=\(priority ?? "low") date=\(todayISO)")
     }
 
     private func saveTasksToJSON(_ tasksToSave: [TaskItem]) {
@@ -419,7 +419,7 @@ class TasksManager {
             let data = try JSONEncoder().encode(tasksToSave)
             try data.write(to: url, options: .atomic)
         } catch {
-            print("[JSON] Error saving tasks: \(error)")
+            FFLogger.log("[JSON] Error saving tasks: \(error)")
         }
     }
 
@@ -820,7 +820,7 @@ class TasksManager {
         subtaskSuggestions[id] = []
 
         guard let apiKey = KeychainHelper.shared.readString(service: "FocusFlow", account: "GeminiAPIKey") else {
-            print("[Breakdown] Gemini API key not found in Keychain.")
+            FFLogger.log("[Breakdown] Gemini API key not found in Keychain.")
             subtaskLoadingState[id] = false
             return
         }
@@ -866,7 +866,7 @@ class TasksManager {
                 let (data, response) = try await URLSession.shared.data(for: req)
                 let httpStatus = (response as? HTTPURLResponse)?.statusCode ?? -1
                 let rawText = String(data: data, encoding: .utf8) ?? ""
-                print("[Breakdown] HTTP \(httpStatus): \(rawText.prefix(400))")
+                FFLogger.log("[Breakdown] HTTP \(httpStatus): \(rawText.prefix(400))")
 
                 await MainActor.run { self.subtaskLoadingState[id] = false }
                 // Extract the JSON text from the Gemini envelope
@@ -877,7 +877,7 @@ class TasksManager {
                       let parts = content["parts"] as? [[String: Any]],
                       let text = parts.first?["text"] as? String
                 else {
-                    print("[Breakdown] Failed to parse Gemini envelope")
+                    FFLogger.log("[Breakdown] Failed to parse Gemini envelope")
                     return
                 }
 
@@ -900,7 +900,7 @@ class TasksManager {
                     }
                     await MainActor.run {
                         self.subtaskSuggestions[id] = suggestions
-                        print("[Breakdown] Parsed \(suggestions.count) suggestions for task \(id)")
+                        FFLogger.log("[Breakdown] Parsed \(suggestions.count) suggestions for task \(id)")
                     }
                 } else {
                     // Fallback: try line-by-line bullet parsing
@@ -914,11 +914,11 @@ class TasksManager {
                         }
                     await MainActor.run {
                         self.subtaskSuggestions[id] = suggestions
-                        print("[Breakdown] Fallback parsed \(suggestions.count) suggestions")
+                        FFLogger.log("[Breakdown] Fallback parsed \(suggestions.count) suggestions")
                     }
                 }
             } catch {
-                print("[Breakdown] Network error: \(error)")
+                FFLogger.log("[Breakdown] Network error: \(error)")
                 await MainActor.run { self.subtaskLoadingState[id] = false }
             }
         }
@@ -949,7 +949,7 @@ class TasksManager {
         guard !suggestions.isEmpty else { return }
 
         let newSubtasks: [TaskItem] = suggestions.map { suggestion in
-            print("[Subtask] Creating: \(suggestion.title)")
+            FFLogger.log("[Subtask] Creating: \(suggestion.title)")
             return TaskItem(
                 id: UUID().uuidString,
                 title: suggestion.title,
