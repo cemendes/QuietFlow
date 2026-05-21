@@ -32,39 +32,58 @@ struct GridLine: View {
                     .frame(height: isHourMark ? 1 : 0.5)
                 Spacer()
             }
-            .contentShape(Rectangle())
-            .onDrop(of: [.plainText, .text], isTargeted: $isTargeted) { providers in
-                // Accept the first provider that can give us a string (task id)
-                guard let provider = providers.first else { return false }
+        }
+        .frame(height: 30)
+        .contentShape(Rectangle())
+        .onDrop(of: [.plainText, .text], isTargeted: $isTargeted) { providers in
+            FFLogger.log("[Drop] GridLine onDrop entered: (hour:\(hour), minute:\(minute), dayOffset:\(dayOffset)). Providers count: \(providers.count)")
+            // Accept the first provider that can give us a string (task id)
+            guard let provider = providers.first else {
+                FFLogger.log("[Drop] GridLine onDrop failed: no providers")
+                return false
+            }
 
-                // NSString → public.plain-text — try loadObject first (most reliable)
-                if provider.canLoadObject(ofClass: NSString.self) {
-                    provider.loadObject(ofClass: NSString.self) { item, _ in
-                        guard let taskId = item as? String, !taskId.isEmpty else { return }
-                        Task { @MainActor in
-                            tasksManager.scheduleTask(id: taskId, hour: hour,
-                                                      minute: minute, dayOffset: dayOffset)
-                        }
+            // NSString → public.plain-text — try loadObject first (most reliable)
+            if provider.canLoadObject(ofClass: NSString.self) {
+                FFLogger.log("[Drop] GridLine loading NSString object...")
+                provider.loadObject(ofClass: NSString.self) { item, error in
+                    if let error = error {
+                        FFLogger.log("[Drop] GridLine failed to load NSString: \(error)")
                     }
-                    return true
-                }
-
-                // Fallback: legacy loadItem path
-                provider.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { item, _ in
-                    var taskId: String?
-                    if let data = item as? Data  { taskId = String(data: data, encoding: .utf8) }
-                    else if let s = item as? String { taskId = s }
-                    if let id = taskId, !id.isEmpty {
-                        Task { @MainActor in
-                            tasksManager.scheduleTask(id: id, hour: hour,
-                                                      minute: minute, dayOffset: dayOffset)
-                        }
+                    guard let taskId = item as? String, !taskId.isEmpty else {
+                        FFLogger.log("[Drop] GridLine loaded taskId is nil or empty")
+                        return
+                    }
+                    FFLogger.log("[Drop] GridLine loaded taskId: \(taskId). Scheduling...")
+                    Task { @MainActor in
+                        tasksManager.scheduleTask(id: taskId, hour: hour,
+                                                  minute: minute, dayOffset: dayOffset)
                     }
                 }
                 return true
             }
+
+            // Fallback: legacy loadItem path
+            FFLogger.log("[Drop] GridLine loading plain text item (fallback)...")
+            provider.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { item, error in
+                if let error = error {
+                    FFLogger.log("[Drop] GridLine fallback failed to load: \(error)")
+                }
+                var taskId: String?
+                if let data = item as? Data  { taskId = String(data: data, encoding: .utf8) }
+                else if let s = item as? String { taskId = s }
+                if let id = taskId, !id.isEmpty {
+                    FFLogger.log("[Drop] GridLine fallback loaded taskId: \(id). Scheduling...")
+                    Task { @MainActor in
+                        tasksManager.scheduleTask(id: id, hour: hour,
+                                                  minute: minute, dayOffset: dayOffset)
+                    }
+                } else {
+                    FFLogger.log("[Drop] GridLine fallback loaded taskId is nil or empty")
+                }
+            }
+            return true
         }
-        .frame(height: 30)
         .background(isTargeted ? Color.googleBlue.opacity(0.08) : Color.clear)
         .overlay(
             Rectangle()
@@ -72,5 +91,8 @@ struct GridLine: View {
                         style: StrokeStyle(lineWidth: 1, dash: [4]))
                 .opacity(isTargeted ? 1 : 0)
         )
+        .onChange(of: isTargeted) { _, targeted in
+            FFLogger.log("[Hover] GridLine targeted status changed: (hour:\(hour), minute:\(minute), dayOffset:\(dayOffset)) → \(targeted)")
+        }
     }
 }
