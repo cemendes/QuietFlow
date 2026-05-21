@@ -1,6 +1,6 @@
 import Foundation
 
-public struct FFLogger {
+public struct FFLogger: Sendable {
     private static let logQueue = DispatchQueue(label: "com.focusflow.logger", qos: .utility)
     
     private static var logURL: URL {
@@ -8,7 +8,7 @@ public struct FFLogger {
             .appendingPathComponent("My Drive/focusflow_debug.log")
     }
     
-    public static func log(_ message: String) {
+    public nonisolated static func log(_ message: String) {
         // Print to standard console
         print(message)
         

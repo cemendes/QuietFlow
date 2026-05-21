@@ -922,16 +922,14 @@ struct CalendarPanel: View {
 
             Divider()
 
-            // Both views stay alive (opacity swap, not if/else).
-            // This preserves the scroll position when switching modes —
-            // no more flash-to-midnight on every tab switch.
-            ZStack {
+            // Only render the active view — the inactive view must not exist
+            // in the view hierarchy at all, because .allowsHitTesting(false)
+            // and .disabled() do NOT suppress .onDrop targets. Having both
+            // views alive causes their GridLines to compete for drops.
+            if tasksManager.currentViewMode == .day {
                 dayView
-                    .opacity(tasksManager.currentViewMode == .day ? 1 : 0)
-                    .allowsHitTesting(tasksManager.currentViewMode == .day)
+            } else {
                 weekView
-                    .opacity(tasksManager.currentViewMode == .week ? 1 : 0)
-                    .allowsHitTesting(tasksManager.currentViewMode == .week)
             }
         }
         .background(Color.secondarySurface)
@@ -965,7 +963,6 @@ struct CalendarPanel: View {
                                 EventPill(event: event) { selectedEvent = event }
                                     .frame(width: w, height: event.calculateHeight(), alignment: .top)
                                     .offset(x: x, y: calOffset(event))
-                                    .allowsHitTesting(!tasksManager.isDragging || event.taskId == tasksManager.draggedTaskId)
                             }
                         }
                     }
@@ -1039,7 +1036,6 @@ struct CalendarPanel: View {
                                                 EventPill(event: ev) { selectedEvent = ev }
                                                     .frame(width: w, height: ev.calculateHeight(), alignment: .top)
                                                     .offset(x: 47, y: calOffset(ev))
-                                                    .allowsHitTesting(!tasksManager.isDragging || ev.taskId == tasksManager.draggedTaskId)
                                             }
                                         }
                                     }
