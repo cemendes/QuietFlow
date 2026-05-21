@@ -148,6 +148,7 @@ class TasksManager {
     var daysBack: Int = 1
     var cookieString: String = ""
     var defaultDuration: Int = 30
+    var bypassCalendarAccessCheck = false
     
     var isMorningRitualComplete: Bool = false
     var isShutdownRitualNeeded: Bool = false
@@ -253,7 +254,7 @@ class TasksManager {
                     guard let self else { return }
                     try? await Task.sleep(for: .seconds(2))
                     guard !Task.isCancelled else { return }
-                    print("[Calendar] Reloading after external change (debounced)")
+                    FFLogger.log("[Calendar] Reloading after external change (debounced)")
                     self.fetchCalendarEvents()
                 }
             }
@@ -492,11 +493,11 @@ class TasksManager {
         eventStore.requestFullAccessToEvents { granted, error in
             Task { @MainActor in
                 if granted {
-                    print("Calendar access granted")
+                    FFLogger.log("Calendar access granted")
                     self.fetchAvailableCalendars()
                     self.fetchCalendarEvents()
                 } else {
-                    print("Calendar access denied: \(error?.localizedDescription ?? "unknown error")")
+                    FFLogger.log("Calendar access denied: \(error?.localizedDescription ?? "unknown error")")
                     self.errorMessage = "Calendar access denied. Please enable in System Settings."
                 }
             }
@@ -505,7 +506,7 @@ class TasksManager {
     
     func fetchAvailableCalendars() {
         let calendars = eventStore.calendars(for: .event)
-        print("Found \(calendars.count) available calendars.")
+        FFLogger.log("Found \(calendars.count) available calendars.")
         let simpleCals = calendars.map { SimpleCalendar(id: $0.calendarIdentifier, title: $0.title) }
         self.availableCalendars = simpleCals
     }
@@ -517,7 +518,7 @@ class TasksManager {
         let targetCalId = targetCalendarIdentifier
         // Guard: if no target calendar is set, don't fetch (avoids dumping all events)
         guard !targetCalId.isEmpty else {
-            print("[Calendar] No target calendar set — skipping fetch")
+            FFLogger.log("[Calendar] No target calendar set — skipping fetch")
             return
         }
 
@@ -543,10 +544,10 @@ class TasksManager {
             let allCals = sharedStore.calendars(for: .event)
             let calendars = allCals.filter { $0.calendarIdentifier == targetCalId }
             guard !calendars.isEmpty else {
-                print("[Calendar] Target calendar \(targetCalId) not found — skipping")
+                FFLogger.log("[Calendar] Target calendar \(targetCalId) not found — skipping")
                 return
             }
-            print("Fetching events for calendars: \(calendars.map { $0.title })")
+            FFLogger.log("Fetching events for calendars: \(calendars.map { $0.title })")
             let predicate = sharedStore.predicateForEvents(withStart: fetchStart, end: endOfDay, calendars: calendars)
             let events = sharedStore.events(matching: predicate)
             
@@ -554,15 +555,15 @@ class TasksManager {
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss Z"
             formatter.timeZone = calendar.timeZone
             
-            print("Current calendar timezone: \(calendar.timeZone)")
-            print("Found \(events.count) events total.")
+            FFLogger.log("Current calendar timezone: \(calendar.timeZone)")
+            FFLogger.log("Found \(events.count) events total.")
             for ev in events {
                 let startHour = calendar.component(.hour, from: ev.startDate)
                 let startMinute = calendar.component(.minute, from: ev.startDate)
                 let endHour = calendar.component(.hour, from: ev.endDate)
                 let endMinute = calendar.component(.minute, from: ev.endDate)
                 let localStr = formatter.string(from: ev.startDate)
-                print("Event: \(ev.title ?? "Untitled") starts at \(startHour):\(startMinute), ends at \(endHour):\(endMinute) (Local: \(localStr)) in \(ev.calendar.title)")
+                FFLogger.log("Event: \(ev.title ?? "Untitled") starts at \(startHour):\(startMinute), ends at \(endHour):\(endMinute) (Local: \(localStr)) in \(ev.calendar.title)")
             }
 
             
@@ -573,7 +574,7 @@ class TasksManager {
                 }
 
                 let isCompleted = event.title?.hasPrefix("✅") ?? false
-                let dayOffset = calendar.dateComponents([.day], from: startOfDay, to: event.startDate).day ?? 0
+                let dayOffset = calendar.dateComponents([.day], from: startOfDay, to: calendar.startOfDay(for: event.startDate)).day ?? 0
 
                 // Determine RSVP status from self-attendance
                 var rsvp = RSVPStatus.unknown
@@ -680,11 +681,17 @@ class TasksManager {
         scheduleTask(id: id, hour: 9, minute: 0)
     }
         func scheduleTask(id: String, hour: Int, minute: Int, dayOffset: Int = 0) {
-            print("[Schedule] DROP received → id=\(id) hour=\(hour) minute=\(minute) dayOffset=\(dayOffset)")
-        guard let task = tasks.first(where: { $0.id == id }) else { return }
+            FFLogger.log("[Schedule] DROP received → id=\(id) hour=\(hour) minute=\(minute) dayOffset=\(dayOffset)")
+        guard let task = tasks.first(where: { $0.id == id }) else {
+            FFLogger.log("[Schedule] Error: Task with ID \(id) not found in active task list.")
+            return
+        }
 
         let status = EKEventStore.authorizationStatus(for: .event)
-        guard status == .fullAccess else { return }
+        guard status == .fullAccess || bypassCalendarAccessCheck else {
+            FFLogger.log("[Schedule] Error: Calendar access check failed. Please check System Settings.")
+            return
+        }
 
         let duration = task.duration ?? defaultDuration
         let taskTitle = task.title
@@ -703,6 +710,7 @@ class TasksManager {
             return propS < ceE && propE > ceS
         }
         if hasHardConflict {
+            FFLogger.log("[Schedule] Conflict detected with another event at \(hour):\(minute). Aborting drop.")
             errorMessage = "That time slot is already taken by another event."
             return
         }
@@ -726,6 +734,8 @@ class TasksManager {
         )
         calendarEvents.append(optimisticEvent)
         // ─────────────────────────────────────────────────────────────────
+
+        guard !bypassCalendarAccessCheck else { return }
 
         // Capture actor-isolated values before leaving @MainActor context
         let capturedStore      = eventStore
@@ -752,9 +762,9 @@ class TasksManager {
                 if let notes = ev.notes, notes.contains("FocusFlow Task ID: \(id)") {
                     do {
                         try capturedStore.remove(ev, span: .thisEvent)
-                        print("[Schedule] Removed old EK event: \(ev.title ?? "")")
+                        FFLogger.log("[Schedule] Removed old EK event: \(ev.title ?? "")")
                     } catch {
-                        print("[Schedule] Failed to remove old EK event: \(error)")
+                        FFLogger.log("[Schedule] Failed to remove old EK event: \(error)")
                     }
                 }
             }
@@ -784,12 +794,12 @@ class TasksManager {
 
             do {
                 try capturedStore.save(ekEvent, span: .thisEvent)
-                print("[Schedule] Saved EK event at \(hour):\(minute) dayOffset=\(dayOffset)")
+                FFLogger.log("[Schedule] Saved EK event at \(hour):\(minute) dayOffset=\(dayOffset)")
             } catch {
                 await MainActor.run {
                     self.calendarEvents.removeAll { $0.taskId == id }
                 }
-                print("[Schedule] Error saving event: \(error.localizedDescription)")
+                FFLogger.log("[Schedule] Error saving event: \(error.localizedDescription)")
             }
             try? await Task.sleep(for: .milliseconds(800))
             await MainActor.run { self.fetchCalendarEvents() }
@@ -962,7 +972,7 @@ class TasksManager {
     }
     
     func completeTask(id: String) {
-        print("completeTask called for id: \(id)")
+        FFLogger.log("completeTask called for id: \(id)")
 
         // 1. Update JSON status to "completed"
         guard let task = tasks.first(where: { $0.id == id }) else { return }
@@ -981,18 +991,18 @@ class TasksManager {
         
         let predicate = eventStore.predicateForEvents(withStart: startOfDay, end: endOfDay, calendars: nil)
         let events = eventStore.events(matching: predicate)
-        print("completeTask: Found \(events.count) events for today.")
+        FFLogger.log("completeTask: Found \(events.count) events for today.")
         
         for event in events {
             if let notes = event.notes, notes.contains(id) {
-                print("Found event to mark complete: \(event.title ?? "Untitled")")
+                FFLogger.log("Found event to mark complete: \(event.title ?? "Untitled")")
                 if let currentTitle = event.title, !currentTitle.hasPrefix("✅") {
                     event.title = "✅ " + currentTitle
                     do {
                         try eventStore.save(event, span: .thisEvent)
-                        print("Event updated in Apple Calendar!")
+                        FFLogger.log("Event updated in Apple Calendar!")
                     } catch {
-                        print("Error updating event: \(error.localizedDescription)")
+                        FFLogger.log("Error updating event: \(error.localizedDescription)")
                     }
                 }
             }
@@ -1002,7 +1012,7 @@ class TasksManager {
     }
     
     func uncompleteTask(id: String) {
-        print("uncompleteTask called for id: \(id)")
+        FFLogger.log("uncompleteTask called for id: \(id)")
 
         // 1. Update JSON status to "needsAction"
         guard let task = tasks.first(where: { $0.id == id }) else { return }
@@ -1019,19 +1029,19 @@ class TasksManager {
         
         let predicate = eventStore.predicateForEvents(withStart: startOfDay, end: endOfDay, calendars: nil)
         let events = eventStore.events(matching: predicate)
-        print("uncompleteTask: Found \(events.count) events for today.")
+        FFLogger.log("uncompleteTask: Found \(events.count) events for today.")
         
         for event in events {
-            print("Checking event: \(event.title ?? "Untitled"), notes: \(event.notes ?? "nil")")
+            FFLogger.log("Checking event: \(event.title ?? "Untitled"), notes: \(event.notes ?? "nil")")
             if let notes = event.notes, notes.contains(id) {
-                print("Found event to mark not complete: \(event.title ?? "Untitled")")
+                FFLogger.log("Found event to mark not complete: \(event.title ?? "Untitled")")
                 if let currentTitle = event.title, currentTitle.hasPrefix("✅ ") {
                     event.title = currentTitle.replacingOccurrences(of: "✅ ", with: "")
                     do {
                         try eventStore.save(event, span: .thisEvent)
-                        print("Event updated in Apple Calendar!")
+                        FFLogger.log("Event updated in Apple Calendar!")
                     } catch {
-                        print("Error updating event: \(error.localizedDescription)")
+                        FFLogger.log("Error updating event: \(error.localizedDescription)")
                     }
                 }
             }
@@ -1041,7 +1051,7 @@ class TasksManager {
     }
     
     func unscheduleTask(id: String, refresh: Bool = true) {
-        print("[Unschedule] called for id: \(id)")
+        FFLogger.log("[Unschedule] called for id: \(id)")
 
         // Optimistic in-memory removal (instant UI feedback)
         calendarEvents.removeAll { $0.taskId == id }
@@ -1057,15 +1067,15 @@ class TasksManager {
 
         let predicate = eventStore.predicateForEvents(withStart: searchStart, end: searchEnd, calendars: nil)
         let events = eventStore.events(matching: predicate)
-        print("[Unschedule] Scanning \(events.count) EK events")
+        FFLogger.log("[Unschedule] Scanning \(events.count) EK events")
 
         for event in events {
             if let notes = event.notes, notes.contains("FocusFlow Task ID: \(id)") {
                 do {
                     try eventStore.remove(event, span: .thisEvent)
-                    print("[Unschedule] Removed EK event: \(event.title ?? "")")
+                    FFLogger.log("[Unschedule] Removed EK event: \(event.title ?? "")")
                 } catch {
-                    print("[Unschedule] Failed to remove: \(error)")
+                    FFLogger.log("[Unschedule] Failed to remove: \(error)")
                 }
             }
         }

@@ -4,6 +4,8 @@ import SwiftUI
 struct TaskRow: View {
     let task: TaskItem
     @Binding var draggedTask: TaskItem?
+    /// Called when the user taps the note icon. Nil-safe — existing callsites unchanged.
+    var onOpenEditor: ((TaskItem) -> Void)? = nil
 
     @Environment(TasksManager.self) var tasksManager
     @State private var isExpanded = false
@@ -55,6 +57,14 @@ struct TaskRow: View {
                             Image(systemName: "clock.badge.exclamationmark")
                                 .font(.system(size: 10))
                                 .foregroundColor(.staleAmber)
+                        }
+
+                        // Note badge — visible when a Drive note file exists
+                        if task.hasNote {
+                            Image(systemName: "doc.text.fill")
+                                .font(.system(size: 9))
+                                .foregroundStyle(Color.googleBlue.opacity(0.7))
+                                .accessibilityLabel("Has note")
                         }
 
                         // Link icon(s) — shown inline after the title
@@ -109,6 +119,18 @@ struct TaskRow: View {
                 // Hover actions
                 if isHovered {
                     HStack(spacing: 4) {
+                        // Open in editor
+                        Button {
+                            onOpenEditor?(task)
+                        } label: {
+                            Image(systemName: "doc.text")
+                                .font(.system(size: 11))
+                                .foregroundColor(.googleBlue.opacity(0.8))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Open Note")
+                        .help("Open note in editor panel")
+
                         Button { showingEditForm = true } label: {
                             Image(systemName: "pencil")
                                 .font(.system(size: 11))

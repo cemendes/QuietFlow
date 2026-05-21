@@ -32,39 +32,39 @@ struct GridLine: View {
                     .frame(height: isHourMark ? 1 : 0.5)
                 Spacer()
             }
-            .contentShape(Rectangle())
-            .onDrop(of: [.plainText, .text], isTargeted: $isTargeted) { providers in
-                // Accept the first provider that can give us a string (task id)
-                guard let provider = providers.first else { return false }
+        }
+        .frame(height: 30)
+        .contentShape(Rectangle())
+        .onDrop(of: [.plainText, .text], isTargeted: $isTargeted) { providers in
+            // Accept the first provider that can give us a string (task id)
+            guard let provider = providers.first else { return false }
 
-                // NSString → public.plain-text — try loadObject first (most reliable)
-                if provider.canLoadObject(ofClass: NSString.self) {
-                    provider.loadObject(ofClass: NSString.self) { item, _ in
-                        guard let taskId = item as? String, !taskId.isEmpty else { return }
-                        Task { @MainActor in
-                            tasksManager.scheduleTask(id: taskId, hour: hour,
-                                                      minute: minute, dayOffset: dayOffset)
-                        }
-                    }
-                    return true
-                }
-
-                // Fallback: legacy loadItem path
-                provider.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { item, _ in
-                    var taskId: String?
-                    if let data = item as? Data  { taskId = String(data: data, encoding: .utf8) }
-                    else if let s = item as? String { taskId = s }
-                    if let id = taskId, !id.isEmpty {
-                        Task { @MainActor in
-                            tasksManager.scheduleTask(id: id, hour: hour,
-                                                      minute: minute, dayOffset: dayOffset)
-                        }
+            // NSString → public.plain-text — try loadObject first (most reliable)
+            if provider.canLoadObject(ofClass: NSString.self) {
+                provider.loadObject(ofClass: NSString.self) { item, _ in
+                    guard let taskId = item as? String, !taskId.isEmpty else { return }
+                    Task { @MainActor in
+                        tasksManager.scheduleTask(id: taskId, hour: hour,
+                                                  minute: minute, dayOffset: dayOffset)
                     }
                 }
                 return true
             }
+
+            // Fallback: legacy loadItem path
+            provider.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { item, _ in
+                var taskId: String?
+                if let data = item as? Data  { taskId = String(data: data, encoding: .utf8) }
+                else if let s = item as? String { taskId = s }
+                if let id = taskId, !id.isEmpty {
+                    Task { @MainActor in
+                        tasksManager.scheduleTask(id: id, hour: hour,
+                                                  minute: minute, dayOffset: dayOffset)
+                    }
+                }
+            }
+            return true
         }
-        .frame(height: 30)
         .background(isTargeted ? Color.googleBlue.opacity(0.08) : Color.clear)
         .overlay(
             Rectangle()

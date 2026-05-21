@@ -18,6 +18,14 @@ struct ContentView: View {
     @State private var geminiKeySaved   = false
     @State private var geminiKeyIsSet   = false
 
+    // Phase 2A: Editor panel state
+    @State private var isEditorOpen   = false
+    @State private var editorTask:    TaskItem?    = nil
+
+    // Phase 2B: Project state
+    @State private var selectedProject: ProjectItem? = nil
+    @State private var editorProject:   ProjectItem? = nil
+
     var body: some View {
         @Bindable var tasksManager = tasksManager
 
@@ -28,8 +36,21 @@ struct ContentView: View {
                     // ── Panel 1: Sidebar ──────────────────────────────────
                     SidebarView(
                         selectedSource: $selectedSource,
+                        selectedProject: $selectedProject,
                         showingSettings: $showingSettings,
-                        showingTaskForm: $showingTaskForm
+                        showingTaskForm: $showingTaskForm,
+                        onSelectProject: { project in
+                            withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                                selectedProject = project
+                                selectedSource  = nil   // clear source filter
+                                if let project {
+                                    // Open editor with this project's note
+                                    editorProject = project
+                                    editorTask    = nil
+                                    isEditorOpen  = true
+                                }
+                            }
+                        }
                     )
 
                     Divider()
@@ -37,8 +58,17 @@ struct ContentView: View {
                     // ── Panel 2: Task List ────────────────────────────────
                     TaskListPanel(
                         selectedSource: selectedSource,
+                        selectedProject: selectedProject,
                         draggedTask: $draggedTask,
-                        searchText: $searchText
+                        searchText: $searchText,
+                        isEditorOpen: $isEditorOpen,
+                        onOpenEditor: { task in
+                            withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                                editorTask    = task
+                                editorProject = nil   // clear project note
+                                isEditorOpen  = true
+                            }
+                        }
                     )
                     .frame(width: 360)
 
@@ -47,6 +77,24 @@ struct ContentView: View {
                     // ── Panel 3: Calendar ─────────────────────────────────
                     CalendarPanel(selectedEvent: $selectedEvent, draggedTask: $draggedTask)
                         .frame(maxWidth: .infinity)
+
+                    // ── Panel 4: Markdown Editor (Phase 2A/2B) ────────────
+                    if isEditorOpen {
+                        Divider()
+
+                        MarkdownEditorPanel(
+                            task: editorTask,
+                            projectItem: editorProject,
+                            onClose: {
+                                withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                                    isEditorOpen  = false
+                                    editorProject = nil
+                                }
+                            }
+                        )
+                        .frame(width: 380)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                    }
                 }
                 .frame(maxHeight: .infinity)
 
@@ -80,11 +128,29 @@ struct ContentView: View {
         }
         .animation(.spring(response: 0.4), value: tasksManager.isMorningRitualComplete)
         .animation(.spring(response: 0.4), value: tasksManager.isShutdownRitualNeeded)
+        .animation(.spring(response: 0.32, dampingFraction: 0.82), value: isEditorOpen)
         .frame(minWidth: 1000, minHeight: 650)
+        // ⌘E — Toggle editor panel
+        .onKeyPress(.init("e"), phases: .down) { press in
+            guard press.modifiers.contains(.command) else { return .ignored }
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) { isEditorOpen.toggle() }
+            return .handled
+        }
         // Sheets
         .sheet(isPresented: $showingSettings)  { settingsSheet() }
         .sheet(isPresented: $showingTaskForm)  { TaskFormView(isPresented: $showingTaskForm) }
-        .sheet(item: $selectedEvent)           { EventDetailsView(event: $0) }
+        .sheet(item: $selectedEvent) { event in
+            EventDetailsView(event: event, onOpenNote: { task in
+                // Sheet is already dismissing — wait for its animation to finish
+                // before sliding in the editor panel to avoid conflicting transitions.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                        editorTask   = task
+                        isEditorOpen = true
+                    }
+                }
+            })
+        }
         // Error alert
         .alert("Error", isPresented: isShowingError) {
             Button("OK", role: .cancel) {}
@@ -292,10 +358,17 @@ struct ContentView: View {
 
 // MARK: - Sidebar View
 struct SidebarView: View {
-    @Environment(TasksManager.self) var tasksManager
-    @Binding var selectedSource:  TaskSource?
-    @Binding var showingSettings: Bool
-    @Binding var showingTaskForm: Bool
+    @Environment(TasksManager.self)  var tasksManager
+    @Environment(ProjectManager.self) var projectManager
+    @Binding var selectedSource:   TaskSource?
+    @Binding var selectedProject:  ProjectItem?
+    @Binding var showingSettings:  Bool
+    @Binding var showingTaskForm:  Bool
+    /// Called when a project row is tapped — ContentView handles opening the editor.
+    var onSelectProject: (ProjectItem?) -> Void = { _ in }
+
+    @State private var showingNewProjectSheet = false
+    @State private var newProjectName = ""
 
     private var openTasks: [TaskItem] {
         tasksManager.tasks.filter { $0.status != "completed" && $0.parentTaskId == nil }
@@ -319,7 +392,7 @@ struct SidebarView: View {
             Divider()
                 .padding(.bottom, 10)
 
-            // Section label
+            // ── SOURCES ──────────────────────────────────────────────
             Text("SOURCES")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(.textSecondary)
@@ -330,8 +403,12 @@ struct SidebarView: View {
             SidebarNavItem(
                 icon: "tray.fill", label: "All Tasks",
                 count: openTasks.count, color: .googleBlue,
-                isSelected: selectedSource == nil
-            ) { selectedSource = nil }
+                isSelected: selectedSource == nil && selectedProject == nil
+            ) {
+                selectedSource  = nil
+                selectedProject = nil
+                onSelectProject(nil)
+            }
 
             // Gmail
             SidebarNavItem(
@@ -339,7 +416,11 @@ struct SidebarView: View {
                 count: openTasks.filter { $0.source == .gmail }.count,
                 color: .gmailRed,
                 isSelected: selectedSource == .gmail
-            ) { selectedSource = .gmail }
+            ) {
+                selectedSource  = .gmail
+                selectedProject = nil
+                onSelectProject(nil)
+            }
 
             // GChat
             SidebarNavItem(
@@ -348,7 +429,11 @@ struct SidebarView: View {
                 color: .gchatBlue,
                 isSelected: selectedSource == .gchat,
                 isComingSoon: true
-            ) { selectedSource = .gchat }
+            ) {
+                selectedSource  = .gchat
+                selectedProject = nil
+                onSelectProject(nil)
+            }
 
             // Chrome
             SidebarNavItem(
@@ -357,7 +442,33 @@ struct SidebarView: View {
                 color: .chromeGreen,
                 isSelected: selectedSource == .chrome,
                 isComingSoon: true
-            ) { selectedSource = .chrome }
+            ) {
+                selectedSource  = .chrome
+                selectedProject = nil
+                onSelectProject(nil)
+            }
+
+            // ── PROJECTS ─────────────────────────────────────────────
+            if !projectManager.projects.isEmpty {
+                Divider()
+                    .padding(.vertical, 8)
+
+                Text("PROJECTS")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.textSecondary)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 4)
+
+                ForEach(projectManager.projects) { project in
+                    ProjectNavItem(
+                        project: project,
+                        count: projectManager.taskCount(for: project, in: tasksManager.tasks),
+                        isSelected: selectedProject == project
+                    ) {
+                        onSelectProject(project)
+                    }
+                }
+            }
 
             Spacer()
 
@@ -377,6 +488,17 @@ struct SidebarView: View {
 
                 Spacer()
 
+                // New Project button
+                Button {
+                    showingNewProjectSheet = true
+                } label: {
+                    Image(systemName: "folder.badge.plus")
+                        .font(.system(size: 14))
+                        .foregroundColor(.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .help("New Project")
+
                 Button { showingSettings = true } label: {
                     Image(systemName: "gearshape")
                         .font(.system(size: 14))
@@ -389,10 +511,107 @@ struct SidebarView: View {
         }
         .frame(width: 200)
         .background(Color.sidebarBackground)
+        // New Project sheet
+        .sheet(isPresented: $showingNewProjectSheet) {
+            newProjectSheet
+        }
+    }
+
+    // MARK: - New Project Sheet
+    private var newProjectSheet: some View {
+        VStack(spacing: 20) {
+            Text("New Project")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.textPrimary)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Project Name")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.textSecondary)
+                TextField("e.g. Privia, Internal", text: $newProjectName)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { createProject() }
+            }
+
+            HStack {
+                Button("Cancel") {
+                    newProjectName = ""
+                    showingNewProjectSheet = false
+                }
+                .keyboardShortcut(.escape, modifiers: [])
+                Spacer()
+                Button("Create") { createProject() }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(newProjectName.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(24)
+        .frame(width: 340)
+        .background(Color.surfaceBackground)
+    }
+
+    private func createProject() {
+        let name = newProjectName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return }
+        if let project = projectManager.createProject(name: name) {
+            newProjectName = ""
+            showingNewProjectSheet = false
+            onSelectProject(project)
+        }
     }
 }
 
-// MARK: - Sidebar Nav Item
+
+// MARK: - Project Nav Item
+/// A project row in the sidebar — colored dot, name, and task count badge.
+struct ProjectNavItem: View {
+    let project:    ProjectItem
+    let count:      Int
+    let isSelected: Bool
+    let action:     () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                // Color dot
+                Circle()
+                    .fill(project.color)
+                    .frame(width: 8, height: 8)
+                    .padding(.leading, 4)
+
+                Text(project.name)
+                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                    .foregroundColor(isSelected ? .textPrimary : .textSecondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                Spacer()
+
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(isSelected ? project.color : .textSecondary)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(isSelected ? project.color.opacity(0.12) : Color.borderGray.opacity(0.5))
+                        .cornerRadius(8)
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 7)
+            .background(
+                isSelected ? project.color.opacity(0.1) :
+                isHovered  ? Color.borderGray.opacity(0.25) : Color.clear
+            )
+            .cornerRadius(6)
+            .padding(.horizontal, 8)
+        }
+        .buttonStyle(.plain)
+        .onHover { h in withAnimation(.easeInOut(duration: 0.12)) { isHovered = h } }
+    }
+}
+
+
 struct SidebarNavItem: View {
     let icon:     String
     let label:    String
@@ -450,9 +669,14 @@ struct SidebarNavItem: View {
 // MARK: - Task List Panel
 struct TaskListPanel: View {
     @Environment(TasksManager.self) var tasksManager
-    let selectedSource: TaskSource?
-    @Binding var draggedTask: TaskItem?
-    @Binding var searchText: String
+    let selectedSource:  TaskSource?
+    let selectedProject: ProjectItem?    // Phase 2B
+    @Binding var draggedTask:   TaskItem?
+    @Binding var searchText:    String
+    /// Reflects and toggles the editor panel open/closed state.
+    @Binding var isEditorOpen: Bool
+    /// Callback wired from ContentView — opens the editor panel for the given task.
+    var onOpenEditor: ((TaskItem) -> Void)? = nil
 
     private var filteredTasks: [TaskItem] {
         tasksManager.tasks.filter { task in
@@ -460,6 +684,10 @@ struct TaskListPanel: View {
             guard task.parentTaskId == nil    else { return false }
             let isUnscheduled = !tasksManager.calendarEvents.contains { $0.taskId == task.id }
             guard isUnscheduled else { return false }
+            // Project filter (Phase 2B) takes precedence over source filter
+            if let proj = selectedProject {
+                return task.resolvedProject == proj.name
+            }
             if let src = selectedSource, task.source != src { return false }
             if !searchText.isEmpty,
                !task.title.localizedCaseInsensitiveContains(searchText) { return false }
@@ -467,15 +695,34 @@ struct TaskListPanel: View {
         }
     }
 
+    private var headerLabel: String {
+        if let proj = selectedProject { return proj.name }
+        return selectedSource?.label ?? "All Tasks"
+    }
+
     var body: some View {
         @Bindable var tasksManager = tasksManager
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text(selectedSource?.label ?? "All Tasks")
+                Text(headerLabel)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.textPrimary)
                 Spacer()
+                // Editor panel toggle button
+                Button {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                        isEditorOpen.toggle()
+                    }
+                } label: {
+                    Image(systemName: "note.text")
+                        .font(.system(size: 13))
+                        .foregroundStyle(isEditorOpen ? Color.googleBlue : Color.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .help(isEditorOpen ? "Close note editor (⌘E)" : "Open note editor (⌘E)")
+                .accessibilityLabel("Toggle Note Editor")
+
                 Button { tasksManager.fetchTasks() } label: {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 13))
@@ -512,12 +759,6 @@ struct TaskListPanel: View {
             .padding(.horizontal, 12)
             .padding(.bottom, 6)
 
-            // ── Inbox Drop Zone ───────────────────────────────────
-            // Always visible above task rows; never intercepted by TaskDropDelegate
-            InboxDropZone()
-                .padding(.horizontal, 12)
-                .padding(.bottom, 8)
-
             Divider()
 
             // Error banner
@@ -539,84 +780,43 @@ struct TaskListPanel: View {
                 .padding(.horizontal, 12).padding(.top, 8)
             }
 
-            // Task list or empty state
-            if filteredTasks.isEmpty {
-                InboxZeroView(selectedSource: selectedSource)
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(filteredTasks) { task in
-                            TaskRow(task: task, draggedTask: $draggedTask)
-                                .onDrop(of: [.plainText, .text],
-                                        delegate: TaskDropDelegate(
-                                            item: task,
-                                            tasks: $tasksManager.tasks,
-                                            draggedItem: $draggedTask
-                                        ) { reordered in
-                                            var all = tasksManager.tasks
-                                            all.removeAll { t in reordered.contains { $0.id == t.id } }
-                                            all.insert(contentsOf: reordered, at: 0)
-                                            tasksManager.persistTaskOrder(newTasks: all)
-                                        })
+            // Task list or empty state container filling remaining space
+            Group {
+                if filteredTasks.isEmpty {
+                    InboxZeroView(selectedSource: selectedSource)
+                        .frame(maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(filteredTasks) { task in
+                                TaskRow(
+                                    task: task,
+                                    draggedTask: $draggedTask,
+                                    onOpenEditor: onOpenEditor
+                                )
+                                    .onDrop(of: [.plainText, .text],
+                                            delegate: TaskDropDelegate(
+                                                item: task,
+                                                tasks: $tasksManager.tasks,
+                                                draggedItem: $draggedTask,
+                                                tasksManager: tasksManager
+                                            ) { reordered in
+                                                var all = tasksManager.tasks
+                                                all.removeAll { t in reordered.contains { $0.id == t.id } }
+                                                all.insert(contentsOf: reordered, at: 0)
+                                                tasksManager.persistTaskOrder(newTasks: all)
+                                            })
+                            }
                         }
                     }
                 }
-                .contentShape(Rectangle())
-                .onDrop(of: [.plainText, .text],
-                        delegate: InboxDropDelegate(tasksManager: tasksManager))
             }
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .onDrop(of: [.plainText, .text],
+                    delegate: InboxDropDelegate(tasksManager: tasksManager))
         }
         .background(Color.surfaceBackground)
-    }
-}
-
-// MARK: - Inbox Drop Zone
-/// A fixed strip that sits above the task list, always visible and never
-/// occluded by TaskRows. The reliable home for "unschedule" drops.
-struct InboxDropZone: View {
-    @Environment(TasksManager.self) var tasksManager
-    @State private var isTargeted = false
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "tray.and.arrow.down")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(isTargeted ? Color.white : Color.staleAmber)
-            Text("Drop here to remove from schedule")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(isTargeted ? Color.white : Color.staleAmber)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 7)
-        .background(isTargeted ? Color.staleAmber : Color.staleAmber.opacity(0.08))
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .strokeBorder(
-                    Color.staleAmber.opacity(isTargeted ? 0 : 0.4),
-                    style: StrokeStyle(lineWidth: 1, dash: [4, 3])
-                )
-        )
-        .clipShape(.rect(cornerRadius: 6))
-        .animation(.easeInOut(duration: 0.15), value: isTargeted)
-        .onDrop(of: [.plainText, .text], isTargeted: $isTargeted) { providers in
-            guard let provider = providers.first else { return false }
-            if provider.canLoadObject(ofClass: NSString.self) {
-                _ = provider.loadObject(ofClass: NSString.self) { item, _ in
-                    guard let taskId = item as? String, !taskId.isEmpty else { return }
-                    Task { @MainActor in tasksManager.unscheduleTask(id: taskId) }
-                }
-                return true
-            }
-            provider.loadItem(forTypeIdentifier: "public.plain-text", options: nil) { item, _ in
-                var taskId: String?
-                if let data = item as? Data    { taskId = String(data: data, encoding: .utf8) }
-                else if let s = item as? String { taskId = s }
-                if let id = taskId, !id.isEmpty {
-                    Task { @MainActor in tasksManager.unscheduleTask(id: id) }
-                }
-            }
-            return true
-        }
     }
 }
 

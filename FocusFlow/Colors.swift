@@ -72,3 +72,20 @@ extension ShapeStyle where Self == Color {
     static var selectedRowBg: Color      { .init(hex: "#EEF2FF") }
     static var selectedSidebarBg: Color  { .init(hex: "#E8F0FE") }
 }
+ 
+// MARK: - Project Color Utility
+extension Color {
+    /// Deterministic HSL color from a project slug.
+    /// Same name always yields the same color — no user configuration needed.
+    static func projectColor(for project: String) -> Color {
+        let hue = Double(abs(project.djb2Hash) % 360) / 360.0
+        return Color(hue: hue, saturation: 0.62, brightness: 0.72)
+    }
+}
+
+extension String {
+    /// DJB2 hash — fast, deterministic, no imports needed.
+    var djb2Hash: Int {
+        unicodeScalars.reduce(5381) { ($0 << 5) &+ $0 &+ Int($1.value) }
+    }
+}

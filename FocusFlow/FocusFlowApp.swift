@@ -4,6 +4,7 @@ import SwiftUI
 struct FocusFlowApp: App {
     @State private var authManager = AuthManager()
     @State private var tasksManager = TasksManager()
+    @State private var projectManager = ProjectManager()
     
     @Environment(\.openWindow) private var openWindow
 
@@ -13,6 +14,8 @@ struct FocusFlowApp: App {
             ContentView()
                 .environment(authManager)
                 .environment(tasksManager)
+                .environment(projectManager)
+                .onAppear { projectManager.bootstrap() }
                 .onOpenURL { url in
                     if url.scheme == "focusflow" && url.host == "cookies" {
                         if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
@@ -79,6 +82,7 @@ struct FocusFlowApp: App {
         }
         .environment(authManager)
         .environment(tasksManager)
+        .environment(projectManager)
 
     }
 }
