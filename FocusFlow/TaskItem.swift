@@ -81,7 +81,7 @@ struct TaskItem: Identifiable, Codable, Hashable {
         return days >= 3
     }
 
-    // MARK: - Phase 2A: Project & Notes
+    // MARK: - Project & Notes
 
     /// The project name — prefers the stored JSON field (set by AppScript),
     /// falls back to parsing "[Project] Title" for older tasks.
@@ -105,31 +105,27 @@ struct TaskItem: Identifiable, Codable, Hashable {
     var hasNote: Bool { NoteManager.shared.hasNote(for: id) }
 
     /// URL of this task's note file on Drive (may not exist yet).
-    var noteURL: URL { NoteManager.shared.noteURL(for: id) }
+    var noteURL: URL? { NoteManager.shared.noteURL(for: id) }
 }
-
 
 // MARK: - Subtask Suggestion
 /// An in-memory, editable suggestion produced by the AI breakdown engine.
 /// Not persisted until the user explicitly commits via "Create Sub-tasks".
-@Observable
-class SubtaskSuggestion: Identifiable {
-    let id: String = UUID().uuidString
+struct SubtaskSuggestion: Identifiable, Sendable, Codable, Equatable {
+    let id: String
     let parentTaskId: String
     var title: String
     var details: String
     var duration: Int?
 
-    init(parentTaskId: String, title: String, details: String, duration: Int? = nil) {
+    init(id: String = UUID().uuidString, parentTaskId: String, title: String, details: String, duration: Int? = nil) {
+        self.id           = id
         self.parentTaskId = parentTaskId
         self.title        = title
         self.details      = details
         self.duration     = duration
     }
 }
-
-
-
 
 @Observable
 @MainActor
@@ -140,13 +136,12 @@ class TasksManager {
 
     // ── Subtask Suggestions ─────────────────────────────────────────────
     // Keyed by parent task ID. Stored in memory so the user can edit,
-    // delete, and recreate suggestions before committing them to the CSV.
+    // delete, and recreate suggestions before committing them.
     var subtaskSuggestions: [String: [SubtaskSuggestion]] = [:]
     var subtaskLoadingState: [String: Bool] = [:]   // taskId → isLoading
     
     var userName: String = "Eduardo Oliveira"
     var daysBack: Int = 1
-    var cookieString: String = ""
     var defaultDuration: Int = 30
     
     var isMorningRitualComplete: Bool = false
@@ -162,7 +157,6 @@ class TasksManager {
         case week = "Week"
         var id: String { self.rawValue }
     }
-
     
     var availableCalendars: [SimpleCalendar] = []
     var selectedCalendarIdentifiers: Set<String> = [] {
@@ -181,6 +175,15 @@ class TasksManager {
     private var fileMonitor: DispatchSourceFileSystemObject?
     private var jsonReloadDebounceTask: Task<Void, Never>?  // debounce rapid JSON writes
     private var calendarReloadDebounceTask: Task<Void, Never>?  // debounce EK notifications
+    
+    // Dependency Injection: Base folder (Google Drive root where tasks.json and FocusFlow folders are located)
+    private let baseDirectory: URL
+    
+    // Hash/Modification tracker to avoid self-triggering reload loops
+    private var lastSavedContentHash: Int = 0
+    
+    // Test hook to bypass system calendar permission checks
+    var bypassCalendarPermissionCheck: Bool = false
 
     // MARK: - Local Tasks Cache
     /// App-local path — never goes through Google Drive, reads in microseconds.
@@ -211,11 +214,32 @@ class TasksManager {
         }
     }
     
-    init() {
+    /// Dynamically scans for modern macOS Google Drive FileProvider paths
+    /// (e.g. `~/Library/CloudStorage/GoogleDrive-.../My Drive`) before falling back to `~/My Drive`.
+    nonisolated static func getGoogleDriveURL() -> URL {
+        let fm = FileManager.default
+        let home = fm.homeDirectoryForCurrentUser
+        
+        let cloudStorageURL = home.appendingPathComponent("Library/CloudStorage")
+        if let contents = try? fm.contentsOfDirectory(at: cloudStorageURL, includingPropertiesForKeys: nil) {
+            for url in contents {
+                if url.lastPathComponent.lowercased().contains("googledrive") {
+                    let driveURL = url.appendingPathComponent("My Drive")
+                    if fm.fileExists(atPath: driveURL.path) {
+                        return driveURL
+                    }
+                }
+            }
+        }
+        return home.appendingPathComponent("My Drive")
+    }
+    
+    init(baseDirectory: URL = TasksManager.getGoogleDriveURL()) {
+        self.baseDirectory = baseDirectory
+        
         self.userName = UserDefaults.standard.string(forKey: "userName") ?? "Eduardo Oliveira"
         self.daysBack = UserDefaults.standard.integer(forKey: "daysBack")
         if self.daysBack == 0 { self.daysBack = 1 }
-        self.cookieString = UserDefaults.standard.string(forKey: "cookieString") ?? ""
         self.defaultDuration = UserDefaults.standard.integer(forKey: "defaultDuration")
         if self.defaultDuration == 0 { self.defaultDuration = 30 }
         
@@ -284,13 +308,10 @@ class TasksManager {
         self.isShutdownRitualNeeded = false
     }
 
-    
     // MARK: - JSON Persistence
 
-    /// Google Drive path — same cross-device accessibility as the old CSV.
     private nonisolated func getJSONURL() -> URL? {
-        FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("My Drive/tasks.json")
+        baseDirectory.appendingPathComponent("tasks.json")
     }
 
     func startMonitoringJSON() {
@@ -309,13 +330,27 @@ class TasksManager {
 
         monitor.setEventHandler { [weak self] in
             guard let self else { return }
-            // Debounce: only reload 1 s after the LAST write.
-            self.jsonReloadDebounceTask?.cancel()
-            self.jsonReloadDebounceTask = Task { @MainActor in
-                try? await Task.sleep(for: .seconds(1))
-                guard !Task.isCancelled else { return }
-                print("[JSON] Reloading after file change (debounced)")
-                self.fetchTasks()
+            
+            // Hop to @MainActor to safely touch isolated properties and variables
+            Task { @MainActor in
+                self.jsonReloadDebounceTask?.cancel()
+                self.jsonReloadDebounceTask = Task {
+                    try? await Task.sleep(for: .seconds(1))
+                    guard !Task.isCancelled else { return }
+                    
+                    // Bypass self-triggering reload loop by comparing content hash
+                    guard let url = self.getJSONURL() else { return }
+                    if let data = try? Data(contentsOf: url) {
+                        let currentHash = data.hashValue
+                        if currentHash == self.lastSavedContentHash {
+                            print("[JSON] Monitored change matches last saved hash — ignoring self-reload")
+                            return
+                        }
+                    }
+                    
+                    print("[JSON] Reloading after external file change (debounced)")
+                    self.fetchTasks()
+                }
             }
         }
 
@@ -353,12 +388,15 @@ class TasksManager {
                 await MainActor.run {
                     self.tasks = sortedTasks
                     self.errorMessage = nil
+                    // Sync the current saved content hash
+                    self.lastSavedContentHash = data.hashValue
                 }
                 self.saveTasksToCache(sortedTasks)
             } catch {
                 print("[JSON] Error reading tasks: \(error)")
                 await MainActor.run {
-                    self.errorMessage = "Failed to read tasks file."
+                    // Fail gracefully: retain in-memory tasks list and show a warning alert
+                    self.errorMessage = "Failed to parse tasks file. Preserving in-memory tasks list."
                 }
             }
         }
@@ -415,6 +453,7 @@ class TasksManager {
         guard let url = getJSONURL() else { return }
         do {
             let data = try JSONEncoder().encode(tasksToSave)
+            self.lastSavedContentHash = data.hashValue
             try data.write(to: url, options: .atomic)
         } catch {
             print("[JSON] Error saving tasks: \(error)")
@@ -484,11 +523,7 @@ class TasksManager {
         self.tasks = mergedTasks
     }
 
-
-    
     func requestCalendarAccess() {
-
-
         eventStore.requestFullAccessToEvents { granted, error in
             Task { @MainActor in
                 if granted {
@@ -512,7 +547,7 @@ class TasksManager {
     
     func fetchCalendarEvents() {
         let status = EKEventStore.authorizationStatus(for: .event)
-        guard status == .fullAccess else { return }
+        guard status == .fullAccess || bypassCalendarPermissionCheck else { return }
 
         let targetCalId = targetCalendarIdentifier
         // Guard: if no target calendar is set, don't fetch (avoids dumping all events)
@@ -533,11 +568,11 @@ class TasksManager {
                 // Start from Monday of the current week so past days are included.
                 // weekday: Sun=1…Sat=7  →  shift so Mon=0
                 let wd = (calendar.component(.weekday, from: today) + 5) % 7
-                fetchStart = calendar.date(byAdding: .day, value: -wd, to: startOfDay)!
-                endOfDay   = calendar.date(byAdding: .day, value: 7, to: fetchStart)!
+                fetchStart = calendar.date(byAdding: .day, value: -wd, to: startOfDay) ?? startOfDay
+                endOfDay   = calendar.date(byAdding: .day, value: 7, to: fetchStart) ?? today
             } else {
                 fetchStart = startOfDay
-                endOfDay   = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: today)!
+                endOfDay   = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: today) ?? today
             }
 
             let allCals = sharedStore.calendars(for: .event)
@@ -565,7 +600,6 @@ class TasksManager {
                 print("Event: \(ev.title ?? "Untitled") starts at \(startHour):\(startMinute), ends at \(endHour):\(endMinute) (Local: \(localStr)) in \(ev.calendar.title)")
             }
 
-            
             let fetchedEvents = events.filter { !$0.isAllDay }.map { event -> CalendarEvent in
                 var taskId: String? = nil
                 if let notes = event.notes, notes.contains("FocusFlow Task ID: ") {
@@ -589,6 +623,7 @@ class TasksManager {
                 }
 
                 var ev = CalendarEvent(
+                    id: event.eventIdentifier,
                     title: event.title ?? "",
                     startHour: calendar.component(.hour, from: event.startDate),
                     startMinute: calendar.component(.minute, from: event.startDate),
@@ -679,12 +714,13 @@ class TasksManager {
         
         scheduleTask(id: id, hour: 9, minute: 0)
     }
-        func scheduleTask(id: String, hour: Int, minute: Int, dayOffset: Int = 0) {
-            print("[Schedule] DROP received → id=\(id) hour=\(hour) minute=\(minute) dayOffset=\(dayOffset)")
+
+    func scheduleTask(id: String, hour: Int, minute: Int, dayOffset: Int = 0) {
+        print("[Schedule] DROP received → id=\(id) hour=\(hour) minute=\(minute) dayOffset=\(dayOffset)")
         guard let task = tasks.first(where: { $0.id == id }) else { return }
 
         let status = EKEventStore.authorizationStatus(for: .event)
-        guard status == .fullAccess else { return }
+        guard status == .fullAccess || bypassCalendarPermissionCheck else { return }
 
         let duration = task.duration ?? defaultDuration
         let taskTitle = task.title
@@ -712,6 +748,7 @@ class TasksManager {
         calendarEvents.removeAll { $0.taskId == id }
         let endTotalMin = hour * 60 + minute + duration
         let optimisticEvent = CalendarEvent(
+            id: "optimistic-\(id)-\(dayOffset)",
             title: "[FocusFlow] \(taskTitle)",
             startHour: hour,
             startMinute: minute,
@@ -743,8 +780,8 @@ class TasksManager {
             let today = Date()
             let cal   = Calendar.current
             // Search a 14-day window to catch events moved to/from different days
-            let searchStart = cal.date(byAdding: .day, value: -7, to: cal.startOfDay(for: today))!
-            let searchEnd   = cal.date(byAdding: .day, value: +7, to: today)!
+            let searchStart = cal.date(byAdding: .day, value: -7, to: cal.startOfDay(for: today)) ?? today
+            let searchEnd   = cal.date(byAdding: .day, value: +7, to: today) ?? today
             let deletePredicate = capturedStore.predicateForEvents(
                 withStart: searchStart, end: searchEnd, calendars: nil)
             let existingEvents = capturedStore.events(matching: deletePredicate)
@@ -765,14 +802,14 @@ class TasksManager {
             ekEvent.notes = "FocusFlow Task ID: \(id)"
 
             let targetDay  = cal.date(byAdding: .day, value: dayOffset,
-                                      to: cal.startOfDay(for: today))!
+                                      to: cal.startOfDay(for: today)) ?? today
             var components = cal.dateComponents([.year, .month, .day], from: targetDay)
             components.hour   = hour
             components.minute = minute
             components.second = 0
 
-            let startDate = cal.date(from: components)!
-            let endDate   = cal.date(byAdding: .minute, value: duration, to: startDate)!
+            let startDate = cal.date(from: components) ?? Date()
+            let endDate   = cal.date(byAdding: .minute, value: duration, to: startDate) ?? Date()
             ekEvent.startDate = startDate
             ekEvent.endDate   = endDate
 
@@ -814,7 +851,8 @@ class TasksManager {
             return
         }
         let model  = "gemini-2.5-flash"
-        let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(apiKey)"
+        // Transmit API key safely via header instead of URL query parameter
+        let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent"
         guard let url = URL(string: urlString) else { subtaskLoadingState[id] = false; return }
 
         let extraLine = extraContext.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -848,67 +886,69 @@ class TasksManager {
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue(apiKey, forHTTPHeaderField: "x-goog-api-key") // API key in request header
         req.httpBody = bodyData
 
-        Task {
+        // Offload response network handling and JSON parsing onto background utility thread
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
             do {
                 let (data, response) = try await URLSession.shared.data(for: req)
                 let httpStatus = (response as? HTTPURLResponse)?.statusCode ?? -1
                 let rawText = String(data: data, encoding: .utf8) ?? ""
                 print("[Breakdown] HTTP \(httpStatus): \(rawText.prefix(400))")
 
-                await MainActor.run { self.subtaskLoadingState[id] = false }
-                // Extract the JSON text from the Gemini envelope
-                guard let env = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                var finalSuggestions: [SubtaskSuggestion] = []
+
+                if let env = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                       let candidates = env["candidates"] as? [[String: Any]],
                       let firstCandidate = candidates.first,
                       let content = firstCandidate["content"] as? [String: Any],
                       let parts = content["parts"] as? [[String: Any]],
-                      let text = parts.first?["text"] as? String
-                else {
-                    print("[Breakdown] Failed to parse Gemini envelope")
-                    return
+                      let text = parts.first?["text"] as? String {
+                    
+                    // Extract the JSON text from the Gemini envelope
+                    let jsonText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                        .replacingOccurrences(of: "```json", with: "")
+                        .replacingOccurrences(of: "```", with: "")
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+
+                    if let jsonData = jsonText.data(using: .utf8),
+                       let array = try? JSONSerialization.jsonObject(with: jsonData) as? [[String: Any]] {
+                        finalSuggestions = array.compactMap { dict -> SubtaskSuggestion? in
+                            guard let title = dict["title"] as? String, !title.isEmpty else { return nil }
+                            return SubtaskSuggestion(
+                                parentTaskId: id,
+                                title: title,
+                                details: dict["details"] as? String ?? "",
+                                duration: dict["duration"] as? Int ?? 30
+                            )
+                        }
+                    } else {
+                        // Fallback: try line-by-line bullet parsing
+                        finalSuggestions = jsonText
+                            .components(separatedBy: .newlines)
+                            .filter { $0.hasPrefix("-") || $0.hasPrefix("*") || $0.hasPrefix("•") }
+                            .compactMap { line -> SubtaskSuggestion? in
+                                let t = line.dropFirst().trimmingCharacters(in: .whitespacesAndNewlines)
+                                guard !t.isEmpty else { return nil }
+                                return SubtaskSuggestion(parentTaskId: id, title: t, details: "", duration: 30)
+                            }
+                    }
                 }
 
-                // Parse the JSON array of sub-task objects
-                let jsonText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                    .replacingOccurrences(of: "```json", with: "")
-                    .replacingOccurrences(of: "```", with: "")
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-
-                if let jsonData = jsonText.data(using: .utf8),
-                   let array = try? JSONSerialization.jsonObject(with: jsonData) as? [[String: Any]] {
-                    let suggestions = array.compactMap { dict -> SubtaskSuggestion? in
-                        guard let title = dict["title"] as? String, !title.isEmpty else { return nil }
-                        return SubtaskSuggestion(
-                            parentTaskId: id,
-                            title: title,
-                            details: dict["details"] as? String ?? "",
-                            duration: dict["duration"] as? Int ?? 30
-                        )
-                    }
-                    await MainActor.run {
-                        self.subtaskSuggestions[id] = suggestions
-                        print("[Breakdown] Parsed \(suggestions.count) suggestions for task \(id)")
-                    }
-                } else {
-                    // Fallback: try line-by-line bullet parsing
-                    let suggestions = jsonText
-                        .components(separatedBy: .newlines)
-                        .filter { $0.hasPrefix("-") || $0.hasPrefix("*") || $0.hasPrefix("•") }
-                        .compactMap { line -> SubtaskSuggestion? in
-                            let t = line.dropFirst().trimmingCharacters(in: .whitespacesAndNewlines)
-                            guard !t.isEmpty else { return nil }
-                            return SubtaskSuggestion(parentTaskId: id, title: t, details: "", duration: 30)
-                        }
-                    await MainActor.run {
-                        self.subtaskSuggestions[id] = suggestions
-                        print("[Breakdown] Fallback parsed \(suggestions.count) suggestions")
-                    }
+                let suggestionsToPost = finalSuggestions
+                // Push suggestions update back to the Main Actor
+                await MainActor.run {
+                    self.subtaskSuggestions[id] = suggestionsToPost
+                    self.subtaskLoadingState[id] = false
+                    print("[Breakdown] Parsed \(suggestionsToPost.count) suggestions for task \(id)")
                 }
             } catch {
                 print("[Breakdown] Network error: \(error)")
-                await MainActor.run { self.subtaskLoadingState[id] = false }
+                await MainActor.run {
+                    self.subtaskLoadingState[id] = false
+                }
             }
         }
     }
@@ -972,12 +1012,12 @@ class TasksManager {
         
         // 2. Update Apple Calendar event title
         let status = EKEventStore.authorizationStatus(for: .event)
-        guard status == .fullAccess else { return }
+        guard status == .fullAccess || bypassCalendarPermissionCheck else { return }
         
         let today = Date()
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: today)
-        let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: today)!
+        let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: today) ?? today
         
         let predicate = eventStore.predicateForEvents(withStart: startOfDay, end: endOfDay, calendars: nil)
         let events = eventStore.events(matching: predicate)
@@ -1010,12 +1050,12 @@ class TasksManager {
         
         // 2. Update Apple Calendar event title
         let status = EKEventStore.authorizationStatus(for: .event)
-        guard status == .fullAccess else { return }
+        guard status == .fullAccess || bypassCalendarPermissionCheck else { return }
         
         let today = Date()
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: today)
-        let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: today)!
+        let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: today) ?? today
         
         let predicate = eventStore.predicateForEvents(withStart: startOfDay, end: endOfDay, calendars: nil)
         let events = eventStore.events(matching: predicate)
@@ -1048,12 +1088,12 @@ class TasksManager {
 
         // EK deletion — search a broad window to catch future-dated events too
         let ekStatus = EKEventStore.authorizationStatus(for: .event)
-        guard ekStatus == .fullAccess else { return }
+        guard ekStatus == .fullAccess || bypassCalendarPermissionCheck else { return }
 
         let today = Date()
         let calendar = Calendar.current
-        let searchStart = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: today))!
-        let searchEnd   = calendar.date(byAdding: .day, value: +8, to: today)!
+        let searchStart = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: today)) ?? today
+        let searchEnd   = calendar.date(byAdding: .day, value: +8, to: today) ?? today
 
         let predicate = eventStore.predicateForEvents(withStart: searchStart, end: searchEnd, calendars: nil)
         let events = eventStore.events(matching: predicate)
