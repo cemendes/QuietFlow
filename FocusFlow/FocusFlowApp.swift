@@ -2,7 +2,6 @@ import SwiftUI
 
 @main
 struct FocusFlowApp: App {
-    @State private var authManager = AuthManager()
     @State private var tasksManager = TasksManager()
     @State private var projectManager = ProjectManager()
     
@@ -12,19 +11,11 @@ struct FocusFlowApp: App {
         // Main Window
         Window("Daily Planner", id: "planner") {
             ContentView()
-                .environment(authManager)
                 .environment(tasksManager)
                 .environment(projectManager)
                 .onAppear { projectManager.bootstrap() }
                 .onOpenURL { url in
-                    if url.scheme == "focusflow" && url.host == "cookies" {
-                        if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                           let queryItems = components.queryItems,
-                           let cookies = queryItems.first(where: { $0.name == "value" })?.value {
-                            tasksManager.cookieString = cookies
-                            print("Cookies updated from URL scheme!")
-                        }
-                    } else if url.scheme == "focusflow" && url.host == "ritual" {
+                    if url.scheme == "focusflow" && url.host == "ritual" {
                         tasksManager.isMorningRitualComplete = false
                         print("Morning Ritual manually triggered from URL scheme!")
                     }
@@ -91,7 +82,6 @@ struct FocusFlowApp: App {
             }
             .keyboardShortcut("Q")
         }
-        .environment(authManager)
         .environment(tasksManager)
         .environment(projectManager)
 

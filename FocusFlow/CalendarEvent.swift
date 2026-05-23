@@ -9,7 +9,7 @@ enum RSVPStatus: String, Codable, Hashable {
 }
 
 struct CalendarEvent: Identifiable, Codable, Hashable {
-    var id: String { title + String(startHour) + String(startMinute) + String(dayOffset) }
+    var id: String = UUID().uuidString
     let title: String
     let startHour: Int
     let startMinute: Int

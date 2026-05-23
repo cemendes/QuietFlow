@@ -166,12 +166,19 @@ struct MarkdownEditorPanel: View {
         saveDebounce = Task {
             try? await Task.sleep(for: .milliseconds(500))
             guard !Task.isCancelled else { return }
-            if let proj = projectItem {
-                ProjectManager().saveNote(for: proj, content: content)
-            } else if let taskId = task?.id {
-                NoteManager.shared.saveNote(for: taskId, content: content)
+            
+            // Perform the file write off the Main Actor thread
+            await Task.detached(priority: .utility) { [projectItem, task] in
+                if let proj = projectItem {
+                    ProjectManager().saveNote(for: proj, content: content)
+                } else if let taskId = task?.id {
+                    NoteManager.shared.saveNote(for: taskId, content: content)
+                }
+            }.value
+            
+            await MainActor.run {
+                isSaved = true
             }
-            await MainActor.run { isSaved = true }
         }
     }
 

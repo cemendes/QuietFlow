@@ -3,7 +3,7 @@ import SwiftUI
 
 // MARK: - Project Item
 
-struct ProjectItem: Identifiable, Hashable {
+struct ProjectItem: Identifiable, Hashable, Sendable {
     let id: String        // slug — filename without .md, e.g. "privia"
     let name: String      // display name from frontmatter or title-cased slug
     let status: String    // active | paused | completed
@@ -59,12 +59,12 @@ final class ProjectManager {
 
     // MARK: - Note I/O
 
-    func loadNote(for project: ProjectItem) -> String {
+    nonisolated func loadNote(for project: ProjectItem) -> String {
         (try? String(contentsOf: project.noteURL, encoding: .utf8))
             ?? defaultTemplate(for: project)
     }
 
-    func saveNote(for project: ProjectItem, content: String) {
+    nonisolated func saveNote(for project: ProjectItem, content: String) {
         try? content.write(to: project.noteURL, atomically: true, encoding: .utf8)
     }
 
@@ -166,7 +166,7 @@ final class ProjectManager {
         return ProjectItem(id: slug, name: name, status: status, noteURL: url)
     }
 
-    private func defaultTemplate(for project: ProjectItem) -> String {
+    private nonisolated func defaultTemplate(for project: ProjectItem) -> String {
         let today = String(ISO8601DateFormatter().string(from: Date()).prefix(10))
         return """
         ---
