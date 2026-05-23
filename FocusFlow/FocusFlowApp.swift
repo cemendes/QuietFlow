@@ -17,7 +17,7 @@ struct FocusFlowApp: App {
                 .onOpenURL { url in
                     if url.scheme == "focusflow" && url.host == "ritual" {
                         tasksManager.isMorningRitualComplete = false
-                        print("Morning Ritual manually triggered from URL scheme!")
+                        FFLogger.log("Morning Ritual manually triggered from URL scheme!")
                     }
                 }
         }

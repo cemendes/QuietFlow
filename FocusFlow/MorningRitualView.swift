@@ -459,10 +459,7 @@ struct MorningRitualView: View {
                                     )
                             )
                             // Drag this task onto the calendar to schedule it
-                            .onDrag {
-                                draggingTaskId = task.id
-                                return NSItemProvider(object: task.id as NSString)
-                            }
+                            .draggable(task.id)
                         }
 
                         if todayTasks.isEmpty {
@@ -492,16 +489,13 @@ struct MorningRitualView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .onDrop(of: ["public.plain-text"], isTargeted: $isUnscheduleTargeted) { providers in
-                providers.first?.loadObject(ofClass: NSString.self) { item, _ in
-                    if let taskId = item as? String {
-                        DispatchQueue.main.async {
-                            tasksManager.unscheduleTask(id: taskId)
-                            draggingTaskId = nil
-                        }
-                    }
-                }
+            .dropDestination(for: String.self) { items, _ in
+                guard let taskId = items.first, !taskId.isEmpty else { return false }
+                tasksManager.unscheduleTask(id: taskId)
+                draggingTaskId = nil
                 return true
+            } isTargeted: { targeted in
+                isUnscheduleTargeted = targeted
             }
             .frame(width: 340)
 

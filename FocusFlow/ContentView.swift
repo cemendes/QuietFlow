@@ -12,7 +12,6 @@ struct ContentView: View {
     @State private var showingSettings  = false
     @State private var showingTaskForm  = false
     @State private var selectedEvent:   CalendarEvent? = nil
-    @State private var draggedTask:     TaskItem?      = nil
     @State private var searchText       = ""
     @State private var geminiKeyInput   = ""
     @State private var geminiKeySaved   = false
@@ -62,7 +61,6 @@ struct ContentView: View {
                         selectedSource: selectedSource,
                         selectedProject: selectedProject,
                         showCompletedOnly: showCompletedOnly,
-                        draggedTask: $draggedTask,
                         searchText: $searchText,
                         isEditorOpen: $isEditorOpen,
                         onOpenEditor: { task in
@@ -76,11 +74,12 @@ struct ContentView: View {
                     .frame(minWidth: 280, idealWidth: 360, maxWidth: 500)
 
                     // ── Panel 3: Calendar ─────────────────────────────────
-                    CalendarPanel(selectedEvent: $selectedEvent, draggedTask: $draggedTask)
+                    CalendarPanel(selectedEvent: $selectedEvent)
                         .frame(minWidth: 400, idealWidth: 600, maxWidth: .infinity)
 
                     // ── Panel 4: Markdown Editor (Phase 2A/2B) ────────────
                     if isEditorOpen {
+                        Divider()
                         MarkdownEditorPanel(
                             task: editorTask,
                             projectItem: editorProject,
@@ -711,13 +710,11 @@ struct TaskListPanel: View {
     let selectedSource:  TaskSource?
     let selectedProject: ProjectItem?    // Phase 2B
     let showCompletedOnly: Bool
-    @Binding var draggedTask:   TaskItem?
     @Binding var searchText:    String
     /// Reflects and toggles the editor panel open/closed state.
     @Binding var isEditorOpen: Bool
     /// Callback wired from ContentView — opens the editor panel for the given task.
     var onOpenEditor: ((TaskItem) -> Void)? = nil
-
     @State private var selectedTaskIds: Set<String> = []
     @State private var isSelecting = true
     @State private var sortOption: TaskSortOption = .date
@@ -849,7 +846,6 @@ struct TaskListPanel: View {
                 .menuStyle(.borderlessButton)
                 .fixedSize()
                 .help("Sort inbox tasks")
-
                 Button { tasksManager.fetchTasks() } label: {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 13))
@@ -1001,13 +997,6 @@ struct TaskListPanel: View {
                 .padding(.horizontal, 12)
                 .padding(.bottom, 8)
             }
-
-            // ── Inbox Drop Zone ───────────────────────────────────
-            // Always visible above task rows; never intercepted by TaskDropDelegate
-            InboxDropZone()
-                .padding(.horizontal, 12)
-                .padding(.bottom, 8)
-
             Divider()
 
             // Error banner
@@ -1029,97 +1018,65 @@ struct TaskListPanel: View {
                 .padding(.horizontal, 12).padding(.top, 8)
             }
 
-            // Task list or empty state
-            if sortedFilteredTasks.isEmpty {
-                InboxZeroView(selectedSource: selectedSource)
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(sortedFilteredTasks) { task in
-                            TaskRow(
-                                task: task,
-                                draggedTask: $draggedTask,
-                                onOpenEditor: onOpenEditor,
-                                isSelecting: isSelecting,
-                                isSelected: selectedTaskIds.contains(task.id),
-                                onSelectToggle: {
-                                    if selectedTaskIds.contains(task.id) {
-                                        selectedTaskIds.remove(task.id)
-                                    } else {
-                                        selectedTaskIds.insert(task.id)
+            // Task list or empty state container filling remaining space
+            Group {
+                if sortedFilteredTasks.isEmpty {
+                    InboxZeroView(selectedSource: selectedSource)
+                        .frame(maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(sortedFilteredTasks) { task in
+                                TaskRow(
+                                    task: task,
+                                    onOpenEditor: onOpenEditor,
+                                    isSelecting: isSelecting,
+                                    isSelected: selectedTaskIds.contains(task.id),
+                                    onSelectToggle: {
+                                        if selectedTaskIds.contains(task.id) {
+                                            selectedTaskIds.remove(task.id)
+                                        } else {
+                                            selectedTaskIds.insert(task.id)
+                                        }
                                     }
-                                }
-                            )
-                                .onDrop(of: [.plainText, .text],
-                                        delegate: TaskDropDelegate(
-                                            item: task,
-                                            tasks: $tasksManager.tasks,
-                                            draggedItem: $draggedTask
-                                        ) { reordered in
-                                            var all = tasksManager.tasks
-                                            all.removeAll { t in reordered.contains { $0.id == t.id } }
-                                            all.insert(contentsOf: reordered, at: 0)
+                                )
+                                .dropDestination(for: String.self) { items, _ in
+                                    guard let draggedId = items.first, !draggedId.isEmpty else { return false }
+                                    // If dropping a scheduled task, unschedule it
+                                    if tasksManager.calendarEvents.contains(where: { $0.taskId == draggedId }) {
+                                        tasksManager.unscheduleTask(id: draggedId)
+                                        return true
+                                    }
+                                    // Otherwise reorder within the inbox
+                                    guard let draggedItem = tasksManager.tasks.first(where: { $0.id == draggedId }),
+                                          draggedItem.id != task.id else { return false }
+                                    var all = tasksManager.tasks
+                                    if let from = all.firstIndex(where: { $0.id == draggedId }),
+                                       let to = all.firstIndex(where: { $0.id == task.id }) {
+                                        all.remove(at: from)
+                                        all.insert(draggedItem, at: to)
                                             tasksManager.persistTaskOrder(newTasks: all)
-                                        })
+                                        }
+                                        return true
+                                    }
+                            }
                         }
                     }
                 }
-                .contentShape(Rectangle())
-                .onDrop(of: [.plainText, .text],
-                        delegate: InboxDropDelegate(tasksManager: tasksManager))
+            }
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .dropDestination(for: String.self) { items, _ in
+                guard let taskId = items.first, !taskId.isEmpty else { return false }
+                if tasksManager.calendarEvents.contains(where: { $0.taskId == taskId }) {
+                    FFLogger.log("[Drop] Inbox container accepted unschedule for taskId: \(taskId)")
+                    tasksManager.unscheduleTask(id: taskId)
+                    return true
+                }
+                return false
             }
         }
         .background(Color.surfaceBackground)
-    }
-}
-
-// MARK: - Inbox Drop Zone
-/// A fixed strip that sits above the task list, always visible and never
-/// occluded by TaskRows. The reliable home for "unschedule" drops.
-struct InboxDropZone: View {
-    @Environment(TasksManager.self) var tasksManager
-    @State private var isTargeted = false
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "tray.and.arrow.down")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(isTargeted ? Color.white : Color.staleAmber)
-            Text("Drop here to remove from schedule")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(isTargeted ? Color.white : Color.staleAmber)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 7)
-        .background(isTargeted ? Color.staleAmber : Color.staleAmber.opacity(0.08))
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .strokeBorder(
-                    Color.staleAmber.opacity(isTargeted ? 0 : 0.4),
-                    style: StrokeStyle(lineWidth: 1, dash: [4, 3])
-                )
-        )
-        .clipShape(.rect(cornerRadius: 6))
-        .animation(.easeInOut(duration: 0.15), value: isTargeted)
-        .onDrop(of: [.plainText, .text], isTargeted: $isTargeted) { providers in
-            guard let provider = providers.first else { return false }
-            if provider.canLoadObject(ofClass: NSString.self) {
-                _ = provider.loadObject(ofClass: NSString.self) { item, _ in
-                    guard let taskId = item as? String, !taskId.isEmpty else { return }
-                    Task { @MainActor in tasksManager.unscheduleTask(id: taskId) }
-                }
-                return true
-            }
-            provider.loadItem(forTypeIdentifier: "public.plain-text", options: nil) { item, _ in
-                var taskId: String?
-                if let data = item as? Data    { taskId = String(data: data, encoding: .utf8) }
-                else if let s = item as? String { taskId = s }
-                if let id = taskId, !id.isEmpty {
-                    Task { @MainActor in tasksManager.unscheduleTask(id: id) }
-                }
-            }
-            return true
-        }
     }
 }
 
@@ -1152,7 +1109,6 @@ struct InboxZeroView: View {
 struct CalendarPanel: View {
     @Environment(TasksManager.self) var tasksManager
     @Binding var selectedEvent: CalendarEvent?
-    @Binding var draggedTask:   TaskItem?
     @AppStorage("showWeekends") private var showWeekends = false
     @State private var scrollTrigger = 0   // incrementing this re-triggers scroll-to-now
 
@@ -1225,16 +1181,14 @@ struct CalendarPanel: View {
 
             Divider()
 
-            // Both views stay alive (opacity swap, not if/else).
-            // This preserves the scroll position when switching modes —
-            // no more flash-to-midnight on every tab switch.
-            ZStack {
+            // Only render the active view — the inactive view must not exist
+            // in the view hierarchy at all, because .allowsHitTesting(false)
+            // and .disabled() do NOT suppress .onDrop targets. Having both
+            // views alive causes their GridLines to compete for drops.
+            if tasksManager.currentViewMode == .day {
                 dayView
-                    .opacity(tasksManager.currentViewMode == .day ? 1 : 0)
-                    .allowsHitTesting(tasksManager.currentViewMode == .day)
+            } else {
                 weekView
-                    .opacity(tasksManager.currentViewMode == .week ? 1 : 0)
-                    .allowsHitTesting(tasksManager.currentViewMode == .week)
             }
         }
         .background(Color.secondarySurface)
@@ -1265,11 +1219,8 @@ struct CalendarPanel: View {
                                 let aw = geo.size.width - 47.0
                                 let w  = event.totalColumns == 1 ? aw : aw / CGFloat(event.totalColumns)
                                 let x  = 47.0 + CGFloat(event.displayColumn) * (aw / CGFloat(event.totalColumns))
-                                Color.clear
-                                    .frame(width: w, height: event.calculateHeight())
-                                    .overlay(alignment: .top) {
-                                        EventPill(event: event) { selectedEvent = event }
-                                    }
+                                EventPill(event: event) { selectedEvent = event }
+                                    .frame(width: w, height: event.calculateHeight(), alignment: .top)
                                     .offset(x: x, y: calOffset(event))
                             }
                         }
@@ -1341,11 +1292,8 @@ struct CalendarPanel: View {
 
                                             ForEach(tasksManager.calendarEvents.filter { $0.dayOffset == dayOff }) { ev in
                                                 let w = geo.size.width - 47.0
-                                                Color.clear
-                                                    .frame(width: w, height: ev.calculateHeight())
-                                                    .overlay(alignment: .top) {
-                                                        EventPill(event: ev) { selectedEvent = ev }
-                                                    }
+                                                EventPill(event: ev) { selectedEvent = ev }
+                                                    .frame(width: w, height: ev.calculateHeight(), alignment: .top)
                                                     .offset(x: 47, y: calOffset(ev))
                                             }
                                         }
@@ -1404,10 +1352,10 @@ struct StatusBarView: View {
     @Environment(TasksManager.self) var tasksManager
 
     private var inboxCount: Int {
-        tasksManager.tasks.filter {
-            $0.status != "completed" &&
-            $0.parentTaskId == nil &&
-            !tasksManager.calendarEvents.contains { $0.taskId == $0.id }
+        tasksManager.tasks.filter { task in
+            task.status != "completed" &&
+            task.parentTaskId == nil &&
+            !tasksManager.calendarEvents.contains { $0.taskId == task.id }
         }.count
     }
     private var scheduledCount: Int { tasksManager.calendarEvents.filter { $0.taskId != nil }.count }

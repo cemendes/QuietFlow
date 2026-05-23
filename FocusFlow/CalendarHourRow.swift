@@ -45,10 +45,7 @@ struct CalendarHourRow: View {
                                 // FocusFlow events are draggable to a new slot.
                                 // The preview is a compact pill so it doesn't look
                                 // like the full-width calendar block while dragging.
-                                .onDrag({
-                                    NSItemProvider(object: taskId as NSString)
-                                }, preview: {
-                                    // Compact pill — looks like a small task chip
+                                .draggable(taskId) {
                                     HStack(spacing: 4) {
                                         Image(systemName: "clock")
                                             .font(.system(size: 9))
@@ -62,7 +59,7 @@ struct CalendarHourRow: View {
                                     .background(Color.googleBlue)
                                     .clipShape(.rect(cornerRadius: 6))
                                     .frame(maxWidth: 160)
-                                })
+                                }
                         }
                     }
                     .padding(.top, 1)
@@ -72,13 +69,12 @@ struct CalendarHourRow: View {
         .frame(height: 34)
         .padding(.horizontal, 10)
         .contentShape(Rectangle())
-        .onDrop(of: ["public.plain-text"], isTargeted: $isDropTargeted) { providers in
-            providers.first?.loadObject(ofClass: NSString.self) { item, _ in
-                if let taskId = item as? String {
-                    DispatchQueue.main.async { onDrop(taskId) }
-                }
-            }
+        .dropDestination(for: String.self) { items, _ in
+            guard let taskId = items.first, !taskId.isEmpty else { return false }
+            onDrop(taskId)
             return true
+        } isTargeted: { targeted in
+            isDropTargeted = targeted
         }
     }
 }
