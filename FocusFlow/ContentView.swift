@@ -5,7 +5,6 @@ import Combine
 
 // MARK: - Content View (3-panel: Sidebar | Task List | Calendar)
 struct ContentView: View {
-    @Environment(AuthManager.self)  var authManager:  AuthManager
     @Environment(TasksManager.self) var tasksManager: TasksManager
 
     @State private var selectedSource:  TaskSource? = nil   // nil = All Tasks
@@ -156,13 +155,10 @@ struct ContentView: View {
             Button("OK", role: .cancel) {}
         } message: { Text(tasksManager.errorMessage ?? "") }
         // Lifecycle
-        .onChange(of: authManager.isSignedIn) { _, isSignedIn in
-            if isSignedIn { tasksManager.fetchTasks() }
-        }
         .onAppear {
             // Calendar permission dialog fires here — window is already visible.
             tasksManager.requestCalendarAccess()
-            if authManager.isSignedIn { tasksManager.fetchTasks() }
+            tasksManager.fetchTasks()
         }
     }
 
