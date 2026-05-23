@@ -181,7 +181,6 @@ struct MarkdownEditorPanel: View {
             }
         }
     }
-    }
 
     // MARK: - Helpers
 
