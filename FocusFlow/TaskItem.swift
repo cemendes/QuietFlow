@@ -140,12 +140,10 @@ class TasksManager {
     // delete, and recreate suggestions before committing them.
     var subtaskSuggestions: [String: [SubtaskSuggestion]] = [:]
     var subtaskLoadingState: [String: Bool] = [:]   // taskId → isLoading
-    
     var userName: String = "Eduardo Oliveira"
     var daysBack: Int = 1
     var defaultDuration: Int = 30
     var tasksFilePath: String = ""
-    var bypassCalendarPermissionCheck: Bool = false
     var bypassCalendarAccessCheck: Bool {
         get { bypassCalendarPermissionCheck }
         set { bypassCalendarPermissionCheck = newValue }
