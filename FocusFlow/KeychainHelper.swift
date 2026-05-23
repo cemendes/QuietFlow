@@ -5,34 +5,37 @@ class KeychainHelper {
     static let shared = KeychainHelper()
     private init() {}
     
-    func save(_ data: Data, service: String, account: String) {
+    @discardableResult
+    func save(_ data: Data, service: String, account: String) -> OSStatus {
         let query = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: account,
             kSecValueData: data,
+            kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        ] as CFDictionary
+        
+        // Delete old item if it exists to prevent duplicate item errors
+        SecItemDelete([
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
             kSecAttrAccount: account
-        ] as CFDictionary
+        ] as CFDictionary)
         
         let status = SecItemAdd(query, nil)
-        
-        if status == errSecDuplicateItem {
-            let query = [
-                kSecAttrService: service,
-                kSecAttrAccount: account,
-                kSecClass: kSecClassGenericPassword
-            ] as CFDictionary
-            
-            let attributesToUpdate = [kSecValueData: data] as CFDictionary
-            SecItemUpdate(query, attributesToUpdate)
+        if status != errSecSuccess {
+            print("[Keychain Error] Failed to write item: \(status)")
         }
+        return status
     }
     
     func read(service: String, account: String) -> Data? {
         let query = [
+            kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
             kSecAttrAccount: account,
-            kSecClass: kSecClassGenericPassword,
-            kSecReturnData: true
+            kSecReturnData: true,
+            kSecMatchLimit: kSecMatchLimitOne
         ] as CFDictionary
         
         var result: AnyObject?
@@ -40,18 +43,25 @@ class KeychainHelper {
         
         if status == errSecSuccess {
             return result as? Data
+        } else if status != errSecItemNotFound {
+            print("[Keychain Error] Failed to read item: \(status)")
         }
         return nil
     }
     
-    func delete(service: String, account: String) {
+    @discardableResult
+    func delete(service: String, account: String) -> OSStatus {
         let query = [
+            kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
-            kSecAttrAccount: account,
-            kSecClass: kSecClassGenericPassword
+            kSecAttrAccount: account
         ] as CFDictionary
         
-        SecItemDelete(query)
+        let status = SecItemDelete(query)
+        if status != errSecSuccess && status != errSecItemNotFound {
+            print("[Keychain Error] Failed to delete item: \(status)")
+        }
+        return status
     }
     
     func save(_ string: String, service: String, account: String) {

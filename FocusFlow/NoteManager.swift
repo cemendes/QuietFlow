@@ -13,19 +13,41 @@ final class NoteManager: @unchecked Sendable {
     static let shared = NoteManager()
 
     private let fm = FileManager.default
+    private let baseDirectory: URL
+    private let lock = NSLock()
+    private var existingNoteTaskIDs: Set<String> = []
 
     // MARK: - Root URLs
 
     var focusFlowRoot: URL {
-        fm.homeDirectoryForCurrentUser
-            .appendingPathComponent("My Drive/FocusFlow")
+        baseDirectory
     }
 
-    private var notesDir:   URL { focusFlowRoot.appendingPathComponent("notes") }
-    private var archiveDir: URL { notesDir.appendingPathComponent("archive") }
+    var notesDir:   URL { focusFlowRoot.appendingPathComponent("notes") }
+    var archiveDir: URL { notesDir.appendingPathComponent("archive") }
 
-    private init() {
+    init(baseDirectory: URL = NoteManager.defaultBaseDirectory()) {
+        self.baseDirectory = baseDirectory
         ensureDirectories()
+        scanForNotes()
+    }
+
+    /// Dynamically scans for modern macOS Google Drive FileProvider paths
+    /// (e.g. `~/Library/CloudStorage/GoogleDrive-.../My Drive`) before falling back to `~/My Drive`.
+    static func defaultBaseDirectory() -> URL {
+        let fm = FileManager.default
+        let home = fm.homeDirectoryForCurrentUser
+        
+        let cloudStorageURL = home.appendingPathComponent("Library/CloudStorage")
+        if let contents = try? fm.contentsOfDirectory(at: cloudStorageURL, includingPropertiesForKeys: nil) {
+            for url in contents {
+                if url.lastPathComponent.lowercased().contains("googledrive") {
+                    let driveURL = url.appendingPathComponent("My Drive/FocusFlow")
+                    return driveURL
+                }
+            }
+        }
+        return home.appendingPathComponent("My Drive/FocusFlow")
     }
 
     // MARK: - Setup
@@ -37,35 +59,70 @@ final class NoteManager: @unchecked Sendable {
         createAgentsMDIfNeeded()
     }
 
-    // MARK: - URL Helpers
+    // MARK: - Cache Management
 
-    func noteURL(for taskId: String) -> URL {
-        notesDir.appendingPathComponent("\(taskId).md")
+    /// Scans the notes directory and updates the in-memory notes presence cache.
+    func scanForNotes() {
+        let fm = FileManager.default
+        guard let urls = try? fm.contentsOfDirectory(at: notesDir, includingPropertiesForKeys: nil) else { return }
+        let ids = Set(urls.filter { $0.pathExtension == "md" }.map { $0.deletingPathExtension().lastPathComponent })
+        
+        lock.lock()
+        self.existingNoteTaskIDs = ids
+        lock.unlock()
     }
 
-    func archiveURL(for taskId: String) -> URL {
-        archiveDir.appendingPathComponent("\(taskId).md")
+    // MARK: - Path Traversal Protection / Sanitization
+    
+    /// Returns true if the taskId is alpha-numeric, with optional hyphens/underscores.
+    /// Prevents directory traversal attacks (`..`, `/`, etc.).
+    private func isValidTaskId(_ taskId: String) -> Bool {
+        let allowedCharacters = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
+        return !taskId.isEmpty && taskId.unicodeScalars.allSatisfy { allowedCharacters.contains($0) }
+    }
+
+    // MARK: - URL Helpers
+
+    func noteURL(for taskId: String) -> URL? {
+        guard isValidTaskId(taskId) else {
+            print("[Security Warning] Invalid taskId detected (NoteURL): \(taskId)")
+            return nil
+        }
+        return notesDir.appendingPathComponent("\(taskId).md")
+    }
+
+    func archiveURL(for taskId: String) -> URL? {
+        guard isValidTaskId(taskId) else {
+            print("[Security Warning] Invalid taskId detected (ArchiveURL): \(taskId)")
+            return nil
+        }
+        return archiveDir.appendingPathComponent("\(taskId).md")
     }
 
     func hasNote(for taskId: String) -> Bool {
-        fm.fileExists(atPath: noteURL(for: taskId).path)
+        guard isValidTaskId(taskId) else { return false }
+        lock.lock()
+        defer { lock.unlock() }
+        return existingNoteTaskIDs.contains(taskId)
     }
 
     // MARK: - CRUD
 
     /// Loads note content. Returns nil if no note exists yet.
     func loadNote(for taskId: String) -> String? {
-        let url = noteURL(for: taskId)
-        guard fm.fileExists(atPath: url.path) else { return nil }
+        guard let url = noteURL(for: taskId), fm.fileExists(atPath: url.path) else { return nil }
         return try? String(contentsOf: url, encoding: .utf8)
     }
 
     /// Creates a new note with YAML frontmatter. Idempotent — returns existing content if file exists.
     @discardableResult
     func createNote(for task: TaskItem) -> String {
-        let url = noteURL(for: task.id)
+        guard let url = noteURL(for: task.id) else { return "" }
         if fm.fileExists(atPath: url.path),
            let existing = try? String(contentsOf: url, encoding: .utf8) {
+            lock.lock()
+            existingNoteTaskIDs.insert(task.id)
+            lock.unlock()
             return existing
         }
 
@@ -87,22 +144,35 @@ final class NoteManager: @unchecked Sendable {
             .trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
 
         try? content.write(to: url, atomically: true, encoding: .utf8)
+        
+        lock.lock()
+        existingNoteTaskIDs.insert(task.id)
+        lock.unlock()
+        
         return content
     }
 
     /// Writes content to disk atomically.
     func saveNote(for taskId: String, content: String) {
-        let url = noteURL(for: taskId)
+        guard let url = noteURL(for: taskId) else { return }
         try? content.write(to: url, atomically: true, encoding: .utf8)
+        
+        lock.lock()
+        existingNoteTaskIDs.insert(taskId)
+        lock.unlock()
     }
 
     /// Moves note to archive/. Safe to call even if no note exists.
     func archiveNote(for taskId: String) {
-        let src = noteURL(for: taskId)
-        let dst = archiveURL(for: taskId)
+        guard let src = noteURL(for: taskId),
+              let dst = archiveURL(for: taskId) else { return }
         guard fm.fileExists(atPath: src.path) else { return }
         try? fm.removeItem(at: dst)
         try? fm.moveItem(at: src, to: dst)
+        
+        lock.lock()
+        existingNoteTaskIDs.remove(taskId)
+        lock.unlock()
     }
 
     // MARK: - AGENTS.md

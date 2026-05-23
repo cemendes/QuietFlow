@@ -95,9 +95,21 @@ struct SubtaskSuggestionsPanel: View {
             // ── Suggestion cards ──────────────────────────────────────────
             if !suggestions.isEmpty {
                 VStack(spacing: 6) {
-                    ForEach(suggestions) { suggestion in
+                    ForEach(Array(suggestions.enumerated()), id: \.element.id) { index, suggestion in
                         SuggestionCard(
-                            suggestion: suggestion,
+                            suggestion: Binding(
+                                get: {
+                                    if index < (tasksManager.subtaskSuggestions[task.id]?.count ?? 0) {
+                                        return tasksManager.subtaskSuggestions[task.id]![index]
+                                    }
+                                    return suggestion
+                                },
+                                set: { newValue in
+                                    if index < (tasksManager.subtaskSuggestions[task.id]?.count ?? 0) {
+                                        tasksManager.subtaskSuggestions[task.id]![index] = newValue
+                                    }
+                                }
+                            ),
                             onDelete: {
                                 withAnimation(.easeInOut(duration: 0.2)) {
                                     tasksManager.removeSuggestion(
@@ -137,7 +149,7 @@ struct SubtaskSuggestionsPanel: View {
                         tasksManager.createSubTasks(from: suggestions, for: task)
                     } label: {
                         Label("Create \(suggestions.count) Sub-tasks",
-                              systemImage: "list.bullet.indent")
+                               systemImage: "list.bullet.indent")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(.white)
                             .padding(.vertical, 6)
@@ -166,7 +178,7 @@ struct SubtaskSuggestionsPanel: View {
 // MARK: - Suggestion Card
 /// One editable row inside the SubtaskSuggestionsPanel.
 struct SuggestionCard: View {
-    @Bindable var suggestion: SubtaskSuggestion
+    @Binding var suggestion: SubtaskSuggestion
     let onDelete: () -> Void
 
     @State private var isExpanded = false
@@ -197,7 +209,7 @@ struct SuggestionCard: View {
                     HStack(spacing: 2) {
                         Image(systemName: "clock")
                             .font(.system(size: 9))
-                        Text(suggestion.duration != nil ? "\(suggestion.duration!)m" : "–")
+                        Text(suggestion.duration.map { "\($0)m" } ?? "–")
                             .font(.system(size: 10, weight: .medium))
                     }
                     .foregroundStyle(.textSecondary)

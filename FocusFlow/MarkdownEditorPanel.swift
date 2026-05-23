@@ -135,8 +135,13 @@ struct MarkdownEditorPanel: View {
         saveDebounce = Task {
             try? await Task.sleep(for: .milliseconds(500))
             guard !Task.isCancelled else { return }
-            NoteManager.shared.saveNote(for: taskId, content: content)
-            await MainActor.run { isSaved = true }
+            
+            // Perform the file write off the Main Actor thread
+            await Task.detached(priority: .utility) {
+                NoteManager.shared.saveNote(for: taskId, content: content)
+            }.value
+            
+            isSaved = true
         }
     }
 }
