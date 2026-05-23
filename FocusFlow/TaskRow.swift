@@ -4,6 +4,12 @@ import SwiftUI
 struct TaskRow: View {
     let task: TaskItem
     @Binding var draggedTask: TaskItem?
+    /// Called when the user taps the note icon. Nil-safe — existing callsites unchanged.
+    var onOpenEditor: ((TaskItem) -> Void)? = nil
+    
+    var isSelecting: Bool = true
+    var isSelected: Bool = false
+    var onSelectToggle: (() -> Void)? = nil
 
     @Environment(TasksManager.self) var tasksManager
     @State private var isExpanded = false
@@ -25,123 +31,166 @@ struct TaskRow: View {
 
                 // Checkbox
                 Button {
-                    if isCompleted { tasksManager.uncompleteTask(id: task.id) }
-                    else           { tasksManager.completeTask(id: task.id) }
+                    if isSelecting {
+                        onSelectToggle?()
+                    } else {
+                        if isCompleted { tasksManager.uncompleteTask(id: task.id) }
+                        else           { tasksManager.completeTask(id: task.id) }
+                    }
                 } label: {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 4)
-                            .stroke(isCompleted ? Color.successGreen : Color.borderGray, lineWidth: 1.5)
-                            .frame(width: 17, height: 17)
-                        if isCompleted {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundColor(.successGreen)
+                        if isSelecting {
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(isSelected ? Color.googleBlue : Color.borderGray, lineWidth: 1.5)
+                                .frame(width: 17, height: 17)
+                            if isSelected {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(Color.googleBlue)
+                                    .frame(width: 17, height: 17)
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                        } else {
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(isCompleted ? Color.successGreen : Color.borderGray, lineWidth: 1.5)
+                                .frame(width: 17, height: 17)
+                            if isCompleted {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundColor(.successGreen)
+                            }
                         }
                     }
+                    .contentShape(Rectangle().size(width: 28, height: 28))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(isCompleted ? "Mark Uncompleted" : "Mark Completed")
+                .accessibilityLabel(isSelecting ? (isSelected ? "Deselect" : "Select") : (isCompleted ? "Mark Uncompleted" : "Mark Completed"))
 
-                // Title + subtitle
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(task.title)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(isCompleted ? .textSecondary : .textPrimary)
-                            .strikethrough(isCompleted)
-                            .lineLimit(1)
+                // Clickable row area (Title + subtitle + actions + chevron)
+                HStack(spacing: 10) {
+                    // Title + subtitle
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 6) {
+                            Text(task.title)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(isCompleted ? .textSecondary : .textPrimary)
+                                .strikethrough(isCompleted)
+                                .lineLimit(1)
+                                .help(task.title)
 
-                        if task.isStale {
-                            Image(systemName: "clock.badge.exclamationmark")
-                                .font(.system(size: 10))
-                                .foregroundColor(.staleAmber)
+                            if task.isStale {
+                                Image(systemName: "clock.badge.exclamationmark")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.staleAmber)
+                            }
+
+                            // Note badge — visible when a Drive note file exists
+                            if task.hasNote {
+                                Image(systemName: "doc.text.fill")
+                                    .font(.system(size: 9))
+                                    .foregroundStyle(Color.googleBlue.opacity(0.7))
+                                    .accessibilityLabel("Has note")
+                            }
+
+                            // Link icon(s) — shown inline after the title
+                            if let rawLink = task.link, !rawLink.isEmpty {
+                                let urls = rawLink
+                                    .components(separatedBy: "\n")
+                                    .filter { !$0.isEmpty }
+                                    .compactMap { URL(string: $0) }
+                                ForEach(urls.indices, id: \.self) { idx in
+                                    Link(destination: urls[idx]) {
+                                        Image(systemName: "arrow.up.right.circle")
+                                            .font(.system(size: 11))
+                                            .foregroundColor(.googleBlue.opacity(0.8))
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
                         }
 
-                        // Link icon(s) — shown inline after the title
-                        if let rawLink = task.link, !rawLink.isEmpty {
-                            let urls = rawLink
-                                .components(separatedBy: "\n")
-                                .filter { !$0.isEmpty }
-                                .compactMap { URL(string: $0) }
-                            ForEach(urls.indices, id: \.self) { idx in
-                                Link(destination: urls[idx]) {
-                                    Image(systemName: "arrow.up.right.circle")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.googleBlue.opacity(0.8))
-                                }
-                                .buttonStyle(.plain)
+                        HStack(spacing: 6) {
+                            // Source icon only (no label text, saves space)
+                            Image(systemName: task.source.iconName)
+                                .font(.system(size: 11))
+                                .foregroundStyle(task.source.color.opacity(0.9))
+
+                            if let duration = task.duration {
+                                Text("·")
+                                    .foregroundColor(.textTertiary)
+                                Text("\(duration)m")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.textSecondary)
+                            }
+
+                            if let priority = task.priority, !priority.isEmpty {
+                                Text("·")
+                                    .foregroundColor(.textTertiary)
+                                priorityBadge(priority)
+                            }
+
+                            if let date = task.date, !date.isEmpty {
+                                Text("·")
+                                    .foregroundStyle(.textTertiary)
+                                Text(TasksManager.formatDateForDisplay(date) ?? date)
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(task.isStale ? .staleAmber : .textSecondary)
                             }
                         }
                     }
 
-                    HStack(spacing: 6) {
-                        // Source icon only (no label text, saves space)
-                        Image(systemName: task.source.iconName)
-                            .font(.system(size: 11))
-                            .foregroundStyle(task.source.color.opacity(0.9))
+                    Spacer()
 
-                        if let duration = task.duration {
-                            Text("·")
-                                .foregroundColor(.textTertiary)
-                            Text("\(duration)m")
-                                .font(.system(size: 10))
-                                .foregroundColor(.textSecondary)
-                        }
+                    // Hover actions
+                    if isHovered {
+                        HStack(spacing: 4) {
+                            // Open in editor
+                            Button {
+                                onOpenEditor?(task)
+                            } label: {
+                                Image(systemName: "doc.text")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.googleBlue.opacity(0.8))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Open Note")
+                            .help("Open note in editor panel")
 
-                        if let priority = task.priority, !priority.isEmpty {
-                            Text("·")
-                                .foregroundColor(.textTertiary)
-                            priorityBadge(priority)
-                        }
+                            Button { showingEditForm = true } label: {
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.textSecondary)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Edit Task")
 
-                        if let date = task.date, !date.isEmpty {
-                            Text("·")
-                                .foregroundStyle(.textTertiary)
-                            Text(TasksManager.formatDateForDisplay(date) ?? date)
-                                .font(.system(size: 10))
-                                .foregroundStyle(task.isStale ? .staleAmber : .textSecondary)
+                            Button { tasksManager.deleteTask(id: task.id) } label: {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.textSecondary)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Delete Task")
                         }
+                        .padding(.trailing, 4)
+                    }
+
+                    // Expand chevron
+                    if task.details != nil && !(task.details?.isEmpty ?? true) {
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 10))
+                            .foregroundColor(.textSecondary)
+                            .animation(.easeInOut(duration: 0.15), value: isExpanded)
                     }
                 }
-
-                Spacer()
-
-                // Hover actions
-                if isHovered {
-                    HStack(spacing: 4) {
-                        Button { showingEditForm = true } label: {
-                            Image(systemName: "pencil")
-                                .font(.system(size: 11))
-                                .foregroundColor(.textSecondary)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Edit Task")
-
-                        Button { tasksManager.deleteTask(id: task.id) } label: {
-                            Image(systemName: "trash")
-                                .font(.system(size: 11))
-                                .foregroundColor(.textSecondary)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Delete Task")
-                    }
-                    .padding(.trailing, 4)
-                }
-
-                // Expand chevron
-                if task.details != nil && !(task.details?.isEmpty ?? true) {
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 10))
-                        .foregroundColor(.textSecondary)
-                        .animation(.easeInOut(duration: 0.15), value: isExpanded)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
                 }
             }
             .padding(.vertical, 9)
             .padding(.horizontal, 12)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
-            }
             .accessibilityLabel(isExpanded ? "Collapse Details" : "Expand Details")
 
             // ── Expanded detail section ──────────────────────────────────

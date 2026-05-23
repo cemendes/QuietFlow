@@ -17,7 +17,14 @@ struct ShutdownRitualView: View {
     // MARK: - Computed
 
     private var completedToday: [TaskItem] {
-        tasksManager.tasks.filter { $0.status == "completed" }
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        let todayStr = fmt.string(from: Date())
+        let yesterdayStr = fmt.string(from: Calendar.current.date(byAdding: .day, value: -1, to: Date())!)
+        
+        return tasksManager.tasks.filter { task in
+            task.status == "completed" && (task.date == todayStr || task.date == yesterdayStr)
+        }
     }
 
     private var incompleteToday: [TaskItem] {
