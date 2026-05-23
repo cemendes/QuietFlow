@@ -39,7 +39,7 @@ enum TaskSource: String, Equatable, CaseIterable {
 
     var isComingSoon: Bool {
         switch self {
-        case .gchat, .chrome: return true
+        case .chrome: return true
         default: return false
         }
     }
@@ -148,6 +148,7 @@ class TasksManager {
     var daysBack: Int = 1
     var cookieString: String = ""
     var defaultDuration: Int = 30
+    var tasksFilePath: String = ""
     
     var isMorningRitualComplete: Bool = false
     var isShutdownRitualNeeded: Bool = false
@@ -219,6 +220,9 @@ class TasksManager {
         self.defaultDuration = UserDefaults.standard.integer(forKey: "defaultDuration")
         if self.defaultDuration == 0 { self.defaultDuration = 30 }
         
+        self.tasksFilePath = UserDefaults.standard.string(forKey: "tasksFilePath") ?? 
+            FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("My Drive/tasks.json").path
+        
         self.selectedCalendarIdentifiers = Set(UserDefaults.standard.stringArray(forKey: "selectedCalendarIdentifiers") ?? [])
         self.targetCalendarIdentifier = UserDefaults.standard.string(forKey: "targetCalendarIdentifier") ?? ""
         
@@ -276,11 +280,23 @@ class TasksManager {
         self.isMorningRitualComplete = true
     }
 
+    var isShutdownRitualCompletedToday: Bool {
+        let lastShutdownDate = UserDefaults.standard.string(forKey: "lastShutdownDate") ?? ""
+        let todayDate = TasksManager.formatDate(Date())
+        return lastShutdownDate == todayDate
+    }
+
     func triggerShutdownRitual() {
+        if isShutdownRitualCompletedToday {
+            print("[TasksManager] Daily shutdown already completed today. Not triggering again.")
+            return
+        }
         self.isShutdownRitualNeeded = true
     }
 
     func completeShutdownRitual() {
+        let todayDate = TasksManager.formatDate(Date())
+        UserDefaults.standard.set(todayDate, forKey: "lastShutdownDate")
         self.isShutdownRitualNeeded = false
     }
 
@@ -289,8 +305,9 @@ class TasksManager {
 
     /// Google Drive path — same cross-device accessibility as the old CSV.
     private nonisolated func getJSONURL() -> URL? {
-        FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("My Drive/tasks.json")
+        let path = UserDefaults.standard.string(forKey: "tasksFilePath") ?? 
+                   FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("My Drive/tasks.json").path
+        return URL(fileURLWithPath: path)
     }
 
     func startMonitoringJSON() {
@@ -344,7 +361,11 @@ class TasksManager {
                 let sortedTasks = decoded.sorted { a, b in
                     let dateA = Self.parseDate(a.date)
                     let dateB = Self.parseDate(b.date)
-                    if let da = dateA, let db = dateB, da != db { return da > db }
+                    if let da = dateA, let db = dateB {
+                        if da != db { return da > db }
+                        // Secondary sort: alphabetical by title for equal dates
+                        return a.title.localizedCompare(b.title) == .orderedAscending
+                    }
                     if dateA != nil { return true }
                     if dateB != nil { return false }
                     return false
@@ -364,13 +385,23 @@ class TasksManager {
         }
     }
 
-    nonisolated private static func parseDate(_ raw: String?) -> Date? {
+    nonisolated static func parseDate(_ raw: String?) -> Date? {
         guard let raw, !raw.isEmpty else { return nil }
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "en_US_POSIX")
         for format in ["yyyy-MM-dd", "MMM d, yyyy", "MMM d"] {
             fmt.dateFormat = format
-            if let d = fmt.date(from: raw) { return d }
+            if let d = fmt.date(from: raw) {
+                if format == "MMM d" {
+                    // Default parsing for MMM d without a year defaults to year 2000.
+                    // We explicitly override the parsed date's year to the current calendar year.
+                    let currentYear = Calendar.current.component(.year, from: Date())
+                    var comps = Calendar.current.dateComponents([.month, .day, .hour, .minute, .second], from: d)
+                    comps.year = currentYear
+                    return Calendar.current.date(from: comps)
+                }
+                return d
+            }
         }
         return nil
     }
@@ -429,7 +460,7 @@ class TasksManager {
         NoteManager.shared.archiveNote(for: id)
     }
     
-    func updateTask(id: String, title: String, details: String?, link: String?, status: String? = nil, duration: Int? = nil, priority: String? = nil) {
+    func updateTask(id: String, title: String, details: String?, link: String?, status: String? = nil, duration: Int? = nil, priority: String? = nil, date: String? = nil) {
         var updatedTasks = self.tasks
         if let index = updatedTasks.firstIndex(where: { $0.id == id }) {
             let current = updatedTasks[index]
@@ -443,13 +474,31 @@ class TasksManager {
                 duration: duration ?? current.duration,
                 priority: priority ?? current.priority,
                 category: current.category,
-                date: current.date,
+                date: date ?? current.date,
                 parentTaskId: current.parentTaskId
             )
             updatedTasks[index] = updated
             saveTasksToJSON(updatedTasks)
             self.tasks = updatedTasks
         }
+    }
+
+    func updateTasksFilePath(newPath: String) {
+        let trimmed = newPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        self.tasksFilePath = trimmed
+        UserDefaults.standard.set(trimmed, forKey: "tasksFilePath")
+        
+        // Tear down the old file monitor
+        if let monitor = self.fileMonitor {
+            monitor.cancel()
+            self.fileMonitor = nil
+        }
+        
+        // Spin up the new monitor and reload data
+        self.startMonitoringJSON()
+        self.fetchTasks()
+        print("[TasksManager] Tasks path updated to: \(trimmed)")
     }
 
     /// Pushes a set of tasks to tomorrow by updating their date field.
@@ -964,9 +1013,14 @@ class TasksManager {
     func completeTask(id: String) {
         print("completeTask called for id: \(id)")
 
-        // 1. Update JSON status to "completed"
+        // 1. Update JSON status to "completed" and stamp completion date as today
         guard let task = tasks.first(where: { $0.id == id }) else { return }
-        updateTask(id: id, title: task.title, details: task.details, link: task.link, status: "completed")
+        
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        let todayStr = fmt.string(from: Date())
+        
+        updateTask(id: id, title: task.title, details: task.details, link: task.link, status: "completed", date: todayStr)
         // Archive note — preserve context, never hard-delete (PRD decision #2)
         NoteManager.shared.archiveNote(for: id)
         

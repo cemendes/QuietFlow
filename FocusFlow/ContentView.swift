@@ -9,6 +9,7 @@ struct ContentView: View {
     @Environment(TasksManager.self) var tasksManager: TasksManager
 
     @State private var selectedSource:  TaskSource? = nil   // nil = All Tasks
+    @State private var showCompletedOnly = false
     @State private var showingSettings  = false
     @State private var showingTaskForm  = false
     @State private var selectedEvent:   CalendarEvent? = nil
@@ -18,35 +19,82 @@ struct ContentView: View {
     @State private var geminiKeySaved   = false
     @State private var geminiKeyIsSet   = false
 
+    // Phase 2A: Editor panel state
+    @State private var isEditorOpen   = false
+    @State private var editorTask:    TaskItem?    = nil
+
+    // Phase 2B: Project state
+    @State private var selectedProject: ProjectItem? = nil
+    @State private var editorProject:   ProjectItem? = nil
+
     var body: some View {
         @Bindable var tasksManager = tasksManager
 
         ZStack {
             VStack(spacing: 0) {
-                HStack(spacing: 0) {
+                HSplitView {
 
                     // ── Panel 1: Sidebar ──────────────────────────────────
                     SidebarView(
                         selectedSource: $selectedSource,
+                        selectedProject: $selectedProject,
+                        showCompletedOnly: $showCompletedOnly,
                         showingSettings: $showingSettings,
-                        showingTaskForm: $showingTaskForm
+                        showingTaskForm: $showingTaskForm,
+                        onSelectProject: { project in
+                            withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                                selectedProject = project
+                                if project != nil {
+                                    selectedSource  = nil   // clear source filter only if project is selected
+                                    showCompletedOnly = false
+                                }
+                                if let project {
+                                    // Open editor with this project's note
+                                    editorProject = project
+                                    editorTask    = nil
+                                    isEditorOpen  = true
+                                }
+                            }
+                        }
                     )
-
-                    Divider()
 
                     // ── Panel 2: Task List ────────────────────────────────
                     TaskListPanel(
                         selectedSource: selectedSource,
+                        selectedProject: selectedProject,
+                        showCompletedOnly: showCompletedOnly,
                         draggedTask: $draggedTask,
-                        searchText: $searchText
+                        searchText: $searchText,
+                        isEditorOpen: $isEditorOpen,
+                        onOpenEditor: { task in
+                            withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                                editorTask    = task
+                                editorProject = nil   // clear project note
+                                isEditorOpen  = true
+                            }
+                        }
                     )
-                    .frame(width: 360)
-
-                    Divider()
+                    .frame(minWidth: 280, idealWidth: 360, maxWidth: 500)
 
                     // ── Panel 3: Calendar ─────────────────────────────────
                     CalendarPanel(selectedEvent: $selectedEvent, draggedTask: $draggedTask)
-                        .frame(maxWidth: .infinity)
+                        .frame(minWidth: 400, idealWidth: 600, maxWidth: .infinity)
+
+                    // ── Panel 4: Markdown Editor (Phase 2A/2B) ────────────
+                    if isEditorOpen {
+                        MarkdownEditorPanel(
+                            task: editorTask,
+                            projectItem: editorProject,
+                            onClose: {
+                                withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                                    isEditorOpen  = false
+                                    editorProject = nil
+                                }
+                            }
+                        )
+                        .frame(minWidth: 280, idealWidth: 380, maxWidth: 600)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                    }
                 }
                 .frame(maxHeight: .infinity)
 
@@ -80,11 +128,29 @@ struct ContentView: View {
         }
         .animation(.spring(response: 0.4), value: tasksManager.isMorningRitualComplete)
         .animation(.spring(response: 0.4), value: tasksManager.isShutdownRitualNeeded)
+        .animation(.spring(response: 0.32, dampingFraction: 0.82), value: isEditorOpen)
         .frame(minWidth: 1000, minHeight: 650)
+        // ⌘E — Toggle editor panel
+        .onKeyPress(.init("e"), phases: .down) { press in
+            guard press.modifiers.contains(.command) else { return .ignored }
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) { isEditorOpen.toggle() }
+            return .handled
+        }
         // Sheets
         .sheet(isPresented: $showingSettings)  { settingsSheet() }
         .sheet(isPresented: $showingTaskForm)  { TaskFormView(isPresented: $showingTaskForm) }
-        .sheet(item: $selectedEvent)           { EventDetailsView(event: $0) }
+        .sheet(item: $selectedEvent) { event in
+            EventDetailsView(event: event, onOpenNote: { task in
+                // Sheet is already dismissing — wait for its animation to finish
+                // before sliding in the editor panel to avoid conflicting transitions.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                        editorTask   = task
+                        isEditorOpen = true
+                    }
+                }
+            })
+        }
         // Error alert
         .alert("Error", isPresented: isShowingError) {
             Button("OK", role: .cancel) {}
@@ -111,13 +177,14 @@ struct ContentView: View {
     // MARK: - Settings Sheet
     @ViewBuilder
     private func settingsSheet() -> some View {
+        @Bindable var tasksManager = tasksManager
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Settings")
                             .font(.system(size: 18, weight: .semibold))
-                        Text("FocusFlow · macOS")
+                        Text("FocusFlow · macOS · v1.2.0 (Build 2026.05.22.1)")
                             .font(.system(size: 11)).foregroundStyle(.textSecondary)
                     }
                     Spacer()
@@ -132,23 +199,28 @@ struct ContentView: View {
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.textSecondary)
                         HStack(spacing: 8) {
-                            Text((FileManager.default.homeDirectoryForCurrentUser.path) + "/My Drive/tasks.json")
+                            TextField("Path to tasks.json...", text: $tasksManager.tasksFilePath)
+                                .onSubmit {
+                                    tasksManager.updateTasksFilePath(newPath: tasksManager.tasksFilePath)
+                                }
                                 .font(.system(size: 11, design: .monospaced))
+                                .textFieldStyle(.plain)
                                 .foregroundStyle(.textPrimary)
                                 .padding(.horizontal, 10).padding(.vertical, 6)
                                 .background(Color.secondarySurface)
                                 .clipShape(.rect(cornerRadius: 6))
-                                .frame(maxWidth: .infinity, alignment: .leading)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
+                                .frame(maxWidth: .infinity)
                             Button {
                                 let panel = NSOpenPanel()
                                 panel.allowedContentTypes = [.json]
                                 panel.canChooseFiles = true
                                 panel.canChooseDirectories = false
                                 panel.begin { response in
-                                    // Future: wire to tasksManager.jsonFilePath
-                                    _ = response
+                                    if response == .OK, let url = panel.url {
+                                        tasksManager.updateTasksFilePath(newPath: url.path)
+                                    }
                                 }
                             } label: {
                                 Text("Browse…")
@@ -292,10 +364,18 @@ struct ContentView: View {
 
 // MARK: - Sidebar View
 struct SidebarView: View {
-    @Environment(TasksManager.self) var tasksManager
-    @Binding var selectedSource:  TaskSource?
-    @Binding var showingSettings: Bool
-    @Binding var showingTaskForm: Bool
+    @Environment(TasksManager.self)  var tasksManager
+    @Environment(ProjectManager.self) var projectManager
+    @Binding var selectedSource:   TaskSource?
+    @Binding var selectedProject:  ProjectItem?
+    @Binding var showCompletedOnly: Bool
+    @Binding var showingSettings:  Bool
+    @Binding var showingTaskForm:  Bool
+    /// Called when a project row is tapped — ContentView handles opening the editor.
+    var onSelectProject: (ProjectItem?) -> Void = { _ in }
+
+    @State private var showingNewProjectSheet = false
+    @State private var newProjectName = ""
 
     private var openTasks: [TaskItem] {
         tasksManager.tasks.filter { $0.status != "completed" && $0.parentTaskId == nil }
@@ -319,7 +399,7 @@ struct SidebarView: View {
             Divider()
                 .padding(.bottom, 10)
 
-            // Section label
+            // ── SOURCES ──────────────────────────────────────────────
             Text("SOURCES")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(.textSecondary)
@@ -330,34 +410,88 @@ struct SidebarView: View {
             SidebarNavItem(
                 icon: "tray.fill", label: "All Tasks",
                 count: openTasks.count, color: .googleBlue,
-                isSelected: selectedSource == nil
-            ) { selectedSource = nil }
+                isSelected: selectedSource == nil && selectedProject == nil && !showCompletedOnly
+            ) {
+                selectedSource  = nil
+                selectedProject = nil
+                showCompletedOnly = false
+                onSelectProject(nil)
+            }
 
             // Gmail
             SidebarNavItem(
                 icon: TaskSource.gmail.iconName, label: TaskSource.gmail.label,
                 count: openTasks.filter { $0.source == .gmail }.count,
                 color: .gmailRed,
-                isSelected: selectedSource == .gmail
-            ) { selectedSource = .gmail }
+                isSelected: selectedSource == .gmail && !showCompletedOnly
+            ) {
+                selectedSource  = .gmail
+                selectedProject = nil
+                showCompletedOnly = false
+                onSelectProject(nil)
+            }
 
             // GChat
             SidebarNavItem(
                 icon: TaskSource.gchat.iconName, label: TaskSource.gchat.label,
                 count: openTasks.filter { $0.source == .gchat }.count,
                 color: .gchatBlue,
-                isSelected: selectedSource == .gchat,
-                isComingSoon: true
-            ) { selectedSource = .gchat }
+                isSelected: selectedSource == .gchat && !showCompletedOnly
+            ) {
+                selectedSource  = .gchat
+                selectedProject = nil
+                showCompletedOnly = false
+                onSelectProject(nil)
+            }
 
             // Chrome
             SidebarNavItem(
                 icon: TaskSource.chrome.iconName, label: TaskSource.chrome.label,
                 count: openTasks.filter { $0.source == .chrome }.count,
                 color: .chromeGreen,
-                isSelected: selectedSource == .chrome,
+                isSelected: selectedSource == .chrome && !showCompletedOnly,
                 isComingSoon: true
-            ) { selectedSource = .chrome }
+            ) {
+                selectedSource  = .chrome
+                selectedProject = nil
+                showCompletedOnly = false
+                onSelectProject(nil)
+            }
+
+            // Completed Tasks
+            SidebarNavItem(
+                icon: "checkmark.circle.fill", label: "Completed",
+                count: tasksManager.tasks.filter { $0.status == "completed" && $0.parentTaskId == nil }.count,
+                color: .successGreen,
+                isSelected: showCompletedOnly
+            ) {
+                selectedSource  = nil
+                selectedProject = nil
+                showCompletedOnly = true
+                onSelectProject(nil)
+            }
+
+            // ── PROJECTS ─────────────────────────────────────────────
+            if !projectManager.projects.isEmpty {
+                Divider()
+                    .padding(.vertical, 8)
+
+                Text("PROJECTS")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.textSecondary)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 4)
+
+                ForEach(projectManager.projects) { project in
+                    ProjectNavItem(
+                        project: project,
+                        count: projectManager.taskCount(for: project, in: tasksManager.tasks),
+                        isSelected: selectedProject == project
+                    ) {
+                        onSelectProject(project)
+                    }
+                }
+            }
 
             Spacer()
 
@@ -377,6 +511,17 @@ struct SidebarView: View {
 
                 Spacer()
 
+                // New Project button
+                Button {
+                    showingNewProjectSheet = true
+                } label: {
+                    Image(systemName: "folder.badge.plus")
+                        .font(.system(size: 14))
+                        .foregroundColor(.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .help("New Project")
+
                 Button { showingSettings = true } label: {
                     Image(systemName: "gearshape")
                         .font(.system(size: 14))
@@ -387,12 +532,109 @@ struct SidebarView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
         }
-        .frame(width: 200)
+        .frame(minWidth: 160, idealWidth: 200, maxWidth: 260)
         .background(Color.sidebarBackground)
+        // New Project sheet
+        .sheet(isPresented: $showingNewProjectSheet) {
+            newProjectSheet
+        }
+    }
+
+    // MARK: - New Project Sheet
+    private var newProjectSheet: some View {
+        VStack(spacing: 20) {
+            Text("New Project")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.textPrimary)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Project Name")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.textSecondary)
+                TextField("e.g. Privia, Internal", text: $newProjectName)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { createProject() }
+            }
+
+            HStack {
+                Button("Cancel") {
+                    newProjectName = ""
+                    showingNewProjectSheet = false
+                }
+                .keyboardShortcut(.escape, modifiers: [])
+                Spacer()
+                Button("Create") { createProject() }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(newProjectName.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(24)
+        .frame(width: 340)
+        .background(Color.surfaceBackground)
+    }
+
+    private func createProject() {
+        let name = newProjectName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return }
+        if let project = projectManager.createProject(name: name) {
+            newProjectName = ""
+            showingNewProjectSheet = false
+            onSelectProject(project)
+        }
     }
 }
 
-// MARK: - Sidebar Nav Item
+
+// MARK: - Project Nav Item
+/// A project row in the sidebar — colored dot, name, and task count badge.
+struct ProjectNavItem: View {
+    let project:    ProjectItem
+    let count:      Int
+    let isSelected: Bool
+    let action:     () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                // Color dot
+                Circle()
+                    .fill(project.color)
+                    .frame(width: 8, height: 8)
+                    .padding(.leading, 4)
+
+                Text(project.name)
+                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                    .foregroundColor(isSelected ? .textPrimary : .textSecondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                Spacer()
+
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(isSelected ? project.color : .textSecondary)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(isSelected ? project.color.opacity(0.12) : Color.borderGray.opacity(0.5))
+                        .cornerRadius(8)
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 7)
+            .background(
+                isSelected ? project.color.opacity(0.1) :
+                isHovered  ? Color.borderGray.opacity(0.25) : Color.clear
+            )
+            .cornerRadius(6)
+            .padding(.horizontal, 8)
+        }
+        .buttonStyle(.plain)
+        .onHover { h in withAnimation(.easeInOut(duration: 0.12)) { isHovered = h } }
+    }
+}
+
+
 struct SidebarNavItem: View {
     let icon:     String
     let label:    String
@@ -448,18 +690,60 @@ struct SidebarNavItem: View {
 }
 
 // MARK: - Task List Panel
+// MARK: - Task Sort Option
+enum TaskSortOption: String, CaseIterable, Identifiable {
+    case date = "Date"
+    case priority = "Priority"
+    case title = "Title"
+    case duration = "Duration"
+    
+    var id: String { rawValue }
+    
+    var iconName: String {
+        switch self {
+        case .date: return "calendar"
+        case .priority: return "exclamationmark.circle"
+        case .title: return "textformat"
+        case .duration: return "clock"
+        }
+    }
+}
+
+// MARK: - Task List Panel
 struct TaskListPanel: View {
     @Environment(TasksManager.self) var tasksManager
-    let selectedSource: TaskSource?
-    @Binding var draggedTask: TaskItem?
-    @Binding var searchText: String
+    let selectedSource:  TaskSource?
+    let selectedProject: ProjectItem?    // Phase 2B
+    let showCompletedOnly: Bool
+    @Binding var draggedTask:   TaskItem?
+    @Binding var searchText:    String
+    /// Reflects and toggles the editor panel open/closed state.
+    @Binding var isEditorOpen: Bool
+    /// Callback wired from ContentView — opens the editor panel for the given task.
+    var onOpenEditor: ((TaskItem) -> Void)? = nil
+
+    @State private var selectedTaskIds: Set<String> = []
+    @State private var isSelecting = true
+    @State private var sortOption: TaskSortOption = .date
+    @State private var isAscending = true
 
     private var filteredTasks: [TaskItem] {
         tasksManager.tasks.filter { task in
+            if showCompletedOnly {
+                guard task.status == "completed" else { return false }
+                guard task.parentTaskId == nil    else { return false }
+                if !searchText.isEmpty,
+                   !task.title.localizedCaseInsensitiveContains(searchText) { return false }
+                return true
+            }
             guard task.status != "completed" else { return false }
             guard task.parentTaskId == nil    else { return false }
             let isUnscheduled = !tasksManager.calendarEvents.contains { $0.taskId == task.id }
             guard isUnscheduled else { return false }
+            // Project filter (Phase 2B) takes precedence over source filter
+            if let proj = selectedProject {
+                return task.resolvedProject == proj.name
+            }
             if let src = selectedSource, task.source != src { return false }
             if !searchText.isEmpty,
                !task.title.localizedCaseInsensitiveContains(searchText) { return false }
@@ -467,15 +751,109 @@ struct TaskListPanel: View {
         }
     }
 
+    private var sortedFilteredTasks: [TaskItem] {
+        let tasks = filteredTasks
+        let sorted: [TaskItem]
+        switch sortOption {
+        case .date:
+            sorted = tasks.sorted { a, b in
+                let dateA = TasksManager.parseDate(a.date)
+                let dateB = TasksManager.parseDate(b.date)
+                if let da = dateA, let db = dateB {
+                    if da != db { return da > db }
+                    return a.title.localizedCompare(b.title) == .orderedAscending
+                }
+                if dateA != nil { return true }
+                if dateB != nil { return false }
+                return a.title.localizedCompare(b.title) == .orderedAscending
+            }
+        case .priority:
+            sorted = tasks.sorted { a, b in
+                let pA = priorityWeight(a.priority)
+                let pB = priorityWeight(b.priority)
+                if pA != pB {
+                    return pA > pB
+                }
+                return a.title.localizedCompare(b.title) == .orderedAscending
+            }
+        case .title:
+            sorted = tasks.sorted { a, b in
+                return a.title.localizedCompare(b.title) == .orderedAscending
+            }
+        case .duration:
+            sorted = tasks.sorted { a, b in
+                let dA = a.duration ?? 0
+                let dB = b.duration ?? 0
+                if dA != dB {
+                    return dA < dB
+                }
+                return a.title.localizedCompare(b.title) == .orderedAscending
+            }
+        }
+        return isAscending ? sorted : sorted.reversed()
+    }
+
+    private func priorityWeight(_ p: String?) -> Int {
+        switch p?.lowercased() {
+        case "high": return 3
+        case "medium": return 2
+        case "low": return 1
+        default: return 0
+        }
+    }
+
+    private var headerLabel: String {
+        if showCompletedOnly { return "Completed Tasks" }
+        if let proj = selectedProject { return proj.name }
+        return selectedSource?.label ?? "All Tasks"
+    }
+
     var body: some View {
         @Bindable var tasksManager = tasksManager
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text(selectedSource?.label ?? "All Tasks")
+                Text(headerLabel)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.textPrimary)
                 Spacer()
+                // Editor panel toggle button
+                Button {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                        isEditorOpen.toggle()
+                    }
+                } label: {
+                    Image(systemName: "note.text")
+                        .font(.system(size: 13))
+                        .foregroundStyle(isEditorOpen ? Color.googleBlue : Color.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .help(isEditorOpen ? "Close note editor (⌘E)" : "Open note editor (⌘E)")
+                .accessibilityLabel("Toggle Note Editor")
+
+                // Sort Menu
+                Menu {
+                    Picker("Sort by", selection: $sortOption) {
+                        ForEach(TaskSortOption.allCases) { opt in
+                            Label(opt.rawValue, systemImage: opt.iconName).tag(opt)
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    Picker("Order", selection: $isAscending) {
+                        Label("Ascending", systemImage: "arrow.up").tag(true)
+                        Label("Descending", systemImage: "arrow.down").tag(false)
+                    }
+                } label: {
+                    Image(systemName: "arrow.up.arrow.down")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.textSecondary)
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                .help("Sort inbox tasks")
+
                 Button { tasksManager.fetchTasks() } label: {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 13))
@@ -512,6 +890,122 @@ struct TaskListPanel: View {
             .padding(.horizontal, 12)
             .padding(.bottom, 6)
 
+            // Bulk action bar (appears at the top of the inbox when tasks are selected)
+            if !selectedTaskIds.isEmpty {
+                HStack(spacing: 12) {
+                    Text("\(selectedTaskIds.count) selected")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.textPrimary)
+
+                    Spacer()
+
+                    Button {
+                        for id in selectedTaskIds {
+                            tasksManager.completeTask(id: id)
+                        }
+                        selectedTaskIds.removeAll()
+                        isSelecting = false
+                    } label: {
+                        Label("Complete", systemImage: "checkmark")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .tint(.successGreen)
+
+                    Button {
+                        for id in selectedTaskIds {
+                            tasksManager.deleteTask(id: id)
+                        }
+                        selectedTaskIds.removeAll()
+                        isSelecting = false
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .tint(.red)
+
+                    Button {
+                        selectedTaskIds.removeAll()
+                        isSelecting = false
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.textSecondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.secondarySurface)
+                .cornerRadius(6)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
+            }
+
+            // ── Ritual Reminders ──────────────────────────────────────────
+            if !tasksManager.isMorningRitualComplete {
+                HStack(spacing: 8) {
+                    Image(systemName: "sunrise.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.staleAmber)
+                    Text("Start your perfect focus day with the Morning Ritual.")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.textPrimary)
+                    Spacer()
+                    Button("Start") {
+                        tasksManager.isMorningRitualComplete = false
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .tint(.googleBlue)
+                    
+                    Button("Dismiss") {
+                        tasksManager.skipMorningRitual()
+                    }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.textSecondary)
+                }
+                .padding(.horizontal, 12).padding(.vertical, 8)
+                .background(Color.googleBlue.opacity(0.06))
+                .cornerRadius(6)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
+            } else if Calendar.current.component(.hour, from: Date()) >= 17 && !tasksManager.isShutdownRitualCompletedToday && !tasksManager.isShutdownRitualNeeded {
+                HStack(spacing: 8) {
+                    Image(systemName: "moon.stars.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.staleAmber)
+                    Text("Ready to wrap up? Complete your Daily Shutdown.")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.textPrimary)
+                    Spacer()
+                    Button("Shutdown") {
+                        tasksManager.triggerShutdownRitual()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .tint(.staleAmber)
+                    
+                    Button("Dismiss") {
+                        let todayDate = TasksManager.formatDate(Date())
+                        UserDefaults.standard.set(todayDate, forKey: "lastShutdownDate")
+                        tasksManager.isShutdownRitualNeeded = false
+                    }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.textSecondary)
+                }
+                .padding(.horizontal, 12).padding(.vertical, 8)
+                .background(Color.staleAmber.opacity(0.06))
+                .cornerRadius(6)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
+            }
+
             // ── Inbox Drop Zone ───────────────────────────────────
             // Always visible above task rows; never intercepted by TaskDropDelegate
             InboxDropZone()
@@ -540,13 +1034,26 @@ struct TaskListPanel: View {
             }
 
             // Task list or empty state
-            if filteredTasks.isEmpty {
+            if sortedFilteredTasks.isEmpty {
                 InboxZeroView(selectedSource: selectedSource)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(filteredTasks) { task in
-                            TaskRow(task: task, draggedTask: $draggedTask)
+                        ForEach(sortedFilteredTasks) { task in
+                            TaskRow(
+                                task: task,
+                                draggedTask: $draggedTask,
+                                onOpenEditor: onOpenEditor,
+                                isSelecting: isSelecting,
+                                isSelected: selectedTaskIds.contains(task.id),
+                                onSelectToggle: {
+                                    if selectedTaskIds.contains(task.id) {
+                                        selectedTaskIds.remove(task.id)
+                                    } else {
+                                        selectedTaskIds.insert(task.id)
+                                    }
+                                }
+                            )
                                 .onDrop(of: [.plainText, .text],
                                         delegate: TaskDropDelegate(
                                             item: task,

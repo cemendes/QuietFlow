@@ -3,7 +3,7 @@ import SwiftUI
 struct MorningRitualView: View {
     @Environment(TasksManager.self) var tasksManager: TasksManager
     @State private var currentStep = 1
-    private let totalSteps = 3
+    private let totalSteps = 2
 
     // Step 1 — tap-to-select (no default; unselected = defer to tomorrow)
     @State private var todayTaskIds: Set<String> = []
@@ -15,20 +15,22 @@ struct MorningRitualView: View {
     @State private var draggingTaskId: String? = nil
     @State private var isUnscheduleTargeted = false
 
-    // Step 3
-    @State private var scheduledOrder: [TaskItem] = []
-
     // MARK: - Computed
 
     private var unreviewedTasks: [TaskItem] {
         tasksManager.tasks.filter { task in
             task.status != "completed" &&
+            task.parentTaskId == nil &&
             !tasksManager.calendarEvents.contains(where: { ev in ev.taskId == task.id })
         }
     }
 
     private var todayTasks: [TaskItem] {
-        unreviewedTasks.filter { task in todayTaskIds.contains(task.id) }
+        tasksManager.tasks.filter { task in
+            task.status != "completed" &&
+            task.parentTaskId == nil &&
+            todayTaskIds.contains(task.id)
+        }
     }
 
     private var selectedTasks: [TaskItem] {
@@ -59,7 +61,6 @@ struct MorningRitualView: View {
                 switch currentStep {
                 case 1: stepOneView()
                 case 2: stepTwoView()
-                case 3: stepThreeView()
                 default: EmptyView()
                 }
             }
@@ -132,16 +133,13 @@ struct MorningRitualView: View {
                         // Pre-select all today tasks going into Step 2
                         promotedTaskIds = todayTaskIds
                     }
-                    if currentStep == 2 {
-                        scheduledOrder = selectedTasks
-                    }
                     withAnimation { currentStep += 1 }
                 } label: {
                     HStack(spacing: 5) {
                         if currentStep == 1 && !todayTaskIds.isEmpty {
                             Text("Next (\(todayTaskIds.count) selected)")
                         } else {
-                            Text(currentStep == 2 ? "Schedule" : "Next Step")
+                            Text("Next Step")
                         }
                         Image(systemName: "chevron.right")
                     }
@@ -156,11 +154,15 @@ struct MorningRitualView: View {
                     if !dailyIntention.isEmpty {
                         UserDefaults.standard.set(dailyIntention, forKey: "dailyIntention")
                     }
-                    // Auto-schedule selected tasks
-                    for task in scheduledOrder {
-                        tasksManager.scheduleTaskAuto(id: task.id)
+                    
+                    // Auto-schedule promoted tasks that are NOT manually scheduled on the calendar
+                    let alreadyScheduledIds = Set(tasksManager.calendarEvents.compactMap { $0.taskId })
+                    let autoScheduleIds = promotedTaskIds.subtracting(alreadyScheduledIds)
+                    for id in autoScheduleIds {
+                        tasksManager.scheduleTaskAuto(id: id)
                     }
-                    // Defer everything NOT selected for today to tomorrow
+                    
+                    // Defer everything NOT selected in Step 1 (todayTaskIds) to tomorrow
                     let deferredIds = Set(unreviewedTasks.map { $0.id }).subtracting(todayTaskIds)
                     tasksManager.deferTasksToTomorrow(ids: deferredIds)
                     tasksManager.completeMorningRitual()
@@ -557,136 +559,7 @@ struct MorningRitualView: View {
         )
     }
 
-    // MARK: - Step 3: Schedule / Order
 
-    @ViewBuilder
-    private func stepThreeView() -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            stepHeader(number: "3", title: "Order Your Day",
-                       subtitle: "Drag rows to reorder, or use the arrows.")
-                .padding(.horizontal, 28).padding(.top, 20).padding(.bottom, 14)
-
-            Divider()
-
-            // Time-budget bar
-            if !scheduledOrder.isEmpty {
-                let committed = scheduledOrder.reduce(0) { $0 + ($1.duration ?? tasksManager.defaultDuration) }
-                let freeMinutes = max(0, (10 * 60) - busyMinutes)
-                let pct = min(1.0, Double(committed) / max(1.0, Double(freeMinutes)))
-                let overloaded = committed > freeMinutes
-                HStack(spacing: 10) {
-                    Image(systemName: overloaded ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                        .font(.system(size: 11))
-                        .foregroundStyle(overloaded ? .staleAmber : .successGreen)
-                    Text(overloaded
-                         ? "\(committed / 60)h \(committed % 60)m planned — over your \(freeMinutes / 60)h free window"
-                         : "\(committed / 60)h \(committed % 60)m planned · \(max(0, freeMinutes - committed) / 60)h \(max(0, freeMinutes - committed) % 60)m still free")
-                        .font(.system(size: 11)).foregroundStyle(.textSecondary)
-                    Spacer()
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(Color.borderGray.opacity(0.3))
-                            .frame(width: 100, height: 4)
-                        Capsule()
-                            .fill(overloaded ? Color.staleAmber : Color.successGreen)
-                            .frame(width: max(4, 100 * pct), height: 4)
-                    }
-                }
-                .padding(.horizontal, 28).padding(.vertical, 10)
-                .background(Color.secondarySurface)
-                .overlay(Divider(), alignment: .bottom)
-            }
-
-            if scheduledOrder.isEmpty {
-                VStack {
-                    emptyState(icon: "calendar.badge.plus", message: "No tasks selected. Go back and select tasks.")
-                }
-                .padding(28)
-                Spacer()
-            } else {
-                List {
-                    ForEach(Array(scheduledOrder.enumerated()), id: \.element.id) { index, task in
-                        HStack(spacing: 12) {
-                            // Drag handle — visible affordance
-                            Image(systemName: "line.3.horizontal")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.textSecondary.opacity(0.45))
-
-                            // Up/down fallback buttons
-                            VStack(spacing: 2) {
-                                Button {
-                                    if index > 0 { scheduledOrder.swapAt(index, index - 1) }
-                                } label: {
-                                    Image(systemName: "chevron.up")
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .foregroundStyle(index == 0 ? .borderGray : .textSecondary)
-                                }
-                                .buttonStyle(.plain)
-                                .disabled(index == 0)
-
-                                Button {
-                                    if index < scheduledOrder.count - 1 {
-                                        scheduledOrder.swapAt(index, index + 1)
-                                    }
-                                } label: {
-                                    Image(systemName: "chevron.down")
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .foregroundStyle(index == scheduledOrder.count - 1 ? .borderGray : .textSecondary)
-                                }
-                                .buttonStyle(.plain)
-                                .disabled(index == scheduledOrder.count - 1)
-                            }
-
-                            // Order badge
-                            Text("\(index + 1)")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Color.googleBlue)
-                                .clipShape(Circle())
-
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(task.title)
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(.textPrimary)
-                                HStack(spacing: 6) {
-                                    HStack(spacing: 3) {
-                                        Image(systemName: task.source.iconName).font(.system(size: 9))
-                                        Text(task.source.label).font(.system(size: 10, weight: .medium))
-                                    }
-                                    .foregroundStyle(task.source.color)
-                                    if let dur = task.duration {
-                                        Text("·").foregroundStyle(.borderGray)
-                                        Text("\(dur)m").font(.system(size: 10)).foregroundStyle(.textSecondary)
-                                    }
-                                }
-                            }
-
-                            Spacer()
-
-                            if let p = task.priority, !p.isEmpty {
-                                Text(p.uppercased())
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundStyle(p.lowercased() == "high" ? .gmailRed : .staleAmber)
-                                    .padding(.horizontal, 6).padding(.vertical, 3)
-                                    .background((p.lowercased() == "high" ? Color.gmailRed : Color.staleAmber).opacity(0.1))
-                                    .cornerRadius(4)
-                            }
-                        }
-                        .listRowBackground(Color.secondarySurface)
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 5, leading: 14, bottom: 5, trailing: 14))
-                    }
-                    .onMove { from, to in
-                        scheduledOrder.move(fromOffsets: from, toOffset: to)
-                    }
-                }
-                .listStyle(.plain)
-                .background(Color.surfaceBackground)
-                .environment(\.defaultMinListRowHeight, 48)
-            }
-        }
-    }
 
     // MARK: - Reusable
 

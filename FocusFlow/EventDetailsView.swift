@@ -5,6 +5,9 @@ import SwiftUI
 /// External (non-FocusFlow) events get a read-only display.
 struct EventDetailsView: View {
     let event: CalendarEvent
+    /// Called when the user taps "Open in Editor". Receives the TaskItem so
+    /// ContentView can load it into the editor panel after this sheet dismisses.
+    var onOpenNote: ((TaskItem) -> Void)? = nil
     @Environment(\.dismiss) var dismiss
     @Environment(TasksManager.self) var tasksManager
 
@@ -108,6 +111,35 @@ struct EventDetailsView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+
+                    // Notes
+                    if let t = task {
+                        formField("NOTES") {
+                            HStack(spacing: 10) {
+                                let hasNote = NoteManager.shared.hasNote(for: t.id)
+                                Image(systemName: hasNote ? "note.text" : "note.text.badge.plus")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(hasNote ? Color.googleBlue : Color.textSecondary)
+                                Text(hasNote ? "Note exists for this task" : "No note yet — one will be created")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.textSecondary)
+                                Spacer()
+                                Button {
+                                    dismiss()
+                                    onOpenNote?(t)
+                                } label: {
+                                    Label("Open in Editor", systemImage: "arrow.up.forward.square")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundStyle(Color.googleBlue)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .background(Color.secondarySurface)
+                            .clipShape(.rect(cornerRadius: 7))
+                        }
+                    }
 
                     // Details
                     formField("DETAILS") {

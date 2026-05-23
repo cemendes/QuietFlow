@@ -23,29 +23,15 @@ struct SubtaskSuggestionsPanel: View {
             // ── Header ────────────────────────────────────────────────────
             HStack(spacing: 8) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Color.googleBlue)
-                Text("AI Suggestions")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.textPrimary)
-                if suggestions.isEmpty && !isLoading {
-                    Text("· add context or break down")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.textSecondary)
-                } else {
-                    Text("· editable before creating")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.textSecondary)
-                }
 
-                Spacer()
-
-                // Refine/context field — always visible
-                TextField(suggestions.isEmpty ? "Add context…" : "Refine…", text: $regeneratePrompt)
+                // Refine/context field — takes all available horizontal space for high readability
+                TextField(suggestions.isEmpty ? "Add context or break down..." : "Refine breakdown...", text: $regeneratePrompt)
                     .textFieldStyle(.plain)
                     .font(.system(size: 11))
                     .foregroundStyle(.textPrimary)
-                    .frame(width: 130)
+                    .frame(minWidth: 100, maxWidth: .infinity)
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Color.secondarySurface)
                     .clipShape(.rect(cornerRadius: 5))
@@ -69,8 +55,8 @@ struct SubtaskSuggestionsPanel: View {
                     }
                     regeneratePrompt = ""
                 } label: {
-                    Image(systemName: suggestions.isEmpty ? "scissors" : "arrow.clockwise")
-                        .font(.system(size: 11, weight: .medium))
+                    Image(systemName: suggestions.isEmpty ? "wand.and.stars" : "arrow.clockwise")
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(suggestions.isEmpty ? Color.googleBlue : .textSecondary)
                 }
                 .buttonStyle(.plain)
