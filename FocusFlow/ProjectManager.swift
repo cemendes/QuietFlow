@@ -54,7 +54,7 @@ final class ProjectManager {
         else { return }
 
         projects = urls.compactMap { parseProject(at: $0) }
-        print("[Projects] Loaded \(projects.count) projects")
+        FFLogger.log("[Projects] Loaded \(projects.count) projects")
     }
 
     // MARK: - Note I/O
