@@ -119,6 +119,12 @@ export const TaskList: React.FC<TaskListProps> = ({
       >
         <FocusHeader
           title={computedTitle}
+          icon={
+            activeFile
+              ? localStorage.getItem(`folder-icon-${activeFile.substring(0, activeFile.lastIndexOf('/'))}`) ||
+                localStorage.getItem(`folder-icon-${activeFile}`)
+              : null
+          }
           completedCount={completedCount}
           totalCount={totalCount}
           activeFocusBucket={activeFocusBucket}

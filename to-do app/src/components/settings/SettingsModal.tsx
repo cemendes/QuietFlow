@@ -127,7 +127,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           <div className="flex items-center gap-2.5">
             <h2 className="text-lg font-bold text-slate-800 tracking-tight">Preferences</h2>
             <span className="text-xs px-2 py-0.5 rounded-full bg-forest-100 text-forest-700 font-medium">
-              QuietFlow v0.1.0-alpha.1
+              QuietFlow v0.1.0-alpha.2
             </span>
           </div>
           <button

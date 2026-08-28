@@ -6,6 +6,7 @@ export type FocusBucket = 'all' | 'now' | 'not-now';
 
 export interface FocusHeaderProps {
   title: string;
+  icon?: string | null;
   completedCount: number;
   totalCount: number;
   activeFocusBucket: FocusBucket;
@@ -16,6 +17,7 @@ export interface FocusHeaderProps {
 
 export const FocusHeader: React.FC<FocusHeaderProps> = ({
   title,
+  icon,
   completedCount,
   totalCount,
   activeFocusBucket,
@@ -33,9 +35,22 @@ export const FocusHeader: React.FC<FocusHeaderProps> = ({
       <div className="flex flex-col gap-3.5 pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-800">
-              {title}
-            </h1>
+            <div className="flex items-center gap-2.5">
+              {icon && (
+                icon.startsWith('data:image') || icon.startsWith('http') ? (
+                  <img
+                    src={icon}
+                    alt="Folder logo"
+                    className="w-7 h-7 rounded-lg object-cover border border-sand-200 shadow-2xs shrink-0"
+                  />
+                ) : (
+                  <span className="text-2xl leading-none select-none shrink-0">{icon}</span>
+                )
+              )}
+              <h1 className="text-2xl font-bold tracking-tight text-slate-800">
+                {title}
+              </h1>
+            </div>
 
             {/* Progress Ring & Dopamine Micro-Counter */}
             <div className="flex items-center gap-2 px-2.5 py-1 bg-white border border-sand-200 rounded-xl shadow-2xs">

@@ -35,11 +35,34 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Check size threshold (warn if > 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Image file is large. Recommended size is under 500 KB for optimal speed.');
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
-        onUploadLogo?.(reader.result);
-        onClose();
+        const img = document.createElement('img');
+        img.onload = () => {
+          // Downscale & center-crop to a clean 128x128 square
+          const canvas = document.createElement('canvas');
+          canvas.width = 128;
+          canvas.height = 128;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            const minDim = Math.min(img.width, img.height);
+            const sx = (img.width - minDim) / 2;
+            const sy = (img.height - minDim) / 2;
+            ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, 128, 128);
+            const optimizedDataUrl = canvas.toDataURL('image/png');
+            onUploadLogo?.(optimizedDataUrl);
+          } else {
+            onUploadLogo?.(reader.result as string);
+          }
+          onClose();
+        };
+        img.src = reader.result;
       }
     };
     reader.readAsDataURL(file);
@@ -156,12 +179,17 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
                 </div>
               )}
 
-              <label className="flex w-full items-center gap-2 px-3 py-1.5 hover:bg-sand-100 transition-colors text-left cursor-pointer">
-                <Image className="w-3.5 h-3.5 text-stone-500" />
-                <span>Upload Company Logo</span>
+              <label className="flex flex-col gap-0.5 px-3 py-1.5 hover:bg-sand-100 transition-colors text-left cursor-pointer group">
+                <div className="flex items-center gap-2">
+                  <Image className="w-3.5 h-3.5 text-stone-500" />
+                  <span className="font-medium text-slate-800">Upload Company Logo</span>
+                </div>
+                <span className="text-[10px] text-slate-400 pl-5 leading-tight">
+                  Square PNG/SVG, transparent, &lt;500KB
+                </span>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/svg+xml,image/webp"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
