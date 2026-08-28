@@ -32,16 +32,18 @@ function parseTaskLine(rawLine: string, lineIndex: number): TaskItem | null {
 
   let remainder = match[2];
 
-  // Parse @due(...)
+  // Parse @due(...) or due:...
   let dueDate: string | undefined;
-  const dueMatch = remainder.match(/@due\(([^)]+)\)/);
+  const dueMatch = remainder.match(/@due\(([^)]+)\)/i) || remainder.match(/\bdue:(\d{4}-\d{2}-\d{2})\b/i);
   if (dueMatch) {
     dueDate = dueMatch[1].trim();
   }
 
-  // Parse @priority(...)
+  // Parse @priority(...) or @high/@medium/@low
   let priority: TaskPriority | undefined;
-  const priorityMatch = remainder.match(/@priority\((low|medium|high)\)/i);
+  const priorityMatch =
+    remainder.match(/@priority\((low|medium|high)\)/i) ||
+    remainder.match(/@(low|medium|high)\b/i);
   if (priorityMatch) {
     priority = priorityMatch[1].toLowerCase() as TaskPriority;
   }
@@ -61,7 +63,7 @@ function parseTaskLine(rawLine: string, lineIndex: number): TaskItem | null {
 
   // Parse @completed(...)
   let completedDate: string | undefined;
-  const completedMatch = remainder.match(/@completed\(([^)]+)\)/);
+  const completedMatch = remainder.match(/@completed\(([^)]+)\)/i);
   if (completedMatch) {
     completedDate = completedMatch[1].trim();
   }
@@ -75,10 +77,12 @@ function parseTaskLine(rawLine: string, lineIndex: number): TaskItem | null {
 
   // Extract clean title by removing metadata annotations and tags
   let title = remainder
-    .replace(/@due\([^)]+\)/g, '')
+    .replace(/@due\([^)]+\)/gi, '')
+    .replace(/\bdue:\d{4}-\d{2}-\d{2}\b/gi, '')
     .replace(/@priority\([^)]+\)/gi, '')
+    .replace(/@(low|medium|high)\b/gi, '')
     .replace(/@status\([^)]+\)/gi, '')
-    .replace(/@completed\([^)]+\)/g, '')
+    .replace(/@completed\([^)]+\)/gi, '')
     .replace(/#[a-zA-Z0-9_-]+/g, '')
     .trim();
 

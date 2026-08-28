@@ -44,4 +44,3 @@ fastlane/test_output
 app_output.log
 .buid_finished
 .trigger_tests
-tests
