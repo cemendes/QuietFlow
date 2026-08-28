@@ -10,6 +10,22 @@ QuietFlow combines the simplicity of plaintext Markdown files with thoughtful AD
 
 ---
 
+## 📸 Visual Showcase
+
+| **Main Dashboard & Progress Ring** | **"One-Thing" Zen Theater (Soft Aura Time-Sweep)** |
+| :---: | :---: |
+| ![Main Dashboard](docs/screenshots/01-main-dashboard.png) | ![Zen Theater](docs/screenshots/02-zen-theater.png) |
+
+| **Kanban Board with WIP Limits** | **Slide-Over Markdown Task Notes Drawer** |
+| :---: | :---: |
+| ![Kanban Board](docs/screenshots/03-kanban-board.png) | ![Task Notes Drawer](docs/screenshots/04-task-detail-notes.png) |
+
+| **Gemini AI & Magic Slicer Settings** |
+| :---: |
+| ![Settings & AI](docs/screenshots/05-settings-ai.png) |
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
