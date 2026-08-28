@@ -1,6 +1,6 @@
 ---
 name: quietflow-contribution-workflow
-description: Pre-flight checks, testing standards, conventional commit formats, and PR guidelines for contributing patches to QuietFlow.
+description: Pre-flight checks, testing standards, conventional commit formats, and interactive bug fix/PR lifecycle for QuietFlow.
 ---
 
 # QuietFlow Contribution & Patch Workflow
@@ -33,3 +33,16 @@ Commits must follow the Conventional Commits specification:
 - Always include automated unit/component tests for new features.
 - If making UI changes, attach before/after screenshots to the PR description.
 - Preserve neurodivergent accessibility invariants (Warm Sand `#FAF9F6` palette, zero cognitive clutter).
+
+## 4. The Interactive Bug Fix & PR Lifecycle
+
+When handling bug reports and fixes:
+1. **Reproduce & Test**: Write a failing unit or E2E test in Vitest / Playwright before making source modifications.
+2. **Implement & Verify**: Apply the fix and run the 3-step verification (`npm test`, `npm run build`, `cargo check`).
+3. **Present Evidence First**: Present the passing test outputs and diffs to the user. Do NOT automatically bump versions or open PRs yet.
+4. **User Confirmation Gate**: Ask the user: *"The bug is resolved and verified. Ready to bump version and create the PR?"*
+5. **Version Bump & PR Creation**:
+   - On approval, bump the patch / increment version across `package.json`, `Cargo.toml`, `tauri.conf.json`, and `SettingsModal.tsx` (e.g. `v0.1.0-alpha.1` $\rightarrow$ `v0.1.0-alpha.2`).
+   - Create a feature branch: `git checkout -b fix/issue-name`.
+   - Commit with Conventional Commits.
+   - Use `gh pr create` to submit the Pull Request with a clear description and testing evidence.
