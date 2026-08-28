@@ -16,6 +16,61 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 }) => {
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
 
+  const renderFormattedText = (str: string) => {
+    // Match markdown links [text](url) or plain URLs
+    const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
+    const elements: (string | React.ReactNode)[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = linkRegex.exec(str)) !== null) {
+      if (match.index > lastIndex) {
+        elements.push(str.substring(lastIndex, match.index));
+      }
+
+      if (match[1] && match[2]) {
+        // [text](url)
+        elements.push(
+          <a
+            key={match.index}
+            href={match[2]}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            className="text-forest-700 hover:text-forest-900 underline font-medium hover:bg-forest-50 px-1 py-0.5 rounded transition-colors"
+          >
+            {match[1]}
+          </a>
+        );
+      } else if (match[3]) {
+        // Raw URL
+        elements.push(
+          <a
+            key={match.index}
+            href={match[3]}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            className="text-forest-700 hover:text-forest-900 underline font-medium hover:bg-forest-50 px-1 py-0.5 rounded transition-colors"
+          >
+            {match[3]}
+          </a>
+        );
+      }
+      lastIndex = linkRegex.lastIndex;
+    }
+
+    if (lastIndex < str.length) {
+      elements.push(str.substring(lastIndex));
+    }
+
+    return elements.length > 0 ? elements : str;
+  };
+
   const renderSimpleMarkdown = (text: string) => {
     if (!text.trim()) {
       return <p className="text-slate-400 italic text-sm">No notes entered.</p>;
@@ -29,21 +84,21 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           if (line.startsWith('### ')) {
             return (
               <h3 key={index} className="text-base font-semibold text-forest-800 pt-2 pb-0.5">
-                {line.replace(/^###\s+/, '')}
+                {renderFormattedText(line.replace(/^###\s+/, ''))}
               </h3>
             );
           }
           if (line.startsWith('## ')) {
             return (
               <h2 key={index} className="text-lg font-bold text-forest-800 pt-2 pb-0.5 border-b border-sand-200">
-                {line.replace(/^##\s+/, '')}
+                {renderFormattedText(line.replace(/^##\s+/, ''))}
               </h2>
             );
           }
           if (line.startsWith('# ')) {
             return (
               <h1 key={index} className="text-xl font-bold text-forest-800 pt-2 pb-1 border-b border-sand-200">
-                {line.replace(/^#\s+/, '')}
+                {renderFormattedText(line.replace(/^#\s+/, ''))}
               </h1>
             );
           }
@@ -52,7 +107,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           if (/^-\s+/.test(line)) {
             return (
               <li key={index} className="list-disc list-inside ml-2">
-                {line.replace(/^-\s+/, '')}
+                {renderFormattedText(line.replace(/^-\s+/, ''))}
               </li>
             );
           }
@@ -61,7 +116,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           if (/^\d+\.\s+/.test(line)) {
             return (
               <li key={index} className="list-decimal list-inside ml-2">
-                {line.replace(/^\d+\.\s+/, '')}
+                {renderFormattedText(line.replace(/^\d+\.\s+/, ''))}
               </li>
             );
           }
@@ -71,7 +126,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             return <div key={index} className="h-2" />;
           }
 
-          return <p key={index}>{line}</p>;
+          return <p key={index}>{renderFormattedText(line)}</p>;
         })}
       </div>
     );

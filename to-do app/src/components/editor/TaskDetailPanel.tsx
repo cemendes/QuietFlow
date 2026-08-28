@@ -21,7 +21,45 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
 
   const activeTask = tasks.find((t) => t.id === activeTaskId);
 
+  const [panelWidth, setPanelWidth] = useState<number>(() => {
+    const saved = localStorage.getItem('quietflow-panel-width');
+    return saved ? parseInt(saved, 10) : 380;
+  });
+  const [isResizing, setIsResizing] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+
+  // Handle right drawer drag resizing
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      const newWidth = Math.min(Math.max(window.innerWidth - e.clientX, 300), 700);
+      setPanelWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      if (isResizing) {
+        setIsResizing(false);
+        localStorage.setItem('quietflow-panel-width', panelWidth.toString());
+      }
+    };
+
+    if (isResizing) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    } else {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing, panelWidth]);
 
   // Handle close action
   const handleClose = () => {
@@ -109,12 +147,35 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
   };
 
   return (
-    <aside
-      aria-label="Task Details"
-      className={`flex flex-col w-96 h-full bg-sand-50 border-l border-sand-200 shadow-xl overflow-hidden animate-in slide-in-from-right duration-200 ${className}`}
-    >
-      {/* Header with Title and Close Button */}
-      <div className="flex items-start justify-between gap-3 p-5 pb-3">
+    <>
+      {/* 1. Backdrop Overlay for click dismissal and focus isolation */}
+      <div
+        data-testid="task-detail-backdrop"
+        onClick={handleClose}
+        className="fixed inset-0 bg-slate-900/15 backdrop-blur-[0.5px] z-40 transition-opacity duration-200"
+      />
+
+      {/* 2. Slide-Over Right Drawer */}
+      <aside
+        aria-label="Task Details"
+        style={{ width: panelWidth }}
+        className={`fixed right-0 top-0 bottom-0 z-50 flex flex-col h-full bg-sand-50 border-l border-sand-200 shadow-2xl overflow-hidden ${
+          isResizing ? 'transition-none' : 'transition-[width] duration-150'
+        } shrink-0 animate-in slide-in-from-right duration-200 ${className}`}
+      >
+      {/* Resizer Handle */}
+      <div
+        data-testid="task-panel-resize-handle"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          setIsResizing(true);
+        }}
+        className="absolute top-0 left-0 w-1.5 h-full cursor-col-resize hover:bg-forest-500/30 transition-colors z-30"
+        title="Drag to resize task details"
+      />
+
+      {/* Header with Title and Action Buttons */}
+      <div className="flex items-start justify-between gap-2 p-5 pb-3">
         <input
           type="text"
           value={activeTask.title}
@@ -122,14 +183,28 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
           aria-label="Task title"
           className="flex-1 text-lg font-semibold text-slate-800 bg-transparent border-0 border-b border-transparent hover:border-sand-300 focus:border-forest-500 focus:outline-none px-1 py-0.5 rounded transition-colors"
         />
-        <button
-          data-testid="close-task-detail-btn"
-          onClick={handleClose}
-          aria-label="Close task details"
-          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-sand-200/60 rounded-lg transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            data-testid="delete-task-detail-btn"
+            onClick={() => {
+              useVaultStore.getState().deleteTask(activeTask.id);
+              handleClose();
+            }}
+            title="Delete task"
+            aria-label="Delete task"
+            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+          <button
+            data-testid="close-task-detail-btn"
+            onClick={handleClose}
+            aria-label="Close task details"
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-sand-200/60 rounded-lg transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Main Drawer Scrollable Content */}
@@ -240,6 +315,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
         </div>
       </div>
     </aside>
+    </>
   );
 };
 

@@ -95,6 +95,9 @@ export function parseNaturalLanguageInput(raw: string): ParsedNLP {
     text = text.replace(/\btoday\b/gi, '').trim();
   }
 
+  // Strip lingering unmatched "due:" keyword
+  text = text.replace(/\bdue:\s*/gi, '').trim();
+
   // Clean extra spaces
   const cleanTitle = text.replace(/\s+/g, ' ').trim();
 
@@ -129,8 +132,13 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
   useEffect(() => {
     if (activeFile) {
       setSelectedFile(activeFile);
-    } else if (files.length > 0 && !selectedFile) {
-      setSelectedFile(files[0].path);
+    } else {
+      const inboxFile = files.find((f) => f.name.toLowerCase().includes('inbox') || f.path.toLowerCase().endsWith('inbox.md'));
+      if (inboxFile) {
+        setSelectedFile(inboxFile.path);
+      } else if (files.length > 0 && !selectedFile) {
+        setSelectedFile(files[0].path);
+      }
     }
   }, [activeFile, files]);
 
@@ -141,8 +149,13 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
       setCaptureType('task');
       if (activeFile) {
         setSelectedFile(activeFile);
-      } else if (files.length > 0) {
-        setSelectedFile(files[0].path);
+      } else {
+        const inboxFile = files.find((f) => f.name.toLowerCase().includes('inbox') || f.path.toLowerCase().endsWith('inbox.md'));
+        if (inboxFile) {
+          setSelectedFile(inboxFile.path);
+        } else if (files.length > 0) {
+          setSelectedFile(files[0].path);
+        }
       }
       inputRef.current?.focus();
     }

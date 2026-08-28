@@ -187,22 +187,14 @@ describe('TaskDetailPanel Component', () => {
     expect(screen.getByTestId('markdown-editor-textarea')).toBeInTheDocument();
   });
 
-  it('closes detail drawer when close button is clicked', async () => {
+  it('renders with slide-over backdrop and closes on backdrop click', async () => {
     render(<TaskDetailPanel />);
 
-    const closeBtn = screen.getByTestId('close-task-detail-btn');
-    await act(async () => {
-      fireEvent.click(closeBtn);
-    });
-
-    expect(useVaultStore.getState().activeTaskId).toBeNull();
-  });
-
-  it('closes detail drawer when Escape key is pressed', async () => {
-    render(<TaskDetailPanel />);
+    const backdrop = screen.getByTestId('task-detail-backdrop');
+    expect(backdrop).toBeInTheDocument();
 
     await act(async () => {
-      fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+      fireEvent.click(backdrop);
     });
 
     expect(useVaultStore.getState().activeTaskId).toBeNull();

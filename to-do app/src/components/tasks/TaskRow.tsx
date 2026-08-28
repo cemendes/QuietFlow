@@ -1,13 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Trash2, Wand2, Sparkles } from 'lucide-react';
 import { TaskItem, TaskPriority } from '../../store/types';
+import { triggerCompletionFeedback } from '../../utils/feedback';
+import { triggerCelebration } from '../../utils/celebrations';
+import { sliceTask } from '../../utils/slicer';
+import { useVaultStore } from '../../store';
 
 export interface TaskRowProps {
   task: TaskItem;
   isSelected?: boolean;
   onToggle: (taskId: string) => void;
   onSelect: (taskId: string) => void;
+  onDelete?: (taskId: string) => void;
   onPriorityClick?: (priority: TaskPriority) => void;
   onTagClick?: (tag: string) => void;
+  onOpenZen?: (task: TaskItem) => void;
 }
 
 const priorityConfig: Record<
@@ -57,8 +64,10 @@ export const TaskRow: React.FC<TaskRowProps> = ({
   isSelected = false,
   onToggle,
   onSelect,
+  onDelete,
   onPriorityClick,
   onTagClick,
+  onOpenZen,
 }) => {
   const isDone = task.status === 'done';
   const isInProgress = task.status === 'in-progress';
@@ -68,6 +77,10 @@ export const TaskRow: React.FC<TaskRowProps> = ({
 
   const handleCheckboxClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isDone) {
+      triggerCompletionFeedback();
+      triggerCelebration();
+    }
     onToggle(task.id);
   };
 
@@ -75,8 +88,50 @@ export const TaskRow: React.FC<TaskRowProps> = ({
     onSelect(task.id);
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData(
+      'application/json',
+      JSON.stringify({
+        type: 'task',
+        taskId: task.id,
+        sourceFilePath: task.filePath,
+      })
+    );
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const [isSlicing, setIsSlicing] = useState(false);
+  const updateTask = useVaultStore((state) => state.updateTask);
+
+  const handleMagicSlice = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isSlicing) return;
+    setIsSlicing(true);
+
+    try {
+      const generatedSteps = await sliceTask(task.title);
+      const existingSubtasks = task.subtasks || [];
+      const newSubtasks = [
+        ...existingSubtasks,
+        ...generatedSteps.map((step, idx) => ({
+          id: `subtask-${Date.now()}-${idx}`,
+          title: step,
+          status: 'todo' as const,
+        })),
+      ];
+
+      await updateTask(task.id, { subtasks: newSubtasks });
+    } catch (err) {
+      console.error('Failed to slice task:', err);
+    } finally {
+      setIsSlicing(false);
+    }
+  };
+
   return (
     <div
+      draggable
+      onDragStart={handleDragStart}
       data-testid={`task-row-${task.id}`}
       onClick={handleRowClick}
       className={`group relative flex items-center gap-3 px-3.5 py-2.5 bg-white border rounded-xl transition-all duration-150 cursor-pointer ${
@@ -124,16 +179,18 @@ export const TaskRow: React.FC<TaskRowProps> = ({
       {task.tags && task.tags.length > 0 && (
         <div className="hidden sm:flex items-center gap-1">
           {task.tags.map((tag) => (
-            <span
+            <button
+              type="button"
               key={tag}
+              data-testid={`tag-chip-${tag}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onTagClick?.(tag);
               }}
-              className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium text-slate-600 bg-sand-100 border border-sand-200 rounded-full hover:bg-sand-200 transition-colors"
+              className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium text-slate-600 bg-sand-100 border border-sand-200 rounded-full hover:bg-sand-200 cursor-pointer transition-colors"
             >
               #{tag}
-            </span>
+            </button>
           ))}
         </div>
       )}
@@ -186,6 +243,53 @@ export const TaskRow: React.FC<TaskRowProps> = ({
           {task.priority}
         </button>
       )}
+
+      {/* Hover Actions: Magic Slicer, Zen Focus, Delete */}
+      <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+        {/* Magic Slicer Button */}
+        <button
+          type="button"
+          data-testid={`task-slice-${task.id}`}
+          title="Magic Slicer (Break into bite-sized steps)"
+          onClick={handleMagicSlice}
+          disabled={isSlicing}
+          className="p-1 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded transition-colors"
+        >
+          <Wand2 className={`w-3.5 h-3.5 ${isSlicing ? 'animate-spin text-emerald-600' : ''}`} />
+        </button>
+
+        {/* Zen Focus Button */}
+        {onOpenZen && (
+          <button
+            type="button"
+            data-testid={`task-zen-${task.id}`}
+            title="Focus in Zen Theater"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenZen(task);
+            }}
+            className="p-1 text-slate-400 hover:text-forest-700 hover:bg-forest-50 rounded transition-colors"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {/* Delete Task Button */}
+        {onDelete && (
+          <button
+            type="button"
+            data-testid={`task-delete-${task.id}`}
+            aria-label={`Delete task ${task.title}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(task.id);
+            }}
+            className="p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded transition-all"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
     </div>
   );
 };

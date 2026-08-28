@@ -2,17 +2,12 @@ use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::Path;
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 
+#[derive(Default)]
 pub struct VaultWatcherState {
     pub watcher: Option<RecommendedWatcher>,
-}
-
-impl Default for VaultWatcherState {
-    fn default() -> Self {
-        Self { watcher: None }
-    }
 }
 
 pub type SafeVaultWatcher = Arc<Mutex<VaultWatcherState>>;
@@ -51,13 +46,13 @@ pub fn start_vault_watcher(
         state_guard.watcher = Some(watcher);
     }
 
-    // Spawn a background thread to process and debounce notify events
+    // Spawn a background thread to process and debounce notify events with trailing debounce
     let path_str = vault_path.to_string();
     std::thread::spawn(move || {
-        let mut last_event_time = Instant::now() - Duration::from_millis(500);
         let debounce_duration = Duration::from_millis(150);
 
         while let Ok(event) = rx.recv() {
+
             // Filter out temporary and hidden files
             let should_ignore = event.paths.iter().all(|p| {
                 p.file_name()
@@ -69,12 +64,13 @@ pub fn start_vault_watcher(
                 continue;
             }
 
-            let now = Instant::now();
-            if now.duration_since(last_event_time) >= debounce_duration {
-                last_event_time = now;
-                // Emit event to frontend
-                let _ = app.emit("vault://changed", &path_str);
+            // Drain subsequent rapid events until 150ms of silence
+            while let Ok(subsequent) = rx.recv_timeout(debounce_duration) {
+                let _ = subsequent;
             }
+
+            // Emit event to frontend once changes settle
+            let _ = app.emit("vault://changed", &path_str);
         }
     });
 

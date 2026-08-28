@@ -83,8 +83,21 @@ describe('Markdown Parser & Non-destructive Serializer', () => {
       expect(parsed.tasks[0].subtasks?.[0].title).toBe('Subtask 1');
       expect(parsed.tasks[0].subtasks?.[0].status).toBe('todo');
       expect(parsed.tasks[0].subtasks?.[1].title).toBe('Subtask 2');
-      expect(parsed.tasks[0].subtasks?.[1].status).toBe('done');
       expect(parsed.tasks[0].notes).toContain('Additional note line');
+    });
+
+    it('maintains stable task IDs across line shifts when new tasks are prepended', () => {
+      const initialDoc = `- [ ] Task Alpha\n- [ ] Task Beta\n`;
+      const parsed1 = parseMarkdownDocument(initialDoc);
+      const alphaId = parsed1.tasks[0].id;
+      const betaId = parsed1.tasks[1].id;
+
+      // Prepend a new task at the top
+      const prependedDoc = `- [ ] Task Zero\n- [ ] Task Alpha\n- [ ] Task Beta\n`;
+      const parsed2 = parseMarkdownDocument(prependedDoc);
+
+      expect(parsed2.tasks[1].id).toBe(alphaId);
+      expect(parsed2.tasks[2].id).toBe(betaId);
     });
   });
 

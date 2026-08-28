@@ -67,11 +67,11 @@ describe('Sidebar Component', () => {
     });
   });
 
-  it('renders Today, Inbox, and Starred system views', () => {
+  it('renders only Inbox in top navigation and removes Today and Starred', () => {
     render(<Sidebar />);
-    expect(screen.getByRole('button', { name: /today/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /inbox/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /starred/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^today$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^starred$/i })).not.toBeInTheDocument();
   });
 
   it('renders QuietFlow branding and traffic lights', () => {
@@ -152,14 +152,15 @@ describe('Sidebar Component', () => {
 
     // Initial state: expanded sidebar width
     const aside = container.querySelector('aside');
-    expect(aside).toHaveClass('w-64');
+    expect(aside).toHaveStyle({ width: '240px' });
 
     // Click collapse
     fireEvent.click(toggleBtn);
-    expect(aside).toHaveClass('w-16');
+    expect(aside).toHaveStyle({ width: '72px' });
 
     // Click expand
-    fireEvent.click(toggleBtn);
-    expect(aside).toHaveClass('w-64');
+    const expandBtn = screen.getByTestId('sidebar-toggle-btn');
+    fireEvent.click(expandBtn);
+    expect(aside).toHaveStyle({ width: '240px' });
   });
 });

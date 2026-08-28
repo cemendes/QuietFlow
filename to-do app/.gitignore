@@ -26,3 +26,13 @@ dist-ssr
 # Tauri
 src-tauri/target
 src-tauri/gen
+
+# Environment & API Keys
+.env
+.env.*
+!.env.example
+
+# Temporary test captures
+scripts/capture_*.mjs
+test-results/
+playwright-report/

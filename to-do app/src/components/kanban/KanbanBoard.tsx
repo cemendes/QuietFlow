@@ -29,6 +29,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const searchQuery = useVaultStore((state) => state.searchQuery);
   const selectedTag = useVaultStore((state) => state.selectedTag);
   const selectedPriority = useVaultStore((state) => state.selectedPriority);
+  const isSaving = useVaultStore((state) => state.isSaving);
 
   const updateTask = useVaultStore((state) => state.updateTask);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
@@ -88,16 +89,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     updateTask(taskId, { status: targetStatus, completedDate });
   };
 
-  const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
-    const completedDate =
-      newStatus === 'done' ? new Date().toISOString().split('T')[0] : undefined;
-    updateTask(taskId, { status: newStatus, completedDate });
-  };
-
   return (
     <div className={`flex flex-col h-full bg-sand-50 overflow-hidden ${className}`}>
       {/* Header & Controls */}
-      <header className="flex flex-col gap-3.5 p-6 pb-4 border-b border-sand-200 bg-sand-50/80 backdrop-blur-sm">
+      <header
+        data-tauri-drag-region
+        className="flex flex-col gap-3.5 p-6 pb-4 border-b border-sand-200 bg-sand-50/80 backdrop-blur-sm select-none"
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold tracking-tight text-slate-800">
@@ -106,6 +104,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold text-forest-800 bg-forest-500/10 border border-forest-500/20 rounded-full">
               {completedCount}/{totalCount} done
             </span>
+            {isSaving && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-amber-700 bg-amber-500/10 border border-amber-500/20 rounded-full animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                Saving...
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -115,8 +119,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
         {/* Active Filters Pill Bar (if any filter is active) */}
         {(selectedTag || selectedPriority || searchQuery) && (
-          <div className="flex items-center flex-wrap gap-2 pt-1 text-xs">
-            <span className="text-slate-400 font-medium">Filters:</span>
+          <div data-testid="active-filters-bar" className="flex items-center flex-wrap gap-2 pt-1 text-xs">
+            <span className="text-slate-400 font-medium">Filtered by:</span>
 
             {searchQuery && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-sand-200 rounded-md text-slate-700">
@@ -174,8 +178,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       </header>
 
       {/* Kanban Board 4-Column Canvas */}
-      <main className="flex-1 overflow-x-auto overflow-y-hidden p-6">
-        <div className="flex gap-4 h-full min-w-max pb-2">
+      <main className="flex-1 overflow-x-auto overflow-y-hidden px-6 py-4 flex flex-col min-h-0">
+        <div className="flex flex-row items-stretch gap-4 h-full w-full min-w-max pb-1">
           {STAGE_COLUMNS.map((column) => {
             const columnTasks = filteredTasks.filter((t) => t.status === column.id);
             return (
@@ -187,11 +191,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 activeTaskId={activeTaskId}
                 onSelectTask={(id) => setActiveTaskId(id)}
                 onTaskDrop={handleTaskDrop}
-                onStatusChange={handleStatusChange}
                 onPriorityClick={(pri) =>
                   setSelectedPriority(selectedPriority === pri ? null : pri)
                 }
                 onTagClick={(tag) => setSelectedTag(selectedTag === tag ? null : tag)}
+                maxWip={column.id === 'in-progress' ? 3 : undefined}
               />
             );
           })}

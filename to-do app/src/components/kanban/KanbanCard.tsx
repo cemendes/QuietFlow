@@ -1,11 +1,12 @@
 import React from 'react';
+import { GripVertical } from 'lucide-react';
 import { TaskItem, TaskPriority, TaskStatus } from '../../store/types';
 
 export interface KanbanCardProps {
   task: TaskItem;
   isSelected?: boolean;
   onSelect: (taskId: string) => void;
-  onStatusChange: (taskId: string, newStatus: TaskStatus) => void;
+  onStatusChange?: (taskId: string, newStatus: TaskStatus) => void;
   onPriorityClick?: (priority: TaskPriority) => void;
   onTagClick?: (tag: string) => void;
 }
@@ -56,7 +57,6 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
   task,
   isSelected = false,
   onSelect,
-  onStatusChange,
   onPriorityClick,
   onTagClick,
 }) => {
@@ -67,6 +67,14 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
 
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('text/plain', task.id);
+    e.dataTransfer.setData(
+      'application/json',
+      JSON.stringify({
+        type: 'task',
+        taskId: task.id,
+        sourceFilePath: task.filePath,
+      })
+    );
     e.dataTransfer.effectAllowed = 'move';
   };
 
@@ -80,38 +88,22 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
       draggable
       onDragStart={handleDragStart}
       onClick={handleCardClick}
-      className={`group relative flex flex-col gap-2.5 p-3.5 bg-white border rounded-xl transition-all duration-150 cursor-grab active:cursor-grabbing hover:shadow-md ${
+      className={`group relative flex flex-col gap-2 p-3 bg-white border rounded-xl shadow-xs transition-all duration-150 cursor-grab active:cursor-grabbing hover:shadow-md hover:border-sand-300 ${
         isSelected
           ? 'border-forest-600 ring-2 ring-forest-500/20 shadow-sm'
-          : 'border-sand-200 hover:border-sand-300'
-      } ${isDone ? 'opacity-70 bg-sand-50/60' : ''}`}
+          : 'border-sand-200/90'
+      } ${isDone ? 'opacity-70 bg-sand-50/50' : ''}`}
     >
-      {/* Top row: Title and Quick Move dropdown */}
-      <div className="flex items-start justify-between gap-2">
+      {/* Top row: Drag Handle & Title */}
+      <div className="flex items-start gap-2 w-full">
+        <GripVertical className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 shrink-0 mt-0.5 transition-colors" />
         <h4
-          className={`text-sm leading-snug font-medium break-words flex-1 ${
+          className={`text-xs font-semibold leading-relaxed break-words flex-1 tracking-tight ${
             isDone ? 'line-through text-slate-400' : 'text-slate-800'
           }`}
         >
           {task.title}
         </h4>
-
-        <select
-          data-testid={`kanban-card-status-select-${task.id}`}
-          aria-label={`Move task ${task.title}`}
-          value={task.status}
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => {
-            e.stopPropagation();
-            onStatusChange(task.id, e.target.value as TaskStatus);
-          }}
-          className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity text-[10px] bg-sand-100 text-slate-600 border border-sand-200 rounded px-1.5 py-0.5 font-medium cursor-pointer hover:bg-sand-200 focus:outline-none focus:ring-1 focus:ring-forest-500"
-        >
-          <option value="backlog">Backlog</option>
-          <option value="todo">To Do</option>
-          <option value="in-progress">In Progress</option>
-          <option value="done">Done</option>
-        </select>
       </div>
 
       {/* Tags Chips */}

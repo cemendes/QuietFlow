@@ -1,23 +1,43 @@
 import { useEffect, useState } from 'react';
 import { useVaultStore } from './store';
+import { ipc } from './store/ipc';
 import { Sidebar } from './components/sidebar';
 import { TaskList } from './components/tasks';
 import { KanbanBoard } from './components/kanban';
 import { TaskDetailPanel } from './components/editor';
 import { QuickCaptureModal } from './components/capture';
 import { SettingsModal } from './components/settings';
+import { ArchiveModal } from './components/archive/ArchiveModal';
+import { BreadcrumbBanner } from './components/breadcrumb/BreadcrumbBanner';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
 export default function App() {
   const vaultPath = useVaultStore((state) => state.vaultPath);
   const activeView = useVaultStore((state) => state.activeView);
   const activeTaskId = useVaultStore((state) => state.activeTaskId);
+  const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
+  const loadVault = useVaultStore((state) => state.loadVault);
   const selectFile = useVaultStore((state) => state.selectFile);
   const createFile = useVaultStore((state) => state.createFile);
-  const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
+  const vaultTree = useVaultStore((state) => state.vaultTree);
 
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+
+  // Auto-initialize vault & theme on first mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('quietflow-theme') || 'warm-paper';
+    document.documentElement.classList.add(`theme-${savedTheme}`);
+
+    const initDefaultVault = async () => {
+      if (!vaultTree) {
+        const defaultPath = await ipc.getDefaultVaultPath();
+        loadVault(vaultPath || defaultPath);
+      }
+    };
+    initDefaultVault();
+  }, [loadVault, vaultPath, vaultTree]);
 
   // Register global / in-app shortcut bindings
   useGlobalShortcuts({
@@ -55,7 +75,7 @@ export default function App() {
         onSelectFile={(filePath) => selectFile(filePath)}
         onNewNote={handleNewNote}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenArchive={() => {}}
+        onOpenArchive={() => setIsArchiveOpen(true)}
       />
 
       {/* 2. Main Content Canvas: Task List or Kanban Board */}
@@ -83,6 +103,15 @@ export default function App() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
       />
+
+      {/* 6. Completed Tasks Archive Modal */}
+      <ArchiveModal
+        isOpen={isArchiveOpen}
+        onClose={() => setIsArchiveOpen(false)}
+      />
+
+      {/* 7. Cognitive Re-entry Breadcrumb Banner */}
+      <BreadcrumbBanner />
     </div>
   );
 }

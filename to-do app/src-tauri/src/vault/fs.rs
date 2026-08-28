@@ -19,7 +19,13 @@ pub type VaultTree = VaultNode;
 /// Recursively scans a directory path and builds a VaultTree hierarchy.
 pub fn scan_directory_tree(dir_path: &Path) -> Result<VaultNode, String> {
     if !dir_path.exists() {
-        return Err(format!("Path '{}' does not exist", dir_path.display()));
+        fs::create_dir_all(dir_path)
+            .map_err(|e| format!("Failed to create vault directory '{}': {}", dir_path.display(), e))?;
+        
+        // Create default today.md
+        let today_path = dir_path.join("today.md");
+        let initial_today_content = "---\ntitle: Today's Focus\n---\n\n# Tasks\n\n- [ ] Welcome to QuietFlow! Add your first task above.\n";
+        let _ = fs::write(&today_path, initial_today_content);
     }
     if !dir_path.is_dir() {
         return Err(format!("Path '{}' is not a directory", dir_path.display()));
@@ -105,7 +111,7 @@ pub fn write_file_atomic(path: String, content: String) -> Result<(), String> {
         .ok_or_else(|| format!("Invalid file name: '{}'", path))?
         .to_string_lossy();
 
-    let temp_file_name = format!(".{}.tmp", file_name);
+    let temp_file_name = format!(".{}.{}.tmp", file_name, uuid::Uuid::new_v4());
     let temp_path = parent.join(temp_file_name);
 
     // Write content to temporary file
@@ -154,6 +160,27 @@ pub fn delete_entry(path: String) -> Result<(), String> {
             .map_err(|e| format!("Failed to remove file '{}': {}", path, e))?;
     }
     Ok(())
+}
+
+/// Moves a file or directory to a new target destination.
+#[tauri::command]
+pub fn move_entry(source_path: String, destination_path: String) -> Result<(), String> {
+    let src = Path::new(&source_path);
+    let dest = Path::new(&destination_path);
+
+    if !src.exists() {
+        return Err(format!("Source path '{}' does not exist", source_path));
+    }
+
+    // If destination parent directory doesn't exist, create it
+    if let Some(parent) = dest.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)
+                .map_err(|e| format!("Failed to create parent directory: {}", e))?;
+        }
+    }
+
+    fs::rename(src, dest).map_err(|e| format!("Failed to move '{}' to '{}': {}", source_path, destination_path, e))
 }
 
 /// Initializes and returns the scanned directory tree for the given vault path.

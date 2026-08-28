@@ -3,7 +3,17 @@ mod tests {
     use crate::vault::fs::*;
     use tempfile::tempdir;
 
-
+    #[test]
+    fn test_reproduce_tauri_cold_start_bug() {
+        // This is the exact string passed by the frontend on cold start in Tauri
+        let invalid_path = "/Users/QuietFlowVault".to_string();
+        let result = init_vault(invalid_path);
+        
+        // This MUST return Err because /Users/QuietFlowVault cannot be created without sudo
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err();
+        println!("\n🔴 EXACT TAURI RUST BACKEND ERROR REPRODUCED:\n{}\n", err_msg);
+    }
 
     #[test]
     fn test_atomic_write_and_read() {
@@ -61,13 +71,12 @@ mod tests {
     fn test_scan_directory_ignores_hidden_files() {
         let dir = tempdir().unwrap();
         let hidden_file = dir.path().join(".DS_Store");
-        let visible_file = dir.path().join("notes.md");
-        
-        std::fs::write(&hidden_file, "junk").unwrap();
-        write_file_atomic(visible_file.to_str().unwrap().to_string(), "# Visible".to_string()).unwrap();
+        let visible_file = dir.path().join("valid.md");
+        write_file_atomic(hidden_file.to_str().unwrap().to_string(), "binary".to_string()).unwrap();
+        write_file_atomic(visible_file.to_str().unwrap().to_string(), "# Valid".to_string()).unwrap();
 
         let tree = init_vault(dir.path().to_str().unwrap().to_string()).unwrap();
         assert_eq!(tree.children.len(), 1);
-        assert_eq!(tree.children[0].name, "notes.md");
+        assert_eq!(tree.children[0].name, "valid.md");
     }
 }

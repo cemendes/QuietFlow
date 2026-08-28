@@ -18,7 +18,11 @@ function slugify(text: string): string {
     .slice(0, 30);
 }
 
-function parseTaskLine(rawLine: string, lineIndex: number): TaskItem | null {
+function parseTaskLine(
+  rawLine: string,
+  lineIndex: number,
+  slugCounts?: Map<string, number>
+): TaskItem | null {
   const match = rawLine.match(/^-\s*\[([ xX/])\]\s+(.*)$/);
   if (!match) return null;
 
@@ -86,7 +90,15 @@ function parseTaskLine(rawLine: string, lineIndex: number): TaskItem | null {
     .replace(/#[a-zA-Z0-9_-]+/g, '')
     .trim();
 
-  const id = `task-${lineIndex}-${slugify(title) || 'item'}`;
+  const baseSlug = slugify(title) || 'item';
+  let id: string;
+  if (slugCounts) {
+    const count = (slugCounts.get(baseSlug) || 0) + 1;
+    slugCounts.set(baseSlug, count);
+    id = count === 1 ? `task-${baseSlug}` : `task-${baseSlug}-${count}`;
+  } else {
+    id = `task-${baseSlug}`;
+  }
 
   return {
     id,
@@ -101,13 +113,47 @@ function parseTaskLine(rawLine: string, lineIndex: number): TaskItem | null {
   };
 }
 
+function extractFrontmatter(content: string): { frontmatter: Frontmatter; body: string } {
+  try {
+    if (typeof (globalThis as any).Buffer === 'undefined') {
+      (globalThis as any).Buffer = {
+        isBuffer: () => false,
+        from: (str: string) => str,
+      };
+    }
+    const parsed = matter(content);
+    return {
+      frontmatter: (parsed.data as Frontmatter) || {},
+      body: parsed.content || '',
+    };
+  } catch {
+    // Robust fallback for browser environments
+    const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+    if (!fmMatch) {
+      return { frontmatter: {}, body: content };
+    }
+    const yamlBlock = fmMatch[1];
+    const body = fmMatch[2];
+    const frontmatter: Frontmatter = {};
+    const lines = yamlBlock.split(/\r?\n/);
+    for (const line of lines) {
+      const parts = line.split(':');
+      if (parts.length >= 2) {
+        const key = parts[0].trim();
+        const val = parts.slice(1).join(':').trim().replace(/^['"](.*)['"]$/, '$1');
+        (frontmatter as any)[key] = val;
+      }
+    }
+    return { frontmatter, body };
+  }
+}
+
 export function parseMarkdownDocument(content: string): VaultDocument {
-  const parsedMatter = matter(content);
-  const frontmatter: Frontmatter = (parsedMatter.data as Frontmatter) || {};
-  const body = parsedMatter.content;
+  const { frontmatter, body } = extractFrontmatter(content);
 
   const lines = content.split(/\r?\n/);
   const tasks: TaskItem[] = [];
+  const slugCounts = new Map<string, number>();
 
   let inFrontmatter = false;
   let inCodeBlock = false;
@@ -159,7 +205,7 @@ export function parseMarkdownDocument(content: string): VaultDocument {
     // Check for top-level task (not indented)
     if (/^-\s*\[([ xX/])\]/.test(line)) {
       finalizeCurrentTask();
-      const parsedTask = parseTaskLine(line, i);
+      const parsedTask = parseTaskLine(line, i, slugCounts);
       if (parsedTask) {
         currentTask = parsedTask;
       }
@@ -222,7 +268,17 @@ export function updateTaskInDocument(
 ): string {
   const lines = content.split(/\r?\n/);
   const doc = parseMarkdownDocument(content);
-  const task = doc.tasks.find((t) => t.id === taskId);
+  let task = doc.tasks.find((t) => t.id === taskId);
+
+  // Fallback if legacy or partial taskId was passed
+  if (!task) {
+    const legacyMatch = taskId.match(/^task-(\d+)-(.*)$/);
+    if (legacyMatch) {
+      const legacyLine = parseInt(legacyMatch[1], 10);
+      const legacySlug = legacyMatch[2];
+      task = doc.tasks.find((t) => t.lineIndex === legacyLine || t.id.includes(legacySlug));
+    }
+  }
 
   if (!task || task.lineIndex === undefined) {
     return content;
@@ -305,5 +361,43 @@ export function addTaskToDocument(
     lines.push(...serializedTaskLines);
   }
 
+  return lines.join('\n');
+}
+
+export function deleteTaskFromDocument(content: string, taskId: string): string {
+  const lines = content.split(/\r?\n/);
+  const doc = parseMarkdownDocument(content);
+  let task = doc.tasks.find((t) => t.id === taskId);
+
+  // Fallback if legacy or partial taskId was passed
+  if (!task) {
+    const legacyMatch = taskId.match(/^task-(\d+)-(.*)$/);
+    if (legacyMatch) {
+      const legacyLine = parseInt(legacyMatch[1], 10);
+      const legacySlug = legacyMatch[2];
+      task = doc.tasks.find((t) => t.lineIndex === legacyLine || t.id.includes(legacySlug));
+    }
+  }
+
+  if (!task || task.lineIndex === undefined) {
+    return content;
+  }
+
+  // Calculate lines occupied by this task block
+  let deleteCount = 1;
+  for (let i = task.lineIndex + 1; i < lines.length; i++) {
+    const line = lines[i];
+    // Stop at the next task or header or unindented text
+    if (/^\s*-\s*\[[ xX/]\]/.test(line) || /^#+\s/.test(line)) {
+      break;
+    }
+    if (/^\s+/.test(line)) {
+      deleteCount++;
+    } else {
+      break;
+    }
+  }
+
+  lines.splice(task.lineIndex, deleteCount);
   return lines.join('\n');
 }

@@ -5,16 +5,19 @@ export default {
     extend: {
       colors: {
         sand: {
-          50: '#FAF9F6',
-          100: '#F5F3EF',
-          200: '#EBE7DF',
-          300: '#DCD5C8',
+          50: 'var(--bg-app)',
+          100: 'var(--bg-sidebar)',
+          200: 'var(--border-color)',
+          300: 'var(--border-color)',
         },
         forest: {
-          500: '#0D9488',
-          600: '#0F766E',
-          700: '#065F46',
-          800: '#064E3B',
+          50: 'var(--accent-light)',
+          100: 'var(--accent-light)',
+          500: 'var(--accent-color)',
+          600: 'var(--accent-color)',
+          700: 'var(--accent-color)',
+          800: 'var(--accent-hover)',
+          900: 'var(--accent-hover)',
         },
         terracotta: {
           500: '#EA580C',

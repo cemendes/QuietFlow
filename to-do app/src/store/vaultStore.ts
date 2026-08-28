@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import {
   addTaskToDocument,
+  deleteTaskFromDocument,
   parseMarkdownDocument,
   updateTaskInDocument,
 } from '../core/markdown';
@@ -26,6 +27,7 @@ const INITIAL_STATE: VaultStoreState = {
   selectedTag: null,
   selectedPriority: null,
   isLoading: false,
+  isSaving: false,
   error: null,
 };
 
@@ -60,11 +62,43 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
+let lastSelfWriteTimestamp = 0;
+
+async function writeVaultFile(filePath: string, content: string): Promise<void> {
+  lastSelfWriteTimestamp = Date.now();
+  await ipc.writeFileAtomic(filePath, content);
+  lastSelfWriteTimestamp = Date.now();
+}
+
 async function loadVault(vaultPath: string): Promise<void> {
   set({ isLoading: true, error: null });
   try {
     const tree = await ipc.initVault(vaultPath);
     set({ vaultPath, vaultTree: tree, isLoading: false });
+
+    // Auto-select today.md or first note if activeFile is empty
+    let targetNode =
+      tree.children?.find((c) => !c.isDirectory && c.name.toLowerCase() === 'today.md') ||
+      tree.children?.find((c) => !c.isDirectory && c.name.endsWith('.md'));
+
+    if (!targetNode && vaultPath) {
+      // Auto-create today.md if none exists in this vault
+      const todayPath = `${vaultPath}/today.md`;
+      const initialContent = `---\ntitle: Today's Focus\n---\n\n# Tasks\n`;
+      await writeVaultFile(todayPath, initialContent);
+      await refreshVault();
+      targetNode = {
+        name: 'today.md',
+        path: todayPath,
+        isDirectory: false,
+        children: [],
+        fileCount: 0,
+      };
+    }
+
+    if (targetNode && !getState().activeFile) {
+      await selectFile(targetNode.path);
+    }
 
     // Clean up any existing listener
     if (vaultUnlisten) {
@@ -75,8 +109,10 @@ async function loadVault(vaultPath: string): Promise<void> {
     await ipc.startWatchingVault(vaultPath);
     vaultUnlisten = await ipc.listenVaultChanged(async (changedVaultPath) => {
       if (changedVaultPath === getState().vaultPath) {
+        const isSelfWrite = Date.now() - lastSelfWriteTimestamp < 600;
         await refreshVault();
-        if (getState().activeFile) {
+        // Only refresh active file if this was an external change (not initiated by app save)
+        if (!isSelfWrite && getState().activeFile) {
           await refreshActiveFile();
         }
       }
@@ -150,7 +186,7 @@ async function refreshActiveFile(): Promise<void> {
 async function createFile(filePath: string, initialContent = ''): Promise<void> {
   set({ isLoading: true, error: null });
   try {
-    await ipc.writeFileAtomic(filePath, initialContent);
+    await writeVaultFile(filePath, initialContent);
     await refreshVault();
     await selectFile(filePath);
   } catch (err: any) {
@@ -206,11 +242,14 @@ async function toggleTask(taskId: string): Promise<void> {
     return t;
   });
 
-  set({ tasks: updatedTasks });
+  set({ tasks: updatedTasks, isSaving: true, error: null });
 
   // Sync to disk
   const targetFile = targetTask.filePath || getState().activeFile;
-  if (!targetFile) return;
+  if (!targetFile) {
+    set({ isSaving: false });
+    return;
+  }
 
   try {
     const content = await ipc.readFile(targetFile);
@@ -218,16 +257,18 @@ async function toggleTask(taskId: string): Promise<void> {
       status: newStatus,
       completedDate,
     });
-    await ipc.writeFileAtomic(targetFile, updatedContent);
+    await writeVaultFile(targetFile, updatedContent);
 
     // Update activeDocument in state if this is the active file
     if (getState().activeFile === targetFile) {
       const doc = parseMarkdownDocument(updatedContent);
-      set({ activeDocument: doc });
+      set({ activeDocument: doc, isSaving: false });
+    } else {
+      set({ isSaving: false });
     }
   } catch (err: any) {
     // Revert optimistic update on failure
-    set({ tasks: currentTasks, error: `Failed to save task update: ${err}` });
+    set({ tasks: currentTasks, error: `Failed to save task update: ${err}`, isSaving: false });
   }
 }
 
@@ -244,23 +285,28 @@ async function updateTask(taskId: string, updates: Partial<TaskItem>): Promise<v
     return t;
   });
 
-  set({ tasks: updatedTasks });
+  set({ tasks: updatedTasks, isSaving: true, error: null });
 
   // Sync to disk
   const targetFile = targetTask.filePath || getState().activeFile;
-  if (!targetFile) return;
+  if (!targetFile) {
+    set({ isSaving: false });
+    return;
+  }
 
   try {
     const content = await ipc.readFile(targetFile);
     const updatedContent = updateTaskInDocument(content, taskId, updates);
-    await ipc.writeFileAtomic(targetFile, updatedContent);
+    await writeVaultFile(targetFile, updatedContent);
 
     if (getState().activeFile === targetFile) {
       const doc = parseMarkdownDocument(updatedContent);
-      set({ activeDocument: doc });
+      set({ activeDocument: doc, isSaving: false });
+    } else {
+      set({ isSaving: false });
     }
   } catch (err: any) {
-    set({ tasks: currentTasks, error: `Failed to update task: ${err}` });
+    set({ tasks: currentTasks, error: `Failed to update task: ${err}`, isSaving: false });
   }
 }
 
@@ -271,10 +317,39 @@ async function addTask(newTask: NewTaskInput, targetSection?: string): Promise<v
     return;
   }
 
+  const currentTasks = getState().tasks;
+
+  // Optimistic task creation with a temporary unique ID
+  const tempId = `task-temp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+  const optimisticTask: TaskItem = {
+    id: tempId,
+    title: newTask.title.trim(),
+    status: newTask.status || 'todo',
+    priority: newTask.priority,
+    dueDate: newTask.dueDate,
+    tags: newTask.tags ? [...newTask.tags] : [],
+    notes: newTask.notes,
+    subtasks: newTask.subtasks
+      ? newTask.subtasks.map((st, idx) => ({
+          id: `subtask-${idx}-${Date.now()}`,
+          title: st.title,
+          status: st.status || 'todo',
+        }))
+      : undefined,
+    filePath: targetFile,
+    rawLine: `- [ ] ${newTask.title}`,
+  };
+
+  set({
+    tasks: [...currentTasks, optimisticTask],
+    isSaving: true,
+    error: null,
+  });
+
   try {
     const content = await ipc.readFile(targetFile);
     const updatedContent = addTaskToDocument(content, newTask, targetSection);
-    await ipc.writeFileAtomic(targetFile, updatedContent);
+    await writeVaultFile(targetFile, updatedContent);
 
     const doc = parseMarkdownDocument(updatedContent);
     const tasksWithFile = doc.tasks.map((t) => ({
@@ -285,9 +360,112 @@ async function addTask(newTask: NewTaskInput, targetSection?: string): Promise<v
     set({
       activeDocument: doc,
       tasks: tasksWithFile,
+      isSaving: false,
     });
   } catch (err: any) {
-    set({ error: `Failed to add task: ${err}` });
+    set({ tasks: currentTasks, error: `Failed to add task: ${err}`, isSaving: false });
+  }
+}
+
+async function deleteTask(taskId: string): Promise<void> {
+  const currentTasks = getState().tasks;
+  const targetTask = currentTasks.find((t) => t.id === taskId);
+  if (!targetTask) return;
+
+  const updatedTasks = currentTasks.filter((t) => t.id !== taskId);
+  set({
+    tasks: updatedTasks,
+    activeTaskId: getState().activeTaskId === taskId ? null : getState().activeTaskId,
+    isSaving: true,
+    error: null,
+  });
+
+  const targetFile = targetTask.filePath || getState().activeFile;
+  if (!targetFile) {
+    set({ isSaving: false });
+    return;
+  }
+
+  try {
+    const content = await ipc.readFile(targetFile);
+    const updatedContent = deleteTaskFromDocument(content, taskId);
+    await writeVaultFile(targetFile, updatedContent);
+
+    if (getState().activeFile === targetFile) {
+      const doc = parseMarkdownDocument(updatedContent);
+      set({ activeDocument: doc, isSaving: false });
+    } else {
+      set({ isSaving: false });
+    }
+  } catch (err: any) {
+    set({ tasks: currentTasks, error: `Failed to delete task: ${err}`, isSaving: false });
+  }
+}
+
+async function moveTask(taskId: string, sourcePath: string, destPath: string): Promise<void> {
+  if (sourcePath === destPath) return;
+
+  const currentTasks = getState().tasks;
+  const targetTask = currentTasks.find((t) => t.id === taskId);
+  if (!targetTask) return;
+
+  set({ isSaving: true, error: null });
+
+  try {
+    // 1. Read source file and delete task
+    const sourceContent = await ipc.readFile(sourcePath);
+    const updatedSourceContent = deleteTaskFromDocument(sourceContent, taskId);
+
+    // 2. Read destination file (or create if empty) and append task
+    let destContent = '';
+    try {
+      destContent = await ipc.readFile(destPath);
+    } catch {
+      destContent = `---\ntitle: ${destPath.split('/').pop()?.replace(/\.md$/, '') || 'Note'}\n---\n\n# Tasks\n`;
+    }
+
+    const newTaskInput: NewTaskInput = {
+      title: targetTask.title,
+      status: targetTask.status,
+      priority: targetTask.priority,
+      dueDate: targetTask.dueDate,
+      tags: targetTask.tags,
+      notes: targetTask.notes,
+      subtasks: targetTask.subtasks?.map((st) => ({ title: st.title, status: st.status })),
+    };
+
+    const updatedDestContent = addTaskToDocument(destContent, newTaskInput);
+
+    // 3. Atomically write both files
+    await writeVaultFile(sourcePath, updatedSourceContent);
+    await writeVaultFile(destPath, updatedDestContent);
+
+    // 4. Update memory state depending on active file
+    const activeFile = getState().activeFile;
+    if (activeFile === sourcePath) {
+      const doc = parseMarkdownDocument(updatedSourceContent);
+      const tasksWithFile = doc.tasks.map((t) => ({ ...t, filePath: sourcePath }));
+      set({
+        activeDocument: doc,
+        tasks: tasksWithFile,
+        activeTaskId: getState().activeTaskId === taskId ? null : getState().activeTaskId,
+        isSaving: false,
+      });
+    } else if (activeFile === destPath) {
+      const doc = parseMarkdownDocument(updatedDestContent);
+      const tasksWithFile = doc.tasks.map((t) => ({ ...t, filePath: destPath }));
+      set({
+        activeDocument: doc,
+        tasks: tasksWithFile,
+        isSaving: false,
+      });
+    } else {
+      // Optimistic update of filePath
+      const updatedTasks = currentTasks.map((t) => (t.id === taskId ? { ...t, filePath: destPath } : t));
+      set({ tasks: updatedTasks, isSaving: false });
+    }
+  } catch (err: any) {
+    set({ tasks: currentTasks, error: `Failed to move task: ${err}`, isSaving: false });
   }
 }
 
@@ -334,6 +512,8 @@ const actions = {
   toggleTask,
   updateTask,
   addTask,
+  deleteTask,
+  moveTask,
   setActiveTaskId,
   setSearchQuery,
   setActiveView,
