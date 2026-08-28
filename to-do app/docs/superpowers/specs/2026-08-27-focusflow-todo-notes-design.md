@@ -1,7 +1,8 @@
-# Design Document: FocusFlow (macOS To-Do & Note-Taking App)
+# Design Document: QuietFlow (macOS To-Do & Note-Taking App)
 
 **Date:** 2026-08-27  
 **Status:** Approved by User  
+**App Name:** **QuietFlow**  
 **Target Platform:** macOS (Desktop)  
 **Primary Tech Stack:** Tauri 2.0 + React + TypeScript + Tailwind CSS + Lucide Icons  
 
@@ -9,7 +10,7 @@
 
 ## 1. Overview & Goals
 
-FocusFlow is a lightweight, calm, and lightning-fast desktop application for macOS designed to manage tasks, deliverables, and quick notes without cognitive overwhelm. 
+**QuietFlow** is a lightweight, calm, and lightning-fast desktop application for macOS designed to manage tasks, deliverables, and quick notes without cognitive overwhelm. 
 
 ### Core Goals (Phase 1)
 - **Fast & Lightweight:** Minimal memory footprint (~30–50MB RAM), near-instant startup, native macOS feel.
@@ -46,8 +47,8 @@ FocusFlow is a lightweight, calm, and lightning-fast desktop application for mac
 │   • File System Service (CRUD Markdown & Atomic Writes)     │
 │   • Directory Watcher (`notify` crate for live Drive sync)  │
 ├─────────────────────────────────────────────────────────────┤
-│  Local Vault Directory (e.g., ~/Google Drive/FocusFlow/)    │
-│   ├── .focusflow/config.json (Preferences & Keybinds)       │
+│  Local Vault Directory (e.g., ~/Google Drive/QuietFlow/)    │
+│   ├── .quietflow/config.json (Preferences & Keybinds)       │
 │   ├── today.md (Daily focus scratchpad)                     │
 │   ├── Customers/                                            │
 │   │   ├── Acme Corp.md                                      │
@@ -188,11 +189,10 @@ tags:
 ## 7. UI Wireframes (Stitch Project)
 
 **Stitch Project ID:** `16839941045420800332`  
-**Design System:** Contemporary Minimalist macOS (`FocusFlow`)
+**Design System:** Contemporary Minimalist macOS (`QuietFlow`)
 
-| Screen | Description | Screen ID |
+| Screen | Description | Stitch Screen ID |
 | :--- | :--- | :--- |
 | **Dashboard & Task Detail** | 3-column macOS layout: nested folder tree, Today's Focus list, and slide-out markdown note editor. | `4e4bb32cd7654978b14261c29d2e59c3` |
 | **Kanban Board View** | Stage columns (*Backlog*, *To Do*, *In Progress*, *Done*) with draggable cards and metadata pills. | `73b0af9e69c24686aed1a7164d9527b9` |
 | **Quick Capture Spotlight** | Floating translucent modal (`Option+Shift+Space`) with fast natural-language capture and folder routing. | `9f0ab5161e294f78b2fe158fcea0849e` |
-
