@@ -14,6 +14,7 @@
 
 ### Core Goals (Phase 1)
 - **Fast & Lightweight:** Minimal memory footprint (~30–50MB RAM), near-instant startup, native macOS feel.
+- **Visual Aesthetic (Warm Sand & Forest Emerald):** Calm, organic, premium artisan theme with warm linen/sand canvas (`#FAF9F6`), crisp elevated white cards, rich forest emerald (`#065F46`) primary accents, and terracotta priority badges.
 - **Local & Google Drive Compatible:** Stores all tasks and notes as human-readable Markdown files (`.md`) with YAML frontmatter in a user-selected folder (e.g., local Google Drive sync directory).
 - **Task-Centric with Context:** Tasks have rich Markdown notes, context, checklists, and metadata attached.
 - **Calm & Structured:** Prevents overwhelm using a dedicated "Today's Focus" view, collapsible nested folder structure (e.g., Customers > Acme Corp), and interchangeable List & Kanban views.
