@@ -182,3 +182,17 @@ tags:
    - Verify hotkey triggers (`Cmd+N`, `Cmd+K`, `Space`, `Esc`).
    - Verify drag-and-drop state updates in both List and Kanban views.
    - Verify folder tree expansion, collapse, and active item highlighting.
+
+---
+
+## 7. UI Wireframes (Stitch Project)
+
+**Stitch Project ID:** `16839941045420800332`  
+**Design System:** Contemporary Minimalist macOS (`FocusFlow`)
+
+| Screen | Description | Screen ID |
+| :--- | :--- | :--- |
+| **Dashboard & Task Detail** | 3-column macOS layout: nested folder tree, Today's Focus list, and slide-out markdown note editor. | `4e4bb32cd7654978b14261c29d2e59c3` |
+| **Kanban Board View** | Stage columns (*Backlog*, *To Do*, *In Progress*, *Done*) with draggable cards and metadata pills. | `73b0af9e69c24686aed1a7164d9527b9` |
+| **Quick Capture Spotlight** | Floating translucent modal (`Option+Shift+Space`) with fast natural-language capture and folder routing. | `9f0ab5161e294f78b2fe158fcea0849e` |
+
