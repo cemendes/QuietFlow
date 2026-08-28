@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { useVaultStore } from '../../store';
-import { NewTaskInput } from '../../store/types';
+import { NewTaskInput, TaskItem } from '../../store/types';
 import TaskRow from './TaskRow';
 import QuickAddBar from './QuickAddBar';
-import ViewSwitcher from './ViewSwitcher';
+import FocusHeader from './FocusHeader';
+import ZenTheaterModal from '../zen/ZenTheaterModal';
 
 export interface TaskListProps {
   title?: string;
@@ -24,8 +25,10 @@ export const TaskList: React.FC<TaskListProps> = ({
   const searchQuery = useVaultStore((state) => state.searchQuery);
   const selectedTag = useVaultStore((state) => state.selectedTag);
   const selectedPriority = useVaultStore((state) => state.selectedPriority);
+  const isSaving = useVaultStore((state) => state.isSaving);
 
   const toggleTask = useVaultStore((state) => state.toggleTask);
+  const deleteTask = useVaultStore((state) => state.deleteTask);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
   const setSelectedTag = useVaultStore((state) => state.setSelectedTag);
   const setSelectedPriority = useVaultStore((state) => state.setSelectedPriority);
@@ -36,14 +39,33 @@ export const TaskList: React.FC<TaskListProps> = ({
     if (title) return title;
     if (activeFile) {
       const fileName = activeFile.split('/').pop()?.replace(/\.md$/, '') || 'Tasks';
+      if (fileName.toLowerCase() === 'inbox') {
+        return '📥 Inbox';
+      }
       return fileName;
     }
     return "Today's Focus";
   }, [title, activeFile]);
 
-  // Filter tasks based on search query, selected tag, and selected priority
+  const [activeFocusBucket, setActiveFocusBucket] = React.useState<'all' | 'now' | 'not-now'>('all');
+
+  // Filter tasks based on search query, selected tag, selected priority, and focus bucket
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
+      // Focus bucket filter
+      const todayStr = new Date().toISOString().split('T')[0];
+      const isDueToday = task.dueDate === todayStr;
+      const isOverdue = Boolean(task.dueDate && task.dueDate < todayStr);
+      const isFuture = Boolean(task.dueDate && task.dueDate > todayStr);
+
+      if (activeFocusBucket === 'now') {
+        const isNow = task.status === 'in-progress' || isDueToday || isOverdue || (task.priority === 'high' && !isFuture);
+        if (!isNow) return false;
+      } else if (activeFocusBucket === 'not-now') {
+        const isLater = task.status === 'backlog' || isFuture || (!task.priority && !task.dueDate && task.status !== 'in-progress');
+        if (!isLater) return false;
+      }
+
       // Search query filter
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
@@ -71,35 +93,44 @@ export const TaskList: React.FC<TaskListProps> = ({
 
       return true;
     });
-  }, [tasks, searchQuery, selectedTag, selectedPriority]);
+  }, [tasks, searchQuery, selectedTag, selectedPriority, activeFocusBucket]);
 
   // Summary counts
-  const totalCount = filteredTasks.length;
-  const completedCount = filteredTasks.filter((t) => t.status === 'done').length;
+  const totalCount = tasks.length;
+  const completedCount = tasks.filter((t) => t.status === 'done').length;
+
+  const [isZenOpen, setIsZenOpen] = React.useState(false);
+  const [zenTask, setZenTask] = React.useState<TaskItem | null>(null);
+
+  const handleOpenZen = (specificTask?: TaskItem) => {
+    const candidate = specificTask || filteredTasks.find((t) => t.status !== 'done') || tasks[0] || null;
+    if (candidate) {
+      setZenTask(candidate);
+      setIsZenOpen(true);
+    }
+  };
 
   return (
     <div className={`flex flex-col h-full bg-sand-50 overflow-hidden ${className}`}>
       {/* Header & Controls */}
-      <header className="flex flex-col gap-3.5 p-6 pb-4 border-b border-sand-200 bg-sand-50/80 backdrop-blur-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-800">
-              {computedTitle}
-            </h1>
-            <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold text-forest-800 bg-forest-500/10 border border-forest-500/20 rounded-full">
-              {completedCount}/{totalCount} done
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <ViewSwitcher />
-          </div>
-        </div>
+      <header
+        data-tauri-drag-region
+        className="flex flex-col p-6 pb-3 border-b border-sand-200 bg-sand-50/80 backdrop-blur-sm select-none"
+      >
+        <FocusHeader
+          title={computedTitle}
+          completedCount={completedCount}
+          totalCount={totalCount}
+          activeFocusBucket={activeFocusBucket}
+          onFocusBucketChange={setActiveFocusBucket}
+          isSaving={isSaving}
+          onOpenZen={() => handleOpenZen()}
+        />
 
         {/* Active Filters Pill Bar (if any filter is active) */}
         {(selectedTag || selectedPriority || searchQuery) && (
-          <div className="flex items-center flex-wrap gap-2 pt-1 text-xs">
-            <span className="text-slate-400 font-medium">Filters:</span>
+          <div data-testid="active-filters-bar" className="flex items-center flex-wrap gap-2 pt-1 text-xs">
+            <span className="text-slate-400 font-medium">Filtered by:</span>
 
             {searchQuery && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-sand-200 rounded-md text-slate-700">
@@ -189,6 +220,7 @@ export const TaskList: React.FC<TaskListProps> = ({
                 isSelected={task.id === activeTaskId}
                 onToggle={(id) => toggleTask(id)}
                 onSelect={(id) => setActiveTaskId(id)}
+                onDelete={(id) => deleteTask(id)}
                 onPriorityClick={(pri) => setSelectedPriority(selectedPriority === pri ? null : pri)}
                 onTagClick={(tag) => setSelectedTag(selectedTag === tag ? null : tag)}
               />
@@ -196,6 +228,16 @@ export const TaskList: React.FC<TaskListProps> = ({
           </div>
         )}
       </main>
+
+      {/* "One-Thing" Zen Theater Focus Modal */}
+      {isZenOpen && (
+        <ZenTheaterModal
+          isOpen={isZenOpen}
+          task={zenTask}
+          onClose={() => setIsZenOpen(false)}
+          onCompleteTask={(id) => toggleTask(id)}
+        />
+      )}
     </div>
   );
 };

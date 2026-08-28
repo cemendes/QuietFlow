@@ -2564,6 +2564,7 @@ dependencies = [
  "tauri-plugin-global-shortcut",
  "tauri-plugin-shell",
  "tempfile",
+ "uuid",
 ]
 
 [[package]]

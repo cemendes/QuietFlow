@@ -68,6 +68,9 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
       text = text.replace(/\btoday\b/gi, '').trim();
     }
 
+    // Strip trailing or lingering unmatched "due:" keyword
+    text = text.replace(/\bdue:\s*/gi, '').trim();
+
     // Clean extra whitespace
     text = text.replace(/\s+/g, ' ').trim();
 
@@ -83,6 +86,15 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
   const handleAddTask = async () => {
     if (!value.trim()) return;
     const parsedTask = parseTaskInput(value);
+    
+    // Ensure there is an active file, or auto-load/create default
+    const activeFile = useVaultStore.getState().activeFile;
+    const vaultPath = useVaultStore.getState().vaultPath;
+    if (!activeFile && vaultPath) {
+      const todayPath = `${vaultPath}/today.md`;
+      await useVaultStore.getState().createFile(todayPath, `---\ntitle: Today's Focus\n---\n\n# Tasks\n`);
+    }
+
     await addTask(parsedTask, defaultSection);
     setValue('');
     if (onAdded) {
@@ -105,7 +117,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className={`relative flex items-center w-full transition-all duration-200 ${
+      className={`relative flex items-center w-full max-w-2xl mx-auto transition-all duration-200 ${
         isFocused
           ? 'ring-2 ring-forest-500/20 shadow-md'
           : 'shadow-sm hover:shadow-md'

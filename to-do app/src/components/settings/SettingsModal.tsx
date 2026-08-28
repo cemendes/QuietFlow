@@ -8,6 +8,7 @@ import {
   FolderOpen,
   Check,
   Sparkles,
+  Wand2,
 } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { isTauriEnvironment } from '../../store/ipc';
@@ -17,7 +18,7 @@ export interface SettingsModalProps {
   onClose: () => void;
 }
 
-type TabType = 'vault' | 'theme' | 'shortcuts' | 'about';
+type TabType = 'vault' | 'ai' | 'theme' | 'shortcuts' | 'about';
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const vaultPath = useVaultStore((state) => state.vaultPath);
@@ -25,10 +26,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   const [activeTab, setActiveTab] = useState<TabType>('vault');
   const [tempVaultPath, setTempVaultPath] = useState(vaultPath || '');
-  const [selectedTheme, setSelectedTheme] = useState<'warm-paper' | 'nordic-slate' | 'forest-moss'>('warm-paper');
+  const [geminiApiKey, setGeminiApiKey] = useState(() => {
+    return localStorage.getItem('gemini_api_key') || '';
+  });
+  const [geminiModel, setGeminiModel] = useState(() => {
+    return localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
+  });
+  const [aiSavedSuccess, setAiSavedSuccess] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState<'warm-paper' | 'nordic-slate' | 'forest-moss'>(() => {
+    return (localStorage.getItem('quietflow-theme') as any) || 'warm-paper';
+  });
   const [shortcutKey] = useState('Option+Shift+Space');
   const [isApplying, setIsApplying] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  const applyTheme = (themeName: 'warm-paper' | 'nordic-slate' | 'forest-moss') => {
+    setSelectedTheme(themeName);
+    localStorage.setItem('quietflow-theme', themeName);
+    document.documentElement.classList.remove('theme-warm-paper', 'theme-nordic-slate', 'theme-forest-moss');
+    document.documentElement.classList.add(`theme-${themeName}`);
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem('quietflow-theme') || 'warm-paper';
+    document.documentElement.classList.add(`theme-${saved}`);
+  }, []);
 
   useEffect(() => {
     if (vaultPath) {
@@ -56,17 +78,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const handleBrowseFolder = async () => {
     if (isTauriEnvironment()) {
       try {
-        const { open } = await import('@tauri-apps/plugin-dialog');
-        const selected = await open({
-          directory: true,
-          multiple: false,
-          title: 'Select QuietFlow Vault Directory',
-        });
-        if (selected && typeof selected === 'string') {
+        const { invoke } = await import('@tauri-apps/api/core');
+        const selected = await invoke<string | null>('pick_vault_folder');
+        if (selected) {
           setTempVaultPath(selected);
         }
       } catch (err) {
-        console.warn('Failed to open Tauri folder picker dialog:', err);
+        console.warn('Failed to invoke pick_vault_folder:', err);
       }
     }
   };
@@ -138,6 +156,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             >
               <Folder className="w-4 h-4 text-forest-600 shrink-0" />
               Vault Storage
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('ai')}
+              className={`flex items-center gap-2.5 w-full px-3 py-2 text-xs font-semibold rounded-lg transition-colors text-left ${
+                activeTab === 'ai'
+                  ? 'bg-sand-200 text-forest-800 shadow-2xs'
+                  : 'text-slate-600 hover:bg-sand-100 hover:text-slate-900'
+              }`}
+            >
+              <Wand2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              AI & Magic Slicer
             </button>
 
             <button
@@ -238,6 +269,72 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               </div>
             )}
 
+            {activeTab === 'ai' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800 mb-1">Gemini AI & Magic Slicer</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Power the 1-click <b>Magic Slicer</b> task auto-breaker using Google Generative AI. All tasks breakdown into simple, low-friction Markdown checkboxes.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="gemini-key-input" className="block text-xs font-semibold text-slate-700">
+                    Google Gemini API Key
+                  </label>
+                  <input
+                    id="gemini-key-input"
+                    type="password"
+                    value={geminiApiKey}
+                    onChange={(e) => setGeminiApiKey(e.target.value)}
+                    placeholder="AIzaSy..."
+                    className="w-full px-3 py-2 text-xs bg-sand-50 border border-sand-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-forest-500 font-mono"
+                  />
+                  <p className="text-[11px] text-slate-400">
+                    Keys are stored only locally in your browser/desktop app. If blank, QuietFlow uses instant offline heuristic breakdown.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="gemini-model-select" className="block text-xs font-semibold text-slate-700">
+                    Gemini Model
+                  </label>
+                  <select
+                    id="gemini-model-select"
+                    value={geminiModel}
+                    onChange={(e) => setGeminiModel(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-sand-50 border border-sand-200 rounded-lg text-slate-800 focus:outline-none focus:ring-1 focus:ring-forest-500"
+                  >
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended - Ultra Fast)</option>
+                    <option value="gemini-3.7-flash">Gemini 3.7 Flash (Advanced Reasoning)</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-sand-100">
+                  <div className="text-xs text-slate-500">
+                    {aiSavedSuccess && (
+                      <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                        <Check className="w-3.5 h-3.5" /> AI configuration saved
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localStorage.setItem('gemini_api_key', geminiApiKey.trim());
+                      localStorage.setItem('gemini_model', geminiModel);
+                      setAiSavedSuccess(true);
+                      setTimeout(() => setAiSavedSuccess(false), 2000);
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-forest-700 hover:bg-forest-800 text-white rounded-lg font-medium text-xs shadow-xs transition-all cursor-pointer"
+                  >
+                    Save AI Settings
+                  </button>
+                </div>
+              </div>
+            )}
+
             {activeTab === 'theme' && (
               <div className="space-y-6">
                 <div>
@@ -248,9 +345,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
-                  <div
-                    onClick={() => setSelectedTheme('warm-paper')}
-                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${
+                  <button
+                    type="button"
+                    data-testid="theme-option-warm-paper"
+                    onClick={() => applyTheme('warm-paper')}
+                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all text-left w-full ${
                       selectedTheme === 'warm-paper'
                         ? 'border-forest-600 bg-forest-50/20 ring-1 ring-forest-600'
                         : 'border-sand-200 hover:border-sand-300 bg-white'
@@ -266,11 +365,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                       </div>
                     </div>
                     {selectedTheme === 'warm-paper' && <Check className="w-4 h-4 text-forest-700" />}
-                  </div>
+                  </button>
 
-                  <div
-                    onClick={() => setSelectedTheme('nordic-slate')}
-                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${
+                  <button
+                    type="button"
+                    data-testid="theme-option-nordic-slate"
+                    onClick={() => applyTheme('nordic-slate')}
+                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all text-left w-full ${
                       selectedTheme === 'nordic-slate'
                         ? 'border-forest-600 bg-forest-50/20 ring-1 ring-forest-600'
                         : 'border-sand-200 hover:border-sand-300 bg-white'
@@ -286,11 +387,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                       </div>
                     </div>
                     {selectedTheme === 'nordic-slate' && <Check className="w-4 h-4 text-forest-700" />}
-                  </div>
+                  </button>
 
-                  <div
-                    onClick={() => setSelectedTheme('forest-moss')}
-                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${
+                  <button
+                    type="button"
+                    data-testid="theme-option-forest-moss"
+                    onClick={() => applyTheme('forest-moss')}
+                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all text-left w-full ${
                       selectedTheme === 'forest-moss'
                         ? 'border-forest-600 bg-forest-50/20 ring-1 ring-forest-600'
                         : 'border-sand-200 hover:border-sand-300 bg-white'
@@ -306,7 +409,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                       </div>
                     </div>
                     {selectedTheme === 'forest-moss' && <Check className="w-4 h-4 text-forest-700" />}
-                  </div>
+                  </button>
                 </div>
               </div>
             )}

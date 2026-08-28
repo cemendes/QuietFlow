@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { useVaultStore } from './vaultStore';
 import { ipc } from './ipc';
-import { VaultNode } from './types';
+import { TaskItem, VaultNode } from './types';
 
 // Mock ipc wrapper module
 vi.mock('./ipc', () => ({
@@ -248,6 +248,72 @@ title: Project Plan
     expect(ipc.writeFileAtomic).toHaveBeenCalled();
     const tasks = useVaultStore.getState().tasks;
     expect(tasks.some((t) => t.title === 'New shiny feature')).toBe(true);
+    expect(useVaultStore.getState().isSaving).toBe(false);
+  });
+
+  it('handles identical/duplicate task titles uniquely by line index and temp IDs', async () => {
+    const markdownContent = `# Tasks\n- [ ] Review PR\n- [ ] Review PR\n`;
+    vi.mocked(ipc.readFile).mockResolvedValue(markdownContent);
+    vi.mocked(ipc.writeFileAtomic).mockResolvedValue(undefined);
+
+    useVaultStore.setState({
+      activeFile: '/vault/tasks.md',
+      tasks: [
+        {
+          id: 'task-1-review-pr',
+          title: 'Review PR',
+          status: 'todo',
+          tags: [],
+          rawLine: '- [ ] Review PR',
+          lineIndex: 1,
+          filePath: '/vault/tasks.md',
+        },
+        {
+          id: 'task-2-review-pr',
+          title: 'Review PR',
+          status: 'todo',
+          tags: [],
+          rawLine: '- [ ] Review PR',
+          lineIndex: 2,
+          filePath: '/vault/tasks.md',
+        },
+      ],
+    });
+
+    // Toggle the second identical task
+    await useVaultStore.getState().toggleTask('task-2-review-pr');
+
+    const tasks = useVaultStore.getState().tasks;
+    expect(tasks[0].status).toBe('todo');
+    expect(tasks[1].status).toBe('done');
+  });
+
+  it('reverts optimistic state and resets isSaving on failure', async () => {
+    vi.mocked(ipc.readFile).mockRejectedValue(new Error('Disk write error'));
+
+    const initialTasks = [
+      {
+        id: 'task-1-test',
+        title: 'Test task',
+        status: 'todo' as const,
+        tags: [],
+        rawLine: '- [ ] Test task',
+        lineIndex: 1,
+        filePath: '/vault/test.md',
+      },
+    ];
+
+    useVaultStore.setState({
+      activeFile: '/vault/test.md',
+      tasks: initialTasks,
+    });
+
+    await useVaultStore.getState().toggleTask('task-1-test');
+
+    const state = useVaultStore.getState();
+    expect(state.tasks[0].status).toBe('todo');
+    expect(state.error).toContain('Disk write error');
+    expect(state.isSaving).toBe(false);
   });
 
   it('supports UI state switching: search, view mode, task selection', () => {
@@ -269,19 +335,39 @@ title: Project Plan
     expect(useVaultStore.getState().selectedPriority).toBe('high');
   });
 
-  it('refreshes active file when external vault change occurs', async () => {
-    const markdownContent = `# Tasks\n- [ ] External task\n`;
-    vi.mocked(ipc.readFile).mockResolvedValue(markdownContent);
+  it('moves task from one markdown file to another atomically', async () => {
+    const sourceFile = '/vault/Inbox.md';
+    const destFile = '/vault/Projects/Client.md';
 
-    useVaultStore.setState({
-      activeFile: '/vault/tasks.md',
-      vaultPath: '/vault',
+    const sourceContent = `# Tasks\n- [ ] Task to move @high #work\n  - Notes: Some notes\n`;
+    const destContent = `# Deliverables\n- [ ] Existing client task\n`;
+
+    vi.mocked(ipc.readFile).mockImplementation(async (path: string) => {
+      if (path === sourceFile) return sourceContent;
+      if (path === destFile) return destContent;
+      return '';
     });
 
-    await useVaultStore.getState().refreshActiveFile();
+    const initialTasks: TaskItem[] = [
+      {
+        id: 'task-task-to-move',
+        title: 'Task to move',
+        status: 'todo',
+        priority: 'high',
+        tags: ['work'],
+        notes: 'Some notes',
+        filePath: sourceFile,
+      },
+    ];
 
-    expect(ipc.readFile).toHaveBeenCalledWith('/vault/tasks.md');
-    expect(useVaultStore.getState().tasks).toHaveLength(1);
-    expect(useVaultStore.getState().tasks[0].title).toBe('External task');
+    useVaultStore.setState({
+      activeFile: sourceFile,
+      tasks: initialTasks,
+    });
+
+    await useVaultStore.getState().moveTask('task-task-to-move', sourceFile, destFile);
+
+    expect(ipc.writeFileAtomic).toHaveBeenCalledWith(sourceFile, expect.not.stringContaining('Task to move'));
+    expect(ipc.writeFileAtomic).toHaveBeenCalledWith(destFile, expect.stringContaining('Task to move'));
   });
 });

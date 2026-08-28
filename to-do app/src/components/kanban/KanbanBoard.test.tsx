@@ -148,14 +148,13 @@ describe('KanbanBoard Component', () => {
     expect(updated?.status).toBe('in-progress');
   });
 
-  it('supports direct status change or move action on card', async () => {
+  it('supports clicking card to select task for detail drawer view', async () => {
     render(<KanbanBoard />);
 
-    const selectStatus = screen.getByTestId('kanban-card-status-select-task-1');
-    fireEvent.change(selectStatus, { target: { value: 'todo' } });
+    const card = screen.getByTestId('kanban-card-task-1');
+    fireEvent.click(card);
 
-    const updated = useVaultStore.getState().tasks.find((t) => t.id === 'task-1');
-    expect(updated?.status).toBe('todo');
+    expect(useVaultStore.getState().activeTaskId).toBe('task-1');
   });
 
   it('filters tasks on board when search query or tag/priority is selected', () => {

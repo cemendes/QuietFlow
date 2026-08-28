@@ -42,6 +42,7 @@ export interface VaultStoreState {
   selectedTag: string | null;
   selectedPriority: TaskPriority | null;
   isLoading: boolean;
+  isSaving: boolean;
   error: string | null;
 }
 
@@ -59,6 +60,8 @@ export interface VaultStoreActions {
   toggleTask: (taskId: string) => Promise<void>;
   updateTask: (taskId: string, updates: Partial<TaskItem>) => Promise<void>;
   addTask: (task: NewTaskInput, targetSection?: string) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>;
+  moveTask: (taskId: string, sourcePath: string, destPath: string) => Promise<void>;
 
   // UI state
   setActiveTaskId: (taskId: string | null) => void;
