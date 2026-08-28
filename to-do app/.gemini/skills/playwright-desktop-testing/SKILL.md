@@ -1,9 +1,9 @@
 ---
 name: playwright-desktop-testing
-description: E2E and component testing patterns for desktop web apps using Playwright, mock filesystem providers, shortcut simulation, and visual regression checks.
+description: Playwright E2E testing for desktop webviews, mocking Tauri IPC and virtual markdown filesystems, visual screenshot inspection, and Kanban drag-and-drop testing.
 ---
 
-# Playwright & Desktop App Testing Skill
+# Playwright Desktop Testing Skill
 
 Use this skill when writing, debugging, or running automated Playwright E2E tests and Vitest component specs for the desktop app.
 
@@ -12,7 +12,6 @@ Since Playwright runs against the browser web bundle, mock native Tauri IPC befo
 ```ts
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
-    // Inject mock Tauri environment internals if necessary
     (window as any).__MOCK_VAULT__ = {
       'Note-1.md': '---\ntitle: Sample\n---\n- [ ] Task 1\n',
     };
