@@ -7,7 +7,6 @@ import {
   FileText,
   FolderPlus,
   FilePlus,
-  Trash2,
   MoreVertical,
 } from 'lucide-react';
 import { VaultNode } from '../../store/types';
@@ -367,53 +366,101 @@ export const FolderItem: React.FC<FolderItemProps> = ({
     );
   }
 
-  // File Item with Drag-and-Drop + Delete
+  // File Item with Drag-and-Drop + Context Menu
   const isActive = activeFile === node.path;
   const displayName = node.name.replace(/\.md$/i, '');
 
   return (
-    <div
-      draggable
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnter={(e) => {
-        e.preventDefault();
-        setIsDragOver(true);
-      }}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      style={{ paddingLeft: `${Math.max(8, level * 14 + 18)}px` }}
-      onClick={() => onSelectFile(node.path)}
-      data-testid={`file-item-${node.path}`}
-      data-active={isActive ? 'true' : 'false'}
-      className={`group flex w-full items-center justify-between py-1.5 pr-2 rounded-md text-xs transition-all text-left cursor-pointer ${
-        isDragOver
-          ? 'bg-forest-100/60 ring-1 ring-forest-500'
-          : isActive
-          ? 'bg-sand-200/90 text-forest-700 font-semibold shadow-xs'
-          : 'text-stone-600 hover:bg-sand-200/50 hover:text-stone-900 font-normal'
-      }`}
-    >
-      <div className="flex items-center gap-2 min-w-0 flex-1">
-        <FileText
-          className={`w-3.5 h-3.5 shrink-0 ${
-            isActive ? 'text-forest-600' : 'text-stone-400 group-hover:text-stone-600'
-          }`}
-        />
-        <span className="truncate">{displayName}</span>
+    <div className="relative">
+      <div
+        draggable
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          setIsDragOver(true);
+        }}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setShowContextMenu(true);
+        }}
+        style={{ paddingLeft: `${Math.max(8, level * 14 + 18)}px` }}
+        onClick={() => onSelectFile(node.path)}
+        data-testid={`file-item-${node.path}`}
+        data-active={isActive ? 'true' : 'false'}
+        className={`group flex w-full items-center justify-between py-1.5 pr-2 rounded-md text-xs transition-all text-left cursor-pointer ${
+          isDragOver
+            ? 'bg-forest-100/60 ring-1 ring-forest-500'
+            : isActive
+            ? 'bg-sand-200/90 text-forest-700 font-semibold shadow-xs'
+            : 'text-stone-600 hover:bg-sand-200/50 hover:text-stone-900 font-normal'
+        }`}
+      >
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          {folderIcon ? (
+            folderIcon.startsWith('data:image') ? (
+              <img
+                src={folderIcon}
+                alt={node.name}
+                className="w-3.5 h-3.5 rounded object-cover shadow-2xs shrink-0"
+              />
+            ) : (
+              <span className="text-xs leading-none shrink-0">{folderIcon}</span>
+            )
+          ) : (
+            <FileText
+              className={`w-3.5 h-3.5 shrink-0 ${
+                isActive ? 'text-forest-600' : 'text-stone-400 group-hover:text-stone-600'
+              }`}
+            />
+          )}
+          <span className="truncate">{displayName}</span>
+        </div>
+
+        <div className="flex items-center gap-1">
+          {/* Note Context Menu Button */}
+          <button
+            type="button"
+            data-testid={`file-menu-btn-${displayName}`}
+            title="Note options"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowContextMenu(!showContextMenu);
+            }}
+            className="opacity-0 group-hover:opacity-100 p-1 text-stone-400 hover:text-stone-700 hover:bg-sand-300/50 rounded transition-opacity"
+          >
+            <MoreVertical className="w-3 h-3" />
+          </button>
+        </div>
       </div>
 
-      <button
-        type="button"
-        title="Delete file"
-        onClick={(e) => {
-          e.stopPropagation();
-          deleteEntry(node.path);
-        }}
-        className="opacity-0 group-hover:opacity-100 p-1 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-opacity"
-      >
-        <Trash2 className="w-3 h-3" />
-      </button>
+      {showContextMenu && (
+        <FolderContextMenu
+          folderName={displayName}
+          folderPath={node.path}
+          isDirectory={false}
+          onRename={async (newName) => {
+            const parentDir = node.path.substring(0, node.path.lastIndexOf('/'));
+            const safeName = newName.trim().endsWith('.md') ? newName.trim() : `${newName.trim()}.md`;
+            const newPath = parentDir ? `${parentDir}/${safeName}` : safeName;
+            try {
+              await ipc.moveEntry(node.path, newPath);
+              await refreshVault();
+            } catch (err) {
+              console.error('Failed to rename note:', err);
+            }
+          }}
+          onDelete={async () => {
+            await deleteEntry(node.path);
+          }}
+          onSetEmoji={handleSetEmoji}
+          onUploadLogo={handleUploadLogo}
+          onClose={() => setShowContextMenu(false)}
+        />
+      )}
     </div>
   );
 };
