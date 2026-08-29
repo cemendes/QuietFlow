@@ -31,3 +31,16 @@
   - Comments: `  - Comment (<author>, <timestamp>): <text>` (defaults author to 'You' if omitted)
 - **Serialization Preservation**: All updates to task status, tags, priority, notes, subtasks, and comments must be non-destructive to surrounding markdown content and headings.
 
+## 7. Vault Snapshots & Swap Safety Engine
+- **Pre-Write Snapshots**: All atomic note writes (`write_file_atomic`) MUST capture a previous version snapshot in `<vault>/.quietflow/snapshots/<relative_path>/<unix_timestamp>.md` (rate-limited to at most once every 2 minutes per file).
+- **Rolling Retention & Pruning**: Enforce a maximum of 20 snapshots per note and auto-prune snapshots older than 14 days on startup/write.
+- **Hidden Storage**: The `.quietflow/` directory must always be ignored by vault directory scanners (`scan_directory_tree`) so backups never clutter user note counts.
+- **Proactive Corruption Guard**: If a note opens with 0 bytes or unparseable corruption, the UI must display a recovery banner allowing 1-click snapshot restore.
+
+## 8. Multi-Layer Preversion Gatekeeper
+- **Never Skip Test Layers**: Before bumping versions or creating release tags, run `npm run preversion` to verify:
+  1. Rust backend tests (`npm run test:rust` / `cargo test`)
+  2. Vitest unit, component, fuzzing, and corruption simulation tests (`npm run test`)
+  3. Playwright autonomous menu and state crawler (`npm run test:autonomous`)
+
+
