@@ -92,11 +92,15 @@ export const FolderItem: React.FC<FolderItemProps> = ({
       return baseDate;
     }
 
-    let counter = 2;
-    while (existingNames.has(`${baseDate} (${counter})`)) {
-      counter++;
+    // Generate short random suffix (e.g. 2026-08-28-a3f9)
+    const generateRandomSuffix = () =>
+      Math.random().toString(36).substring(2, 6);
+
+    let randomCandidate = `${baseDate}-${generateRandomSuffix()}`;
+    while (existingNames.has(randomCandidate)) {
+      randomCandidate = `${baseDate}-${generateRandomSuffix()}`;
     }
-    return `${baseDate} (${counter})`;
+    return randomCandidate;
   };
 
   const handleCreateFileInFolder = async (customName?: string) => {
