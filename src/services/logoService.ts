@@ -57,6 +57,14 @@ export async function resolveFolderIcon(
   folderPath: string,
   config: LogoConfig
 ): Promise<string | null> {
+  // 1. Fast check: localStorage cache (guarantees zero latency on initial render)
+  if (typeof localStorage !== 'undefined') {
+    const cached = localStorage.getItem(`folder-icon-${folderPath}`);
+    if (cached) {
+      return cached;
+    }
+  }
+
   const relativePath = getFolderRelativePath(vaultPath, folderPath);
   const mapped = config[relativePath] || config[folderPath];
 
@@ -76,29 +84,37 @@ export async function resolveFolderIcon(
     if (isTauriEnvironment()) {
       try {
         const { convertFileSrc } = await import('@tauri-apps/api/core');
-        return convertFileSrc(filePath);
-      } catch {
-        // Fallback to localStorage if convertFileSrc fails
-      }
-    } else {
-      // In browser mock / testing environment
-      try {
-        const fileContent = await ipc.readFile(filePath);
-        if (fileContent) {
-          if (mapped.endsWith('.svg')) {
-            return `data:image/svg+xml;utf8,${encodeURIComponent(fileContent)}`;
+        const assetUrl = convertFileSrc(filePath);
+        if (assetUrl) {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(`folder-icon-${folderPath}`, assetUrl);
           }
-          return fileContent.startsWith('data:') ? fileContent : `data:image/png;base64,${fileContent}`;
+          return assetUrl;
         }
       } catch {
-        // ignore and fallback
+        // Fallback to reading file content
       }
     }
-  }
 
-  // Fallback to localStorage
-  if (typeof localStorage !== 'undefined') {
-    return localStorage.getItem(`folder-icon-${folderPath}`);
+    try {
+      const fileContent = await ipc.readFile(filePath);
+      if (fileContent) {
+        let resultUrl = fileContent;
+        if (mapped.endsWith('.svg')) {
+          resultUrl = fileContent.startsWith('data:')
+            ? fileContent
+            : `data:image/svg+xml;utf8,${encodeURIComponent(fileContent)}`;
+        } else if (!fileContent.startsWith('data:')) {
+          resultUrl = `data:image/png;base64,${fileContent}`;
+        }
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(`folder-icon-${folderPath}`, resultUrl);
+        }
+        return resultUrl;
+      }
+    } catch {
+      // ignore
+    }
   }
 
   return null;

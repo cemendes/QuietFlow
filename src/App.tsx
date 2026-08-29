@@ -33,8 +33,9 @@ export default function App() {
 
     const initDefaultVault = async () => {
       if (!vaultTree) {
+        const savedVault = localStorage.getItem('quietflow-vault-path');
         const defaultPath = await ipc.getDefaultVaultPath();
-        loadVault(vaultPath || defaultPath);
+        loadVault(savedVault || vaultPath || defaultPath);
       }
     };
     initDefaultVault();

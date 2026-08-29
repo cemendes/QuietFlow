@@ -82,6 +82,9 @@ async function writeVaultFile(filePath: string, content: string): Promise<void> 
 async function loadVault(vaultPath: string): Promise<void> {
   set({ isLoading: true, error: null });
   try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('quietflow-vault-path', vaultPath);
+    }
     const [tree, logoConfig] = await Promise.all([
       ipc.initVault(vaultPath),
       loadLogoConfig(vaultPath),
@@ -574,44 +577,44 @@ function setSelectedPriority(selectedPriority: TaskPriority | null): void {
 
 async function setFolderIcon(folderPath: string, iconDataOrEmoji: string): Promise<void> {
   const { vaultPath, logoConfig } = getState();
+  
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(`folder-icon-${folderPath}`, iconDataOrEmoji);
+  }
+
   if (!vaultPath) {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(`folder-icon-${folderPath}`, iconDataOrEmoji);
-    }
+    set({ logoConfig: { ...logoConfig, [folderPath]: iconDataOrEmoji } });
     return;
   }
 
   const relPath = getFolderRelativePath(vaultPath, folderPath);
+  // Update state immediately with the active icon / dataUrl so UI renders instantly
+  set({ 
+    logoConfig: { 
+      ...logoConfig, 
+      [relPath]: iconDataOrEmoji,
+      [folderPath]: iconDataOrEmoji 
+    } 
+  });
 
   if (iconDataOrEmoji.startsWith('data:') || iconDataOrEmoji.includes('<svg')) {
-    const { fileName } = await persistFolderLogo(vaultPath, folderPath, iconDataOrEmoji);
-    set({ logoConfig: { ...logoConfig, [relPath]: fileName } });
+    await persistFolderLogo(vaultPath, folderPath, iconDataOrEmoji);
   } else {
     await persistFolderEmoji(vaultPath, folderPath, iconDataOrEmoji);
-    set({ logoConfig: { ...logoConfig, [relPath]: iconDataOrEmoji } });
   }
 }
 
 function getFolderIcon(folderPath: string): string | null {
   const { vaultPath, logoConfig } = getState();
+  if (typeof localStorage !== 'undefined') {
+    const cached = localStorage.getItem(`folder-icon-${folderPath}`);
+    if (cached) return cached;
+  }
   if (!vaultPath) {
-    return typeof localStorage !== 'undefined' ? localStorage.getItem(`folder-icon-${folderPath}`) : null;
+    return logoConfig[folderPath] || null;
   }
   const relPath = getFolderRelativePath(vaultPath, folderPath);
-  const mapped = logoConfig[relPath] || logoConfig[folderPath];
-  if (mapped) {
-    if (!mapped.includes('.') && !mapped.startsWith('data:')) {
-      return mapped;
-    }
-    if (mapped.startsWith('data:')) {
-      return mapped;
-    }
-    if (typeof localStorage !== 'undefined') {
-      const cached = localStorage.getItem(`folder-icon-${folderPath}`);
-      if (cached) return cached;
-    }
-  }
-  return typeof localStorage !== 'undefined' ? localStorage.getItem(`folder-icon-${folderPath}`) : null;
+  return logoConfig[relPath] || logoConfig[folderPath] || null;
 }
 
 function setError(error: string | null): void {
