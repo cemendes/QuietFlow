@@ -11,9 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.1.0-alpha.3] - 2026-08-28
+## [0.1.0-alpha.4] - 2026-08-28
 
 ### Added
+- **Vault Location Auto-Recovery**: Automatically restores and maintains selected vault directory across restarts and dev builds without losing state.
+- **Immediate Logo & Icon Display**: Instant reactive rendering of company logos and emojis in folder rows with zero latency.
 - **Vault-Synced Folder Logos**: Save and load custom company logos and emojis directly from `<vault>/.logos/` indexed by `<vault>/.logos/config.json`.
 - **Cloud Vault Sync Compatibility**: Folder logos sync seamlessly across devices via cloud storage providers (Google Drive, iCloud, Dropbox, Syncthing) with automatic fallback cache.
 - **Git Vault Protection**: `.logos/` and vault test assets are explicitly ignored in `.gitignore` to prevent private assets or notes from entering Git repositories.
