@@ -104,6 +104,13 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
           <input
             type="text"
             autoFocus
+            ref={(input) => {
+              if (input) {
+                input.focus();
+                input.select();
+              }
+            }}
+            onFocus={(e) => e.target.select()}
             value={renamedValue}
             onChange={(e) => setRenamedValue(e.target.value)}
             onKeyDown={(e) => {

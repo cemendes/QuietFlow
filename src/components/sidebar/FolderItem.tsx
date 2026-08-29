@@ -351,8 +351,13 @@ export const FolderItem: React.FC<FolderItemProps> = ({
               autoFocus
               ref={(input) => {
                 if (input && isCreatingFile) {
-                  // Select the text so the user can easily overwrite or tweak it
+                  input.focus();
                   input.select();
+                }
+              }}
+              onFocus={(e) => {
+                if (isCreatingFile) {
+                  e.target.select();
                 }
               }}
               value={newSubName}
