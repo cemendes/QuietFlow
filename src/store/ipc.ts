@@ -20,6 +20,8 @@ export interface IpcInterface {
   deleteEntry: (path: string) => Promise<void>;
   moveEntry: (sourcePath: string, destinationPath: string) => Promise<void>;
   getDefaultVaultPath: () => Promise<string>;
+  getSavedVaultPath: () => Promise<string>;
+  setSavedVaultPath: (path: string) => Promise<void>;
   startWatchingVault: (path: string) => Promise<void>;
   listenVaultChanged: (callback: (vaultPath: string) => void) => Promise<() => void>;
 }
@@ -197,6 +199,20 @@ category: Customers
     return '/MockVault';
   }
 
+  async getSavedVaultPath(): Promise<string> {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('quietflow-vault-path');
+      if (saved) return saved;
+    }
+    return '/MockVault';
+  }
+
+  async setSavedVaultPath(path: string): Promise<void> {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('quietflow-vault-path', path);
+    }
+  }
+
   async startWatchingVault(_path: string): Promise<void> {
     // No-op in browser mock
   }
@@ -223,6 +239,22 @@ export const ipc: IpcInterface = {
       return await invoke<string>('get_default_vault_path');
     }
     return browserMock.getDefaultVaultPath();
+  },
+
+  getSavedVaultPath: async (): Promise<string> => {
+    if (isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      return await invoke<string>('get_saved_vault_path');
+    }
+    return browserMock.getSavedVaultPath();
+  },
+
+  setSavedVaultPath: async (path: string): Promise<void> => {
+    if (isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      return await invoke<void>('set_saved_vault_path', { path });
+    }
+    return browserMock.setSavedVaultPath(path);
   },
 
   readFile: async (path: string): Promise<string> => {

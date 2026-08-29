@@ -85,11 +85,26 @@ async function loadVault(vaultPath: string): Promise<void> {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('quietflow-vault-path', vaultPath);
     }
+    // Save to OS application support directory via backend IPC
+    if (typeof ipc?.setSavedVaultPath === 'function') {
+      try {
+        await ipc.setSavedVaultPath(vaultPath);
+      } catch {
+        // Ignored
+      }
+    }
+
     const [tree, logoConfig] = await Promise.all([
       ipc.initVault(vaultPath),
       loadLogoConfig(vaultPath),
     ]);
-    set({ vaultPath, vaultTree: tree, logoConfig, isLoading: false });
+    set((prev) => ({
+      ...prev,
+      vaultPath,
+      vaultTree: tree,
+      logoConfig,
+      isLoading: false,
+    }));
 
     // Auto-select today.md or first note if activeFile is empty
     let targetNode =
@@ -98,17 +113,21 @@ async function loadVault(vaultPath: string): Promise<void> {
 
     if (!targetNode && vaultPath) {
       // Auto-create today.md if none exists in this vault
-      const todayPath = `${vaultPath}/today.md`;
-      const initialContent = `---\ntitle: Today's Focus\n---\n\n# Tasks\n`;
-      await writeVaultFile(todayPath, initialContent);
-      await refreshVault();
-      targetNode = {
-        name: 'today.md',
-        path: todayPath,
-        isDirectory: false,
-        children: [],
-        fileCount: 0,
-      };
+      try {
+        const todayPath = `${vaultPath}/today.md`;
+        const initialContent = `---\ntitle: Today's Focus\n---\n\n# Tasks\n`;
+        await writeVaultFile(todayPath, initialContent);
+        await refreshVault();
+        targetNode = {
+          name: 'today.md',
+          path: todayPath,
+          isDirectory: false,
+          children: [],
+          fileCount: 0,
+        };
+      } catch {
+        // Safe fallback in mock/read-only vaults
+      }
     }
 
     if (targetNode && !getState().activeFile) {
@@ -121,26 +140,33 @@ async function loadVault(vaultPath: string): Promise<void> {
       vaultUnlisten = null;
     }
 
-    await ipc.startWatchingVault(vaultPath);
-    vaultUnlisten = await ipc.listenVaultChanged(async (changedVaultPath) => {
-      if (changedVaultPath === getState().vaultPath) {
-        const isSelfWrite = Date.now() - lastSelfWriteTimestamp < 600;
-        await refreshVault();
-        // Only refresh active file/folder if this was an external change (not initiated by app save)
-        if (!isSelfWrite) {
-          if (getState().activeFile) {
-            await refreshActiveFile();
-          } else if (getState().activeFolder) {
-            await selectFolder(getState().activeFolder!);
+    try {
+      await ipc.startWatchingVault(vaultPath);
+      vaultUnlisten = await ipc.listenVaultChanged(async (changedVaultPath) => {
+        if (changedVaultPath === getState().vaultPath) {
+          const isSelfWrite = Date.now() - lastSelfWriteTimestamp < 600;
+          await refreshVault();
+          // Only refresh active file/folder if this was an external change (not initiated by app save)
+          if (!isSelfWrite) {
+            if (getState().activeFile) {
+              await refreshActiveFile();
+            } else if (getState().activeFolder) {
+              await selectFolder(getState().activeFolder!);
+            }
           }
         }
-      }
-    });
+      });
+    } catch {
+      // Ignore watcher failure in browser mock
+    }
   } catch (err: any) {
-    set({
+    console.error('loadVault error:', err);
+    set((prev) => ({
+      ...prev,
+      vaultPath,
       isLoading: false,
       error: err?.message || err?.toString() || 'Failed to load vault',
-    });
+    }));
   }
 }
 
@@ -207,18 +233,20 @@ async function selectFolder(folderPath: string): Promise<void> {
       }
     }
 
-    set({
+    set((prev) => ({
+      ...prev,
       activeFolder: folderPath,
       activeFile: null,
       activeDocument: null,
       tasks: allTasks,
       isLoading: false,
-    });
+    }));
   } catch (err: any) {
-    set({
+    set((prev) => ({
+      ...prev,
       isLoading: false,
       error: err?.message || err?.toString() || `Failed to select folder: ${folderPath}`,
-    });
+    }));
   }
 }
 
@@ -234,18 +262,20 @@ async function selectFile(filePath: string): Promise<void> {
       filePath,
     }));
 
-    set({
+    set((prev) => ({
+      ...prev,
       activeFile: filePath,
       activeFolder: null,
       activeDocument: doc,
       tasks: tasksWithFile,
       isLoading: false,
-    });
+    }));
   } catch (err: any) {
-    set({
+    set((prev) => ({
+      ...prev,
       isLoading: false,
       error: err?.message || err?.toString() || `Failed to read file: ${filePath}`,
-    });
+    }));
   }
 }
 

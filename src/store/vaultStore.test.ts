@@ -12,8 +12,17 @@ vi.mock('./ipc', () => ({
     createDirectory: vi.fn(),
     deleteEntry: vi.fn(),
     startWatchingVault: vi.fn(),
-    listenVaultChanged: vi.fn(),
+    listenVaultChanged: vi.fn().mockResolvedValue(() => {}),
+    getSavedVaultPath: vi.fn().mockResolvedValue('/MockVault'),
+    setSavedVaultPath: vi.fn().mockResolvedValue(undefined),
   },
+}));
+
+vi.mock('../services/logoService', () => ({
+  loadLogoConfig: vi.fn().mockResolvedValue({}),
+  persistFolderEmoji: vi.fn().mockResolvedValue(undefined),
+  persistFolderLogo: vi.fn().mockResolvedValue('data:image/png;base64,mock'),
+  getFolderRelativePath: vi.fn().mockReturnValue(''),
 }));
 
 describe('VaultStore', () => {
