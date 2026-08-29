@@ -16,3 +16,18 @@
 ## 3. Storage & Vault Standards
 - **Default Location**: Fresh vault initializations MUST default to `$HOME/Documents/QuietFlowVault`.
 - **Local-First & Non-Destructive**: Never perform destructive operations on vault markdown files. In-place app upgrades or uninstalls must preserve all user vaults and settings.
+
+## 4. Tauri Desktop Development Invariants
+- **HTML5 Drag-and-Drop**: In Tauri 2.0 applications with internal drag-and-drop (e.g., Kanban boards, moving tasks between folders/notes), `"dragDropEnabled": false` MUST be explicitly declared in `tauri.conf.json` (`app.windows[].dragDropEnabled`) so the webview does not swallow DOM drag/drop events.
+- **Event Propagation**: All nested drop targets (e.g. folders and files) must call `e.stopPropagation()` in `onDrop` and `onDragEnter` to prevent double-firing on parent containers.
+
+## 5. Autonomous Verification Invariant
+- **Zero-Manual-Testing Gate**: Do not rely on asking the user to manually verify feature additions or navigation flows. Build autonomous, deterministic integration and E2E test suites (`tests/e2e/*.test.tsx`) using Vitest and React Testing Library that verify the complete user path, state transitions, and disk serialization.
+
+## 6. Markdown Task Specification & Comments
+- **Standard Format**: Tasks must support nested subtasks, unstructured notes, and timestamped activity comments:
+  - Subtasks: `  - [ ] <title>` or `  - [x] <title>`
+  - Notes: `  - Notes: <text>`
+  - Comments: `  - Comment (<author>, <timestamp>): <text>` (defaults author to 'You' if omitted)
+- **Serialization Preservation**: All updates to task status, tags, priority, notes, subtasks, and comments must be non-destructive to surrounding markdown content and headings.
+
