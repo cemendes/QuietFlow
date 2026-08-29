@@ -8,8 +8,6 @@ import {
   Plus,
   Folder,
   FolderPlus,
-  Library,
-  Vault,
 } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { isTauriEnvironment, ipc } from '../../store/ipc';

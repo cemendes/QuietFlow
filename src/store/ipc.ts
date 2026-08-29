@@ -226,12 +226,12 @@ category: Customers
 
   private mockSnapshots = new Map<string, Array<{ id: string; timestamp: string; fileName: string; relativePath: string; sizeBytes: number; snapshotPath: string; taskCount: number; content: string }>>();
 
-  async listSnapshots(vaultPath: string, filePath: string): Promise<any[]> {
+  async listSnapshots(_vaultPath: string, filePath: string): Promise<any[]> {
     const list = this.mockSnapshots.get(filePath) || [];
     return list.map(({ content, ...meta }) => meta);
   }
 
-  async restoreSnapshot(vaultPath: string, filePath: string, snapshotId: string): Promise<void> {
+  async restoreSnapshot(_vaultPath: string, filePath: string, snapshotId: string): Promise<void> {
     const list = this.mockSnapshots.get(filePath) || [];
     const target = list.find((s) => s.id === snapshotId);
     if (target) {
@@ -248,7 +248,7 @@ category: Customers
       timestamp: now,
       fileName: filePath.split('/').pop() || 'note.md',
       relativePath: filePath,
-      sizeBytes: content.len ? (content as any).length : content.length,
+      sizeBytes: content.length,
       snapshotPath: `${vaultPath}/.quietflow/snapshots/${now}.md`,
       taskCount,
       content,

@@ -33,6 +33,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   const updateTask = useVaultStore((state) => state.updateTask);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
+  const setSearchQuery = useVaultStore((state) => state.setSearchQuery);
   const setSelectedTag = useVaultStore((state) => state.setSelectedTag);
   const setSelectedPriority = useVaultStore((state) => state.setSelectedPriority);
   const activeFolder = useVaultStore((state) => state.activeFolder);

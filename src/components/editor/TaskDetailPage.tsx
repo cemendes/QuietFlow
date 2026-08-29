@@ -1,20 +1,15 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   CheckCircle2,
   Circle,
   Trash2,
   Plus,
-  Calendar,
-  Tag,
   Folder,
   FileText,
   ChevronRight,
   MessageSquare,
   Send,
-  Sparkles,
-  Clock,
-  User,
   X,
 } from 'lucide-react';
 import { useVaultStore } from '../../store';

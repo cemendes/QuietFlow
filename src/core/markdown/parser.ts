@@ -6,6 +6,7 @@ import {
   TaskItem,
   TaskPriority,
   TaskStatus,
+  TaskComment,
   VaultDocument,
 } from './types';
 import { serializeTaskBlock } from './serializer';

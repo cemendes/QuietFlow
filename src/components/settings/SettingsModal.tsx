@@ -10,7 +10,6 @@ import {
   Sparkles,
   Wand2,
   History,
-  RotateCcw,
   FileText,
   ExternalLink,
 } from 'lucide-react';

@@ -5,6 +5,7 @@ import {
   TaskItem,
   TaskPriority,
   TaskStatus,
+  TaskComment,
   VaultDocument,
 } from '../core/markdown/types';
 
@@ -15,6 +16,7 @@ export type {
   TaskItem,
   TaskPriority,
   TaskStatus,
+  TaskComment,
   VaultDocument,
 };
 

@@ -14,6 +14,7 @@ import {
 import { ipc } from './ipc';
 import {
   NewTaskInput,
+  SnapshotMetadata,
   TaskItem,
   TaskPriority,
   VaultNode,
