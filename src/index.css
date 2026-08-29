@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root, .theme-warm-paper {
+  --bg-app: #FAF9F6;
+  --bg-sidebar: #F5F3EF;
+  --bg-surface: #FFFFFF;
+  --text-primary: #1E293B;
+  --text-secondary: #64748B;
+  --border-color: #EBE7DF;
+  --accent-color: #065F46;
+  --accent-hover: #064E3B;
+  --accent-light: #ECFDF5;
+}
+
+.theme-nordic-slate {
+  --bg-app: #F8FAFC;
+  --bg-sidebar: #F1F5F9;
+  --bg-surface: #FFFFFF;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --border-color: #E2E8F0;
+  --accent-color: #0F172A;
+  --accent-hover: #1E293B;
+  --accent-light: #F1F5F9;
+}
+
+.theme-forest-moss {
+  --bg-app: #061A14;
+  --bg-sidebar: #09261D;
+  --bg-surface: #0E3328;
+  --text-primary: #ECFDF5;
+  --text-secondary: #A7F3D0;
+  --border-color: #134E3C;
+  --accent-color: #10B981;
+  --accent-hover: #34D399;
+  --accent-light: #064E3B;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  overflow: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}

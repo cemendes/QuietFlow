@@ -44,3 +44,18 @@ fastlane/test_output
 app_output.log
 .buid_finished
 .trigger_tests
+
+# Local User Vaults & Personal Notes
+notes/
+*.vault/
+local_vault/
+
+# Dependencies
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Rust & Tauri Builds
+target/
+src-tauri/target/
