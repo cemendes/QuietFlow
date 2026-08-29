@@ -1,6 +1,6 @@
 [package]
 name = "quietflow"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 description = "Lightweight, calm, and fast desktop to-do and note-taking application"
 authors = ["QuietFlow Team"]
 edition = "2021"

@@ -19,6 +19,13 @@ if (!fs.existsSync(tauriConfPath)) {
 
 const tauriConf = JSON.parse(fs.readFileSync(tauriConfPath, 'utf8'));
 tauriConf.version = newVersion;
-
 fs.writeFileSync(tauriConfPath, JSON.stringify(tauriConf, null, 2) + '\n', 'utf8');
 console.log(`[sync-tauri-version] Synced version ${newVersion} to src-tauri/tauri.conf.json`);
+
+const cargoTomlPath = path.join(rootDir, 'src-tauri', 'Cargo.toml');
+if (fs.existsSync(cargoTomlPath)) {
+  let cargoToml = fs.readFileSync(cargoTomlPath, 'utf8');
+  cargoToml = cargoToml.replace(/^version = ".*?"/m, `version = "${newVersion}"`);
+  fs.writeFileSync(cargoTomlPath, cargoToml, 'utf8');
+  console.log(`[sync-tauri-version] Synced version ${newVersion} to src-tauri/Cargo.toml`);
+}
