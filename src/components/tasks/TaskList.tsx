@@ -35,6 +35,7 @@ export const TaskList: React.FC<TaskListProps> = ({
   const setSearchQuery = useVaultStore((state) => state.setSearchQuery);
 
   const activeFolder = useVaultStore((state) => state.activeFolder);
+  const getFolderIcon = useVaultStore((state) => state.getFolderIcon);
 
   // Determine display title
   const computedTitle = useMemo(() => {
@@ -131,8 +132,11 @@ export const TaskList: React.FC<TaskListProps> = ({
           title={computedTitle}
           icon={
             activeFile
-              ? localStorage.getItem(`folder-icon-${activeFile.substring(0, activeFile.lastIndexOf('/'))}`) ||
-                localStorage.getItem(`folder-icon-${activeFile}`)
+              ? (getFolderIcon ? getFolderIcon(activeFile.substring(0, activeFile.lastIndexOf('/'))) || getFolderIcon(activeFile) : null) ||
+                (typeof localStorage !== 'undefined'
+                  ? localStorage.getItem(`folder-icon-${activeFile.substring(0, activeFile.lastIndexOf('/'))}`) ||
+                    localStorage.getItem(`folder-icon-${activeFile}`)
+                  : null)
               : null
           }
           completedCount={completedCount}

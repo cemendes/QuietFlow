@@ -38,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
-  const { vaultTree, vaultPath, activeFile, activeFolder, selectFile, selectFolder, tasks, refreshVault } = useVaultStore();
+  const { vaultTree, vaultPath, activeFile, activeFolder, selectFile, selectFolder, tasks, refreshVault, getFolderIcon } = useVaultStore();
 
   // Handle drag resizing
   useEffect(() => {
@@ -335,7 +335,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {vaultTree?.children
               ?.filter((c) => c.isDirectory)
               .map((folder) => {
-                const icon = localStorage.getItem(`folder-icon-${folder.path}`);
+                const icon = getFolderIcon ? getFolderIcon(folder.path) : (typeof localStorage !== 'undefined' ? localStorage.getItem(`folder-icon-${folder.path}`) : null);
                 return (
                   <button
                     key={folder.path}
@@ -351,11 +351,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     className="p-2 rounded-lg text-stone-500 hover:text-forest-700 hover:bg-sand-200/80 transition-colors cursor-pointer group relative flex items-center justify-center"
                   >
                     {icon ? (
-                      icon.startsWith('data:image') ? (
+                      (icon.startsWith('data:') || icon.startsWith('asset:') || icon.startsWith('http') || icon.includes('/') || icon.includes('.')) ? (
                         <img
                           src={icon}
                           alt={folder.name}
-                          className="w-5 h-5 rounded object-cover shadow-2xs"
+                          className="w-5 h-5 rounded object-contain shadow-2xs"
                         />
                       ) : (
                         <span className="text-base leading-none">{icon}</span>

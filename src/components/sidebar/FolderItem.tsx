@@ -12,6 +12,7 @@ import {
 import { VaultNode } from '../../store/types';
 import { ipc } from '../../store/ipc';
 import { useVaultStore } from '../../store';
+import { resolveFolderIcon } from '../../services/logoService';
 import FolderContextMenu from './FolderContextMenu';
 
 export interface FolderItemProps {
@@ -41,23 +42,48 @@ export const FolderItem: React.FC<FolderItemProps> = ({
   const [newSubName, setNewSubName] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
+  const vaultPath = useVaultStore((state) => state.vaultPath);
+  const logoConfig = useVaultStore((state) => state.logoConfig);
+  const setStoreFolderIcon = useVaultStore((state) => state.setFolderIcon);
+  const getStoreFolderIcon = useVaultStore((state) => state.getFolderIcon);
+
   const [folderIcon, setFolderIcon] = useState<string | null>(() => {
-    return localStorage.getItem(`folder-icon-${node.path}`);
+    return getStoreFolderIcon ? getStoreFolderIcon(node.path) : (typeof localStorage !== 'undefined' ? localStorage.getItem(`folder-icon-${node.path}`) : null);
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem(`folder-icon-${node.path}`);
-    if (saved) setFolderIcon(saved);
-  }, [node.path]);
+    let isMounted = true;
+    if (vaultPath) {
+      resolveFolderIcon(vaultPath, node.path, logoConfig).then((resolved) => {
+        if (isMounted && resolved) {
+          setFolderIcon(resolved);
+        }
+      });
+    } else {
+      const saved = typeof localStorage !== 'undefined' ? localStorage.getItem(`folder-icon-${node.path}`) : null;
+      if (saved) setFolderIcon(saved);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [node.path, vaultPath, logoConfig]);
 
-  const handleSetEmoji = (emoji: string) => {
-    localStorage.setItem(`folder-icon-${node.path}`, emoji);
+  const handleSetEmoji = async (emoji: string) => {
     setFolderIcon(emoji);
+    if (setStoreFolderIcon) {
+      await setStoreFolderIcon(node.path, emoji);
+    } else if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(`folder-icon-${node.path}`, emoji);
+    }
   };
 
-  const handleUploadLogo = (dataUrl: string) => {
-    localStorage.setItem(`folder-icon-${node.path}`, dataUrl);
+  const handleUploadLogo = async (dataUrl: string) => {
     setFolderIcon(dataUrl);
+    if (setStoreFolderIcon) {
+      await setStoreFolderIcon(node.path, dataUrl);
+    } else if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(`folder-icon-${node.path}`, dataUrl);
+    }
   };
 
   const refreshVault = useVaultStore((state) => state.refreshVault);
@@ -255,11 +281,11 @@ export const FolderItem: React.FC<FolderItemProps> = ({
 
             {/* Custom Logo / Emoji or Default Folder Icon */}
             {folderIcon ? (
-              folderIcon.startsWith('data:image') ? (
+              (folderIcon.startsWith('data:') || folderIcon.startsWith('asset:') || folderIcon.startsWith('http') || folderIcon.includes('/') || folderIcon.includes('.')) ? (
                 <img
                   src={folderIcon}
                   alt={node.name}
-                  className="w-4 h-4 rounded object-cover shadow-2xs shrink-0"
+                  className="w-4 h-4 rounded object-contain shrink-0"
                 />
               ) : (
                 <span className="text-sm leading-none shrink-0">{folderIcon}</span>

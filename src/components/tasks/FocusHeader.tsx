@@ -37,11 +37,11 @@ export const FocusHeader: React.FC<FocusHeaderProps> = ({
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2.5">
               {icon && (
-                icon.startsWith('data:image') || icon.startsWith('http') ? (
+                (icon.startsWith('data:') || icon.startsWith('asset:') || icon.startsWith('http') || icon.includes('/') || icon.includes('.')) ? (
                   <img
                     src={icon}
                     alt="Folder logo"
-                    className="w-7 h-7 rounded-lg object-cover border border-sand-200 shadow-2xs shrink-0"
+                    className="w-7 h-7 rounded-lg object-contain border border-sand-200 shadow-2xs shrink-0"
                   />
                 ) : (
                   <span className="text-2xl leading-none select-none shrink-0">{icon}</span>

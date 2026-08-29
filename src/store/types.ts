@@ -42,6 +42,7 @@ export interface VaultStoreState {
   activeView: ViewMode;
   selectedTag: string | null;
   selectedPriority: TaskPriority | null;
+  logoConfig: Record<string, string>;
   isLoading: boolean;
   isSaving: boolean;
   error: string | null;
@@ -56,6 +57,8 @@ export interface VaultStoreActions {
   refreshActiveFile: () => Promise<void>;
   createFile: (filePath: string, initialContent?: string) => Promise<void>;
   deleteEntry: (path: string) => Promise<void>;
+  setFolderIcon: (folderPath: string, iconDataOrEmoji: string) => Promise<void>;
+  getFolderIcon: (folderPath: string) => string | null;
 
   // Task operations
   setTasks: (tasks: TaskItem[]) => void;

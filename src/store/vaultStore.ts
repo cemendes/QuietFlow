@@ -5,6 +5,12 @@ import {
   parseMarkdownDocument,
   updateTaskInDocument,
 } from '../core/markdown';
+import {
+  loadLogoConfig,
+  persistFolderEmoji,
+  persistFolderLogo,
+  getFolderRelativePath,
+} from '../services/logoService';
 import { ipc } from './ipc';
 import {
   NewTaskInput,
@@ -28,6 +34,7 @@ const INITIAL_STATE: VaultStoreState = {
   activeView: 'list',
   selectedTag: null,
   selectedPriority: null,
+  logoConfig: {},
   isLoading: false,
   isSaving: false,
   error: null,
@@ -75,8 +82,11 @@ async function writeVaultFile(filePath: string, content: string): Promise<void> 
 async function loadVault(vaultPath: string): Promise<void> {
   set({ isLoading: true, error: null });
   try {
-    const tree = await ipc.initVault(vaultPath);
-    set({ vaultPath, vaultTree: tree, isLoading: false });
+    const [tree, logoConfig] = await Promise.all([
+      ipc.initVault(vaultPath),
+      loadLogoConfig(vaultPath),
+    ]);
+    set({ vaultPath, vaultTree: tree, logoConfig, isLoading: false });
 
     // Auto-select today.md or first note if activeFile is empty
     let targetNode =
@@ -136,8 +146,11 @@ async function refreshVault(): Promise<void> {
   if (!currentPath) return;
 
   try {
-    const tree = await ipc.initVault(currentPath);
-    set({ vaultTree: tree });
+    const [tree, logoConfig] = await Promise.all([
+      ipc.initVault(currentPath),
+      loadLogoConfig(currentPath),
+    ]);
+    set({ vaultTree: tree, logoConfig });
   } catch (err: any) {
     console.error('Failed to refresh vault tree:', err);
   }
@@ -559,6 +572,48 @@ function setSelectedPriority(selectedPriority: TaskPriority | null): void {
   set({ selectedPriority });
 }
 
+async function setFolderIcon(folderPath: string, iconDataOrEmoji: string): Promise<void> {
+  const { vaultPath, logoConfig } = getState();
+  if (!vaultPath) {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(`folder-icon-${folderPath}`, iconDataOrEmoji);
+    }
+    return;
+  }
+
+  const relPath = getFolderRelativePath(vaultPath, folderPath);
+
+  if (iconDataOrEmoji.startsWith('data:') || iconDataOrEmoji.includes('<svg')) {
+    const { fileName } = await persistFolderLogo(vaultPath, folderPath, iconDataOrEmoji);
+    set({ logoConfig: { ...logoConfig, [relPath]: fileName } });
+  } else {
+    await persistFolderEmoji(vaultPath, folderPath, iconDataOrEmoji);
+    set({ logoConfig: { ...logoConfig, [relPath]: iconDataOrEmoji } });
+  }
+}
+
+function getFolderIcon(folderPath: string): string | null {
+  const { vaultPath, logoConfig } = getState();
+  if (!vaultPath) {
+    return typeof localStorage !== 'undefined' ? localStorage.getItem(`folder-icon-${folderPath}`) : null;
+  }
+  const relPath = getFolderRelativePath(vaultPath, folderPath);
+  const mapped = logoConfig[relPath] || logoConfig[folderPath];
+  if (mapped) {
+    if (!mapped.includes('.') && !mapped.startsWith('data:')) {
+      return mapped;
+    }
+    if (mapped.startsWith('data:')) {
+      return mapped;
+    }
+    if (typeof localStorage !== 'undefined') {
+      const cached = localStorage.getItem(`folder-icon-${folderPath}`);
+      if (cached) return cached;
+    }
+  }
+  return typeof localStorage !== 'undefined' ? localStorage.getItem(`folder-icon-${folderPath}`) : null;
+}
+
 function setError(error: string | null): void {
   set({ error });
 }
@@ -579,6 +634,8 @@ const actions = {
   refreshActiveFile,
   createFile,
   deleteEntry,
+  setFolderIcon,
+  getFolderIcon,
   setTasks,
   toggleTask,
   updateTask,

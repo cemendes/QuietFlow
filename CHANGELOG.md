@@ -9,7 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.1.0-alpha.3] - 2026-08-28
+
 ### Added
+- **Vault-Synced Folder Logos**: Save and load custom company logos and emojis directly from `<vault>/.logos/` indexed by `<vault>/.logos/config.json`.
+- **Cloud Vault Sync Compatibility**: Folder logos sync seamlessly across devices via cloud storage providers (Google Drive, iCloud, Dropbox, Syncthing) with automatic fallback cache.
+- **Git Vault Protection**: `.logos/` and vault test assets are explicitly ignored in `.gitignore` to prevent private assets or notes from entering Git repositories.
 - **Folder-Level Task Aggregation**: Selecting a folder row aggregates and displays all tasks across every markdown note inside that folder on both List View and Kanban Board.
 - **Folder & Note Selection Highlight**: Active folder and note rows now clearly highlight with an emerald-accented background in the sidebar navigation.
 - **Clean Breadcrumbs in Drawer**: Replaced raw file system paths in the task slide-over drawer with formatted location tags (`📁 [Folder] / 📄 [Note]`).

@@ -49,6 +49,9 @@ app_output.log
 notes/
 *.vault/
 local_vault/
+.logos/
+**/.logos/
+QuietFlowVault/
 
 # Dependencies
 node_modules/
