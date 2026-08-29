@@ -158,7 +158,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Top Bar: Window Drag Region & macOS Inset */}
       <div
         data-tauri-drag-region
-        className="flex items-center justify-between px-3 pt-3.5 pb-2 cursor-grab active:cursor-grabbing min-h-[38px]"
+        className="flex items-center justify-between px-3 pt-3.5 pb-2 min-h-[38px] select-none"
       >
         <div className="flex items-center gap-1.5 h-4">
           {/* Only render simulated dots in browser mock mode, never in native Tauri window */}
