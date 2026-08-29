@@ -76,7 +76,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const now = new Date();
     const dateStr = `${monthNames[now.getMonth()]} ${now.getDate()}`;
-    return `${node.name} - ${dateStr}`;
+    return dateStr;
   };
 
   const handleCreateFileInFolder = async (customName?: string) => {

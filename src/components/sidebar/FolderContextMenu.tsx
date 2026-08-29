@@ -153,7 +153,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
               className="flex w-full items-center gap-2 px-3 py-1.5 hover:bg-sand-100 transition-colors text-left"
             >
               <FilePlus className="w-3.5 h-3.5 text-stone-500" />
-              <span>Add Note ({folderName} - Date)</span>
+              <span>Add Note</span>
             </button>
           )}
 

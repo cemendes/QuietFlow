@@ -79,9 +79,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const folderPath = `${vaultPath}/${folderName}`;
     await ipc.createDirectory(folderPath);
 
-    // Auto-create primary note e.g. PRivia/PRivia.md
-    const primaryNotePath = `${folderPath}/${folderName}.md`;
-    const initialContent = `---\ntitle: ${folderName}\n---\n\n# Tasks\n\n- [ ] Initial action item\n`;
+    // Auto-create standard initial note inside folder with clean format (e.g. today date)
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const now = new Date();
+    const dateStr = `${monthNames[now.getMonth()]} ${now.getDate()}`;
+    const initialNoteName = `${dateStr}.md`;
+    const primaryNotePath = `${folderPath}/${initialNoteName}`;
+    const initialContent = `---\ntitle: ${dateStr}\n---\n\n# Tasks\n\n- [ ] Initial action item\n`;
     await ipc.writeFileAtomic(primaryNotePath, initialContent);
 
     await refreshVault();
