@@ -30,7 +30,7 @@ async fn pick_vault_folder(app: AppHandle) -> Result<Option<String>, String> {
 #[tauri::command]
 fn get_default_vault_path() -> String {
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
-    format!("{}/QuietFlowVault", home)
+    format!("{}/Documents/QuietFlowVault", home)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
