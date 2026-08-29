@@ -1,0 +1,22 @@
+{
+  "name": "QuietFlow",
+  "short_name": "QuietFlow",
+  "description": "A calm, local-first markdown task manager crafted for neurodivergent focus, speed, and privacy.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF9F6",
+  "theme_color": "#FAF9F6",
+  "icons": [
+    {
+      "src": "/app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ]
+}
