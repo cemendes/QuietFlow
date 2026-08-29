@@ -44,7 +44,7 @@ describe('Vault Integrity & In-App Update UI Simulation Test Suite', () => {
     );
   });
 
-  it('UpdateToast displays prompt, streams download progress, and shows Relaunch Now button', async () => {
+  it('UpdateToast displays pill notice, starts download on click, and supports changelog pill', async () => {
     mockUpdaterInstance.setMockState({
       available: true,
       version: '0.2.0-alpha.1',
@@ -54,19 +54,23 @@ describe('Vault Integrity & In-App Update UI Simulation Test Suite', () => {
     render(<UpdateToast />);
 
     // Advance timer to trigger background startup check
-    await waitFor(() => {
-      expect(screen.getByTestId('toast-download-btn')).toBeInTheDocument();
-    }, { timeout: 3500 });
-
-    expect(screen.getByText(/QuietFlow v0.2.0-alpha.1 Available/i)).toBeInTheDocument();
-
-    // Click Update Now
-    fireEvent.click(screen.getByTestId('toast-download-btn'));
-
-    // Wait for Relaunch button
     await waitFor(
       () => {
-        expect(screen.getByTestId('toast-relaunch-btn')).toBeInTheDocument();
+        expect(screen.getByTestId('update-toast-banner')).toBeInTheDocument();
+      },
+      { timeout: 3500 }
+    );
+
+    expect(screen.getByText(/Update available/i)).toBeInTheDocument();
+    expect(screen.getByText('v0.2.0-alpha.1')).toBeInTheDocument();
+
+    // Click pill to initiate update
+    fireEvent.click(screen.getByTestId('update-toast-banner'));
+
+    // Verify downloading state
+    await waitFor(
+      () => {
+        expect(screen.getByText(/Updating.../i)).toBeInTheDocument();
       },
       { timeout: 3000 }
     );
