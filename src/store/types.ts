@@ -34,6 +34,7 @@ export interface VaultStoreState {
   vaultPath: string | null;
   vaultTree: VaultTree | null;
   activeFile: string | null;
+  activeFolder: string | null;
   activeDocument: VaultDocument | null;
   tasks: TaskItem[];
   activeTaskId: string | null;
@@ -51,6 +52,7 @@ export interface VaultStoreActions {
   loadVault: (vaultPath: string) => Promise<void>;
   refreshVault: () => Promise<void>;
   selectFile: (filePath: string) => Promise<void>;
+  selectFolder: (folderPath: string) => Promise<void>;
   refreshActiveFile: () => Promise<void>;
   createFile: (filePath: string, initialContent?: string) => Promise<void>;
   deleteEntry: (path: string) => Promise<void>;

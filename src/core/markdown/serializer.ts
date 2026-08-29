@@ -19,6 +19,10 @@ export function serializeTaskLine(
   const checkbox = getCheckboxForStatus(task.status);
   const parts: string[] = [checkbox, task.title];
 
+  if (task.status === 'backlog') {
+    parts.push(`@status(backlog)`);
+  }
+
   if (task.dueDate) {
     parts.push(`@due(${task.dueDate})`);
   }

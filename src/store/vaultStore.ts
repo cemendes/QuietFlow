@@ -10,6 +10,7 @@ import {
   NewTaskInput,
   TaskItem,
   TaskPriority,
+  VaultNode,
   VaultStore,
   VaultStoreState,
   ViewMode,
@@ -19,6 +20,7 @@ const INITIAL_STATE: VaultStoreState = {
   vaultPath: null,
   vaultTree: null,
   activeFile: null,
+  activeFolder: null,
   activeDocument: null,
   tasks: [],
   activeTaskId: null,
@@ -111,9 +113,13 @@ async function loadVault(vaultPath: string): Promise<void> {
       if (changedVaultPath === getState().vaultPath) {
         const isSelfWrite = Date.now() - lastSelfWriteTimestamp < 600;
         await refreshVault();
-        // Only refresh active file if this was an external change (not initiated by app save)
-        if (!isSelfWrite && getState().activeFile) {
-          await refreshActiveFile();
+        // Only refresh active file/folder if this was an external change (not initiated by app save)
+        if (!isSelfWrite) {
+          if (getState().activeFile) {
+            await refreshActiveFile();
+          } else if (getState().activeFolder) {
+            await selectFolder(getState().activeFolder!);
+          }
         }
       }
     });
@@ -137,8 +143,71 @@ async function refreshVault(): Promise<void> {
   }
 }
 
+function collectMarkdownFiles(node: VaultNode | null): string[] {
+  if (!node) return [];
+  const files: string[] = [];
+  if (!node.isDirectory && (node.name.endsWith('.md') || !node.name.includes('.'))) {
+    files.push(node.path);
+  }
+  if (node.children) {
+    for (const child of node.children) {
+      files.push(...collectMarkdownFiles(child));
+    }
+  }
+  return files;
+}
+
+function findNodeByPath(root: VaultNode | null, targetPath: string): VaultNode | null {
+  if (!root) return null;
+  if (root.path === targetPath) return root;
+  if (root.children) {
+    for (const child of root.children) {
+      const found = findNodeByPath(child, targetPath);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+async function selectFolder(folderPath: string): Promise<void> {
+  set({ isLoading: true, error: null, activeFolder: folderPath, activeFile: null });
+  try {
+    const root = getState().vaultTree;
+    const folderNode = findNodeByPath(root, folderPath);
+    const mdFiles = folderNode ? collectMarkdownFiles(folderNode) : [];
+
+    const allTasks: TaskItem[] = [];
+    for (const file of mdFiles) {
+      try {
+        const content = await ipc.readFile(file);
+        const doc = parseMarkdownDocument(content);
+        const tasksWithFile = doc.tasks.map((t) => ({
+          ...t,
+          filePath: file,
+        }));
+        allTasks.push(...tasksWithFile);
+      } catch (e) {
+        console.warn(`Failed to read markdown file in folder ${file}:`, e);
+      }
+    }
+
+    set({
+      activeFolder: folderPath,
+      activeFile: null,
+      activeDocument: null,
+      tasks: allTasks,
+      isLoading: false,
+    });
+  } catch (err: any) {
+    set({
+      isLoading: false,
+      error: err?.message || err?.toString() || `Failed to select folder: ${folderPath}`,
+    });
+  }
+}
+
 async function selectFile(filePath: string): Promise<void> {
-  set({ isLoading: true, error: null, activeFile: filePath });
+  set({ isLoading: true, error: null, activeFile: filePath, activeFolder: null });
   try {
     const content = await ipc.readFile(filePath);
     const doc = parseMarkdownDocument(content);
@@ -151,6 +220,7 @@ async function selectFile(filePath: string): Promise<void> {
 
     set({
       activeFile: filePath,
+      activeFolder: null,
       activeDocument: doc,
       tasks: tasksWithFile,
       isLoading: false,
@@ -505,6 +575,7 @@ const actions = {
   loadVault,
   refreshVault,
   selectFile,
+  selectFolder,
   refreshActiveFile,
   createFile,
   deleteEntry,

@@ -163,6 +163,61 @@ title: Test Note
     expect(ipc.startWatchingVault).toHaveBeenCalledWith('/vault');
   });
 
+  it('selectFolder aggregates all tasks across all notes inside the folder', async () => {
+    const mockTree: VaultNode = {
+      name: 'Vault',
+      path: '/vault',
+      isDirectory: true,
+      fileCount: 2,
+      children: [
+        {
+          name: 'CCO',
+          path: '/vault/CCO',
+          isDirectory: true,
+          fileCount: 2,
+          children: [
+            {
+              name: '2026-08-28.md',
+              path: '/vault/CCO/2026-08-28.md',
+              isDirectory: false,
+              fileCount: 0,
+              children: [],
+            },
+            {
+              name: '2026-08-29.md',
+              path: '/vault/CCO/2026-08-29.md',
+              isDirectory: false,
+              fileCount: 0,
+              children: [],
+            },
+          ],
+        },
+      ],
+    };
+
+    useVaultStore.setState({ vaultTree: mockTree, vaultPath: '/vault' });
+
+    const note1 = `# Tasks\n- [ ] Task from note 1 @priority(high)`;
+    const note2 = `# Tasks\n- [/] Task from note 2 @status(in-progress)`;
+
+    vi.mocked(ipc.readFile).mockImplementation(async (path: string) => {
+      if (path === '/vault/CCO/2026-08-28.md') return note1;
+      if (path === '/vault/CCO/2026-08-29.md') return note2;
+      return '';
+    });
+
+    await useVaultStore.getState().selectFolder('/vault/CCO');
+
+    const state = useVaultStore.getState();
+    expect(state.activeFolder).toBe('/vault/CCO');
+    expect(state.activeFile).toBeNull();
+    expect(state.tasks).toHaveLength(2);
+    expect(state.tasks[0].title).toBe('Task from note 1');
+    expect(state.tasks[0].filePath).toBe('/vault/CCO/2026-08-28.md');
+    expect(state.tasks[1].title).toBe('Task from note 2');
+    expect(state.tasks[1].filePath).toBe('/vault/CCO/2026-08-29.md');
+  });
+
   it('selects a file and parses tasks into store', async () => {
     const markdownContent = `---
 title: Project Plan

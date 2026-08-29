@@ -141,12 +141,12 @@ export const FocusHeader: React.FC<FocusHeaderProps> = ({
             onClick={() => onFocusBucketChange('not-now')}
             className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-all ${
               activeFocusBucket === 'not-now'
-                ? 'bg-white text-slate-800 shadow-xs'
+                ? 'bg-white text-slate-800 shadow-xs font-semibold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
-            Later / Backlog
+            Backlog
           </button>
         </div>
       </div>

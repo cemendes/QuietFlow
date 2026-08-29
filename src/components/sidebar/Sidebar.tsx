@@ -38,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
-  const { vaultTree, vaultPath, activeFile, selectFile, tasks, refreshVault } = useVaultStore();
+  const { vaultTree, vaultPath, activeFile, activeFolder, selectFile, selectFolder, tasks, refreshVault } = useVaultStore();
 
   // Handle drag resizing
   useEffect(() => {
@@ -325,7 +325,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <FolderTree
               tree={vaultTree}
               activeFile={activeFile}
+              activeFolder={activeFolder}
               onSelectFile={handleFileSelect}
+              onSelectFolder={selectFolder}
             />
           </>
         ) : (

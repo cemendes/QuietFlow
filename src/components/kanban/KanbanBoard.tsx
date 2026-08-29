@@ -3,7 +3,7 @@ import { useVaultStore } from '../../store';
 import { TaskStatus } from '../../store/types';
 import KanbanColumn from './KanbanColumn';
 import QuickAddBar from '../tasks/QuickAddBar';
-import ViewSwitcher from '../tasks/ViewSwitcher';
+import FocusHeader from '../tasks/FocusHeader';
 
 export interface KanbanBoardProps {
   title?: string;
@@ -37,19 +37,54 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const setSelectedPriority = useVaultStore((state) => state.setSelectedPriority);
   const setSearchQuery = useVaultStore((state) => state.setSearchQuery);
 
+  const activeFolder = useVaultStore((state) => state.activeFolder);
+
   // Determine display title
   const computedTitle = useMemo(() => {
     if (title) return title;
     if (activeFile) {
       const fileName = activeFile.split('/').pop()?.replace(/\.md$/, '') || 'Tasks';
-      return fileName;
+      if (fileName.toLowerCase() === 'inbox') {
+        return '📥 Inbox';
+      }
+      if (fileName.toLowerCase() === 'today') {
+        return "Today's Focus";
+      }
+      return fileName.charAt(0).toUpperCase() + fileName.slice(1);
+    }
+    if (activeFolder) {
+      const folderName = activeFolder.split('/').pop() || 'Folder';
+      return folderName.charAt(0).toUpperCase() + folderName.slice(1);
     }
     return "Today's Focus";
-  }, [title, activeFile]);
+  }, [title, activeFile, activeFolder]);
+
+  const [activeFocusBucket, setActiveFocusBucket] = React.useState<'all' | 'now' | 'not-now'>('all');
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
+      // Focus bucket filter
+      const todayStr = new Date().toISOString().split('T')[0];
+      const isDueToday = task.dueDate === todayStr;
+      const isOverdue = Boolean(task.dueDate && task.dueDate < todayStr);
+      const isFuture = Boolean(task.dueDate && task.dueDate > todayStr);
+
+      if (activeFocusBucket === 'now') {
+        // Now = Due today, overdue, high priority, or in-progress
+        const isHighPriority = task.priority === 'high';
+        const isInProgress = task.status === 'in-progress';
+        if (!isDueToday && !isOverdue && !isHighPriority && !isInProgress) {
+          return false;
+        }
+      } else if (activeFocusBucket === 'not-now') {
+        // Backlog / Not Now
+        const isBacklogStatus = task.status === 'backlog';
+        if (!isFuture && !isBacklogStatus) {
+          return false;
+        }
+      }
+
       // Search query filter
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
@@ -77,7 +112,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
       return true;
     });
-  }, [tasks, searchQuery, selectedTag, selectedPriority]);
+  }, [tasks, activeFocusBucket, searchQuery, selectedTag, selectedPriority]);
 
   // Task count summary
   const totalCount = filteredTasks.length;
@@ -94,28 +129,24 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       {/* Header & Controls */}
       <header
         data-tauri-drag-region
-        className="flex flex-col gap-3.5 p-6 pb-4 border-b border-sand-200 bg-sand-50/80 backdrop-blur-sm select-none"
+        className="flex flex-col gap-3.5 p-6 pb-3 border-b border-sand-200 bg-sand-50/80 backdrop-blur-sm select-none"
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-800">
-              {computedTitle}
-            </h1>
-            <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold text-forest-800 bg-forest-500/10 border border-forest-500/20 rounded-full">
-              {completedCount}/{totalCount} done
-            </span>
-            {isSaving && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-amber-700 bg-amber-500/10 border border-amber-500/20 rounded-full animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
-                Saving...
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <ViewSwitcher />
-          </div>
-        </div>
+        <FocusHeader
+          title={computedTitle}
+          icon={
+            activeFile
+              ? localStorage.getItem(`folder-icon-${activeFile.substring(0, activeFile.lastIndexOf('/'))}`) ||
+                localStorage.getItem(`folder-icon-${activeFile}`)
+              : activeFolder
+              ? localStorage.getItem(`folder-icon-${activeFolder}`)
+              : null
+          }
+          completedCount={completedCount}
+          totalCount={totalCount}
+          activeFocusBucket={activeFocusBucket}
+          onFocusBucketChange={setActiveFocusBucket}
+          isSaving={isSaving}
+        />
 
         {/* Active Filters Pill Bar (if any filter is active) */}
         {(selectedTag || selectedPriority || searchQuery) && (

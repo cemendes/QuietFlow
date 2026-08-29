@@ -49,8 +49,9 @@ describe('TaskDetailPanel Component', () => {
   it('renders task title, folder path, metadata controls, subtasks, and markdown note editor', () => {
     render(<TaskDetailPanel />);
 
-    // Folder path display
-    expect(screen.getByText(/projects\/finance\.md/i)).toBeInTheDocument();
+    // Folder and Note breadcrumb display
+    expect(screen.getByText('projects')).toBeInTheDocument();
+    expect(screen.getByText('finance')).toBeInTheDocument();
 
     // Task title editable input/field
     const titleInput = screen.getByDisplayValue('Review Q3 financial forecast');

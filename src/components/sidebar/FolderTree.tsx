@@ -5,7 +5,9 @@ import { VaultNode } from '../../store/types';
 export interface FolderTreeProps {
   tree: VaultNode | null;
   activeFile: string | null;
+  activeFolder?: string | null;
   onSelectFile: (path: string) => void;
+  onSelectFolder?: (path: string) => void;
   className?: string;
 }
 
@@ -26,7 +28,9 @@ function collectDirectoryPaths(node: VaultNode | null): string[] {
 export const FolderTree: React.FC<FolderTreeProps> = ({
   tree,
   activeFile,
+  activeFolder,
   onSelectFile,
+  onSelectFolder,
   className = '',
 }) => {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => {
@@ -86,9 +90,11 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           node={item}
           level={0}
           activeFile={activeFile}
+          activeFolder={activeFolder}
           expandedPaths={expandedPaths}
           onToggleFolder={handleToggleFolder}
           onSelectFile={onSelectFile}
+          onSelectFolder={onSelectFolder}
         />
       ))}
     </nav>

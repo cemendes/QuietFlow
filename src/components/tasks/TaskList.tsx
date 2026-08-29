@@ -34,6 +34,8 @@ export const TaskList: React.FC<TaskListProps> = ({
   const setSelectedPriority = useVaultStore((state) => state.setSelectedPriority);
   const setSearchQuery = useVaultStore((state) => state.setSearchQuery);
 
+  const activeFolder = useVaultStore((state) => state.activeFolder);
+
   // Determine display title
   const computedTitle = useMemo(() => {
     if (title) return title;
@@ -42,10 +44,18 @@ export const TaskList: React.FC<TaskListProps> = ({
       if (fileName.toLowerCase() === 'inbox') {
         return '📥 Inbox';
       }
-      return fileName;
+      if (fileName.toLowerCase() === 'today') {
+        return "Today's Focus";
+      }
+      // Capitalize first letter
+      return fileName.charAt(0).toUpperCase() + fileName.slice(1);
+    }
+    if (activeFolder) {
+      const folderName = activeFolder.split('/').pop() || 'Folder';
+      return folderName.charAt(0).toUpperCase() + folderName.slice(1);
     }
     return "Today's Focus";
-  }, [title, activeFile]);
+  }, [title, activeFile, activeFolder]);
 
   const [activeFocusBucket, setActiveFocusBucket] = React.useState<'all' | 'now' | 'not-now'>('all');
 

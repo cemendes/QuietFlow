@@ -18,18 +18,22 @@ export interface FolderItemProps {
   node: VaultNode;
   level?: number;
   activeFile: string | null;
+  activeFolder?: string | null;
   expandedPaths: Set<string>;
   onToggleFolder: (path: string) => void;
   onSelectFile: (path: string) => void;
+  onSelectFolder?: (path: string) => void;
 }
 
 export const FolderItem: React.FC<FolderItemProps> = ({
   node,
   level = 0,
   activeFile,
+  activeFolder,
   expandedPaths,
   onToggleFolder,
   onSelectFile,
+  onSelectFolder,
 }) => {
   const isExpanded = expandedPaths.has(node.path);
   const [isCreatingSubfolder, setIsCreatingSubfolder] = useState(false);
@@ -199,6 +203,8 @@ export const FolderItem: React.FC<FolderItemProps> = ({
     }
   };
 
+  const isFolderActive = Boolean(activeFolder && activeFolder === node.path);
+
   if (node.isDirectory) {
     return (
       <div
@@ -220,11 +226,26 @@ export const FolderItem: React.FC<FolderItemProps> = ({
             setShowContextMenu(true);
           }}
           style={{ paddingLeft: `${Math.max(8, level * 14 + 8)}px` }}
-          className="group relative flex w-full items-center justify-between py-1.5 pr-2 rounded-md text-xs font-medium text-stone-700 hover:bg-sand-200/60 hover:text-stone-900 transition-colors cursor-pointer"
-          onClick={() => onToggleFolder(node.path)}
+          className={`group relative flex w-full items-center justify-between py-1.5 pr-2 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+            isFolderActive
+              ? 'bg-sand-200/90 text-forest-800 font-semibold shadow-xs'
+              : 'text-stone-700 hover:bg-sand-200/60 hover:text-stone-900'
+          }`}
+          onClick={() => {
+            if (onSelectFolder) {
+              onSelectFolder(node.path);
+            }
+            onToggleFolder(node.path);
+          }}
         >
           <div className="flex items-center gap-1.5 min-w-0 flex-1">
-            <span className="text-stone-400 group-hover:text-stone-600 transition-transform">
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFolder(node.path);
+              }}
+              className="text-stone-400 hover:text-stone-700 group-hover:text-stone-600 transition-transform p-0.5"
+            >
               {isExpanded ? (
                 <ChevronDown className="w-3.5 h-3.5 shrink-0" />
               ) : (
@@ -244,7 +265,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
                 <span className="text-sm leading-none shrink-0">{folderIcon}</span>
               )
             ) : (
-              <span className="text-forest-600 shrink-0">
+              <span className={isFolderActive ? 'text-forest-700 shrink-0' : 'text-forest-600 shrink-0'}>
                 {isExpanded ? (
                   <FolderOpen className="w-4 h-4" />
                 ) : (

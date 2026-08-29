@@ -1,6 +1,6 @@
 import React from 'react';
 import { TaskPriority, TaskStatus } from '../../store/types';
-import { Calendar, Tag, Folder } from 'lucide-react';
+import { Calendar, Tag, Folder, FileText, ChevronRight } from 'lucide-react';
 
 export interface MetadataBarProps {
   status: TaskStatus;
@@ -25,16 +25,37 @@ export const MetadataBar: React.FC<MetadataBarProps> = ({
   onDueDateChange,
   className = '',
 }) => {
-  const displayPath = filePath ? filePath.replace(/^\/?(vault\/)?/, '') : '';
+  // Format clean breadcrumb (e.g. CCO / 2026-08-28)
+  const breadcrumb = React.useMemo(() => {
+    if (!filePath) return null;
+    const parts = filePath.split('/').filter(Boolean);
+    const fileName = parts.pop()?.replace(/\.md$/, '') || '';
+    const parentFolder = parts.length > 0 ? parts.pop() : null;
+    const isVaultRoot = !parentFolder || parentFolder === 'QuietFlowVault' || parentFolder === 'Documents';
+
+    return {
+      folder: isVaultRoot ? null : parentFolder,
+      file: fileName,
+    };
+  }, [filePath]);
 
   return (
     <div className={`flex flex-col gap-3 py-3 border-y border-sand-200 text-xs text-slate-600 ${className}`}>
-      {/* Folder location */}
-      {displayPath && (
-        <div className="flex items-center gap-2 text-slate-500">
-          <Folder className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          <span className="truncate font-mono text-[11px]" title={filePath}>
-            {displayPath}
+      {/* Clean Folder & Note location breadcrumb */}
+      {breadcrumb && (
+        <div className="flex items-center flex-wrap gap-1.5 px-2.5 py-1.5 bg-sand-100/70 border border-sand-200/80 rounded-lg text-slate-700 text-xs">
+          {breadcrumb.folder && (
+            <>
+              <span className="flex items-center gap-1 font-medium text-stone-600">
+                <Folder className="w-3.5 h-3.5 text-forest-600 shrink-0" />
+                {breadcrumb.folder}
+              </span>
+              <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
+            </>
+          )}
+          <span className="flex items-center gap-1 font-semibold text-slate-800">
+            <FileText className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+            {breadcrumb.file}
           </span>
         </div>
       )}
