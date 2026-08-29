@@ -98,6 +98,22 @@ export const TaskRow: React.FC<TaskRowProps> = ({
       })
     );
     e.dataTransfer.effectAllowed = 'move';
+
+    // Create compact drag ghost pill
+    const ghost = document.createElement('div');
+    ghost.textContent = `☐ ${task.title}`;
+    ghost.style.cssText = `
+      position: absolute; top: -9999px; left: -9999px;
+      max-width: 200px; padding: 4px 10px;
+      background: #065F46; color: white;
+      border-radius: 6px; font-size: 11px; font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    `;
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, 0, 0);
+    // Clean up after drag starts rendering
+    requestAnimationFrame(() => document.body.removeChild(ghost));
   };
 
   const [isSlicing, setIsSlicing] = useState(false);

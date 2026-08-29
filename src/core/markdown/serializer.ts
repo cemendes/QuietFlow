@@ -76,5 +76,16 @@ export function serializeTaskBlock(task: TaskItem | NewTaskInput): string[] {
     }
   }
 
+  if (task.comments && task.comments.length > 0) {
+    for (const comment of task.comments) {
+      const commentLines = comment.content.trim().split('\n');
+      const authorPrefix = comment.author && comment.author !== 'You' ? `${comment.author}, ` : '';
+      lines.push(`  - Comment (${authorPrefix}${comment.timestamp}): ${commentLines[0]}`);
+      for (let i = 1; i < commentLines.length; i++) {
+        lines.push(`    ${commentLines[i]}`);
+      }
+    }
+  }
+
   return lines;
 }

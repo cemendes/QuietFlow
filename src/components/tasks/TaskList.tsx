@@ -54,7 +54,13 @@ export const TaskList: React.FC<TaskListProps> = ({
   // Synchronously compute initial icon and asynchronously resolve Tauri asset / base64 if needed
   React.useEffect(() => {
     let isMounted = true;
-    if (!currentFolderPath) {
+    if (!currentFolderPath || currentFolderPath === vaultPath) {
+      setHeaderIcon(null);
+      return;
+    }
+
+    // Don't show folder icon for Inbox
+    if (activeFile?.toLowerCase().includes('inbox')) {
       setHeaderIcon(null);
       return;
     }
@@ -99,6 +105,9 @@ export const TaskList: React.FC<TaskListProps> = ({
       return fileName.charAt(0).toUpperCase() + fileName.slice(1);
     }
     if (activeFolder) {
+      if (activeFolder === vaultPath) {
+        return 'My Vault';
+      }
       const folderName = activeFolder.split('/').pop() || 'Folder';
       return folderName.charAt(0).toUpperCase() + folderName.slice(1);
     }
@@ -169,7 +178,7 @@ export const TaskList: React.FC<TaskListProps> = ({
   };
 
   return (
-    <div className={`flex flex-col h-full bg-sand-50 overflow-hidden ${className}`}>
+    <div data-testid="task-list" className={`flex flex-col h-full bg-sand-50 overflow-hidden ${className}`}>
       {/* Header & Controls */}
       <header
         data-tauri-drag-region

@@ -1,6 +1,14 @@
 export type TaskStatus = 'todo' | 'in-progress' | 'done' | 'backlog';
 export type TaskPriority = 'low' | 'medium' | 'high';
 
+export interface TaskComment {
+  id: string;
+  author?: string;
+  timestamp: string;
+  content: string;
+  rawLine?: string;
+}
+
 export interface SubtaskItem {
   id: string;
   title: string;
@@ -19,6 +27,7 @@ export interface TaskItem {
   tags: string[];
   notes?: string;
   subtasks?: SubtaskItem[];
+  comments?: TaskComment[];
   rawLine?: string;
   lineIndex?: number;
   filePath?: string;
@@ -50,4 +59,5 @@ export interface NewTaskInput {
   tags?: string[];
   notes?: string;
   subtasks?: Array<{ title: string; status?: TaskStatus }>;
+  comments?: TaskComment[];
 }

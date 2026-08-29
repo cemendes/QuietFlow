@@ -72,9 +72,9 @@ function parseTaskLine(
     completedDate = completedMatch[1].trim();
   }
 
-  // Parse #tags
+  // Parse #tags (require starting with a letter or underscore so issue numbers like #45 are preserved in title)
   const tags: string[] = [];
-  const tagMatches = remainder.matchAll(/#([a-zA-Z0-9_-]+)/g);
+  const tagMatches = remainder.matchAll(/(?:^|\s)#([a-zA-Z_][a-zA-Z0-9_-]*)/g);
   for (const tm of tagMatches) {
     tags.push(tm[1]);
   }
@@ -87,7 +87,7 @@ function parseTaskLine(
     .replace(/@(low|medium|high)\b/gi, '')
     .replace(/@status\([^)]+\)/gi, '')
     .replace(/@completed\([^)]+\)/gi, '')
-    .replace(/#[a-zA-Z0-9_-]+/g, '')
+    .replace(/(?:^|\s)#[a-zA-Z_][a-zA-Z0-9_-]*/g, '')
     .trim();
 
   const baseSlug = slugify(title) || 'item';
@@ -160,6 +160,7 @@ export function parseMarkdownDocument(content: string): VaultDocument {
   let currentTask: TaskItem | null = null;
   let currentNotes: string[] = [];
   let currentSubtasks: SubtaskItem[] = [];
+  let currentComments: TaskComment[] = [];
 
   const finalizeCurrentTask = () => {
     if (currentTask) {
@@ -169,10 +170,14 @@ export function parseMarkdownDocument(content: string): VaultDocument {
       if (currentSubtasks.length > 0) {
         currentTask.subtasks = [...currentSubtasks];
       }
+      if (currentComments.length > 0) {
+        currentTask.comments = [...currentComments];
+      }
       tasks.push(currentTask);
       currentTask = null;
       currentNotes = [];
       currentSubtasks = [];
+      currentComments = [];
     }
   };
 
@@ -229,6 +234,27 @@ export function parseMarkdownDocument(content: string): VaultDocument {
             status: subStatus,
             rawLine: line,
             lineIndex: i,
+          });
+          continue;
+        }
+
+        // Comment line check
+        const commentMatch = trimmed.match(/^-\s*[Cc]omment\s*\(([^)]+)\):\s*(.*)$/i);
+        if (commentMatch) {
+          const meta = commentMatch[1].trim();
+          let author = 'You';
+          let timestamp = meta;
+          if (meta.includes(',')) {
+            const parts = meta.split(',');
+            author = parts[0].trim();
+            timestamp = parts.slice(1).join(',').trim();
+          }
+          currentComments.push({
+            id: `comment-${i}`,
+            author,
+            timestamp,
+            content: commentMatch[2].trim(),
+            rawLine: line,
           });
           continue;
         }

@@ -179,4 +179,51 @@ describe('Markdown Parser & Non-destructive Serializer', () => {
       expect(line).toBe('- [/] Ship feature @due(2026-09-10) @priority(high) #core #v1');
     });
   });
+
+  describe('Task Comments & Activity', () => {
+    it('parses comments with author and timestamps', () => {
+      const docWithComments = `- [ ] Deploy to production @high
+  - Notes: Check staging logs before deploy
+  - [x] Run smoke tests
+  - Comment (Eduardo, 2026-08-29 07:15): Staging verified.
+  - Comment (2026-08-29 07:25): Approval received.
+`;
+      const parsed = parseMarkdownDocument(docWithComments);
+      expect(parsed.tasks).toHaveLength(1);
+      const task = parsed.tasks[0];
+      expect(task.comments).toHaveLength(2);
+      expect(task.comments?.[0].author).toBe('Eduardo');
+      expect(task.comments?.[0].timestamp).toBe('2026-08-29 07:15');
+      expect(task.comments?.[0].content).toBe('Staging verified.');
+      expect(task.comments?.[1].author).toBe('You');
+      expect(task.comments?.[1].timestamp).toBe('2026-08-29 07:25');
+      expect(task.comments?.[1].content).toBe('Approval received.');
+    });
+
+    it('round-trips comments through updateTaskInDocument without data loss', () => {
+      const doc = `- [ ] Task with discussion
+  - Notes: Initial spec
+  - [ ] Subtask 1
+`;
+      const parsed = parseMarkdownDocument(doc);
+      const updated = updateTaskInDocument(doc, parsed.tasks[0].id, {
+        comments: [
+          {
+            id: 'c1',
+            author: 'You',
+            timestamp: '2026-08-29 07:30',
+            content: 'Discussed with design team, moving ahead.',
+          },
+        ],
+      });
+
+      expect(updated).toContain('  - Comment (2026-08-29 07:30): Discussed with design team, moving ahead.');
+      expect(updated).toContain('  - Notes: Initial spec');
+      expect(updated).toContain('  - [ ] Subtask 1');
+
+      const reParsed = parseMarkdownDocument(updated);
+      expect(reParsed.tasks[0].comments).toHaveLength(1);
+      expect(reParsed.tasks[0].comments?.[0].content).toBe('Discussed with design team, moving ahead.');
+    });
+  });
 });

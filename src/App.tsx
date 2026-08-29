@@ -4,7 +4,7 @@ import { ipc } from './store/ipc';
 import { Sidebar } from './components/sidebar';
 import { TaskList } from './components/tasks';
 import { KanbanBoard } from './components/kanban';
-import { TaskDetailPanel } from './components/editor';
+import { TaskDetailPage } from './components/editor';
 import { QuickCaptureModal } from './components/capture';
 import { SettingsModal } from './components/settings';
 import { ArchiveModal } from './components/archive/ArchiveModal';
@@ -42,6 +42,18 @@ export default function App() {
     };
     initDefaultVault();
   }, [loadVault, vaultPath, vaultTree]);
+
+  // Keyboard shortcut listener: Cmd+N for quick note creation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+        e.preventDefault();
+        setIsQuickCaptureOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Register global / in-app shortcut bindings
   useGlobalShortcuts({
@@ -82,19 +94,16 @@ export default function App() {
         onOpenArchive={() => setIsArchiveOpen(true)}
       />
 
-      {/* 2. Main Content Canvas: Task List or Kanban Board */}
+      {/* 2. Main Content Canvas: Full-Page Task Detail OR Task List / Kanban Board */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
-        {activeView === 'kanban' ? (
+        {activeTaskId ? (
+          <TaskDetailPage onBack={() => setActiveTaskId(null)} />
+        ) : activeView === 'kanban' ? (
           <KanbanBoard />
         ) : (
           <TaskList />
         )}
       </div>
-
-      {/* 3. Slide-out Task Detail Drawer */}
-      {activeTaskId && (
-        <TaskDetailPanel onClose={() => setActiveTaskId(null)} />
-      )}
 
       {/* 4. Quick Capture Modal Spotlight */}
       <QuickCaptureModal
