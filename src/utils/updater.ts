@@ -67,6 +67,16 @@ export async function checkForAppUpdate(): Promise<UpdateInfo | null> {
         date: update.date,
       };
     } catch (err: any) {
+      const errorMsg = String(err?.message || err);
+      // If the latest release has no newer version or manifest returns 404, treat gracefully as up-to-date
+      if (
+        errorMsg.includes('404') ||
+        errorMsg.includes('Not Found') ||
+        errorMsg.includes('could not find latest') ||
+        errorMsg.includes('No updates')
+      ) {
+        return null;
+      }
       console.warn('Updater check error:', err);
       throw err;
     }
