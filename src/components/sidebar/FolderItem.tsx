@@ -264,7 +264,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
             onToggleFolder(node.path);
           }}
         >
-          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1 pr-1">
             <span
               onClick={(e) => {
                 e.stopPropagation();
@@ -300,10 +300,11 @@ export const FolderItem: React.FC<FolderItemProps> = ({
               </span>
             )}
 
-            <span className="truncate text-left">{node.name}</span>
+            <span className="truncate text-left flex-1 min-w-0">{node.name}</span>
           </div>
 
-          <div className="flex items-center gap-1">
+          {/* Action buttons (only takes space on hover via overlay or compact layout) */}
+          <div className="flex items-center gap-0.5 shrink-0">
             {/* Context Menu Button */}
             <button
               type="button"
@@ -313,13 +314,13 @@ export const FolderItem: React.FC<FolderItemProps> = ({
                 e.stopPropagation();
                 setShowContextMenu(!showContextMenu);
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 text-stone-400 hover:text-stone-700 hover:bg-sand-300/50 rounded transition-opacity"
+              className="hidden group-hover:flex p-1 text-stone-400 hover:text-stone-700 hover:bg-sand-300/50 rounded transition-opacity"
             >
               <MoreVertical className="w-3 h-3" />
             </button>
 
             {/* Quick Actions: Add subfolder / Add file */}
-            <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity shrink-0">
+            <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
               <button
                 type="button"
                 title="New file in folder"
@@ -486,7 +487,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
             : 'text-stone-600 hover:bg-sand-200/50 hover:text-stone-900 font-normal'
         }`}
       >
-        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1 pr-1">
           {folderIcon ? (
             folderIcon.startsWith('data:image') ? (
               <img
@@ -504,10 +505,10 @@ export const FolderItem: React.FC<FolderItemProps> = ({
               }`}
             />
           )}
-          <span className="truncate">{displayName}</span>
+          <span className="truncate flex-1 min-w-0">{displayName}</span>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 shrink-0">
           {/* Note Context Menu Button */}
           <button
             type="button"
@@ -517,7 +518,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
               e.stopPropagation();
               setShowContextMenu(!showContextMenu);
             }}
-            className="opacity-0 group-hover:opacity-100 p-1 text-stone-400 hover:text-stone-700 hover:bg-sand-300/50 rounded transition-opacity"
+            className="hidden group-hover:flex p-1 text-stone-400 hover:text-stone-700 hover:bg-sand-300/50 rounded transition-opacity"
           >
             <MoreVertical className="w-3 h-3" />
           </button>
