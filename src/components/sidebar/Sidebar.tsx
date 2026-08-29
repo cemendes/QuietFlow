@@ -79,10 +79,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const folderPath = `${vaultPath}/${folderName}`;
     await ipc.createDirectory(folderPath);
 
-    // Auto-create standard initial note inside folder with clean format (e.g. today date)
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    // Auto-create standard initial note inside folder with clean ISO date (YYYY-MM-DD)
     const now = new Date();
-    const dateStr = `${monthNames[now.getMonth()]} ${now.getDate()}`;
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
     const initialNoteName = `${dateStr}.md`;
     const primaryNotePath = `${folderPath}/${initialNoteName}`;
     const initialContent = `---\ntitle: ${dateStr}\n---\n\n# Tasks\n\n- [ ] Initial action item\n`;

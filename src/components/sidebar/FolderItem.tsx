@@ -73,10 +73,11 @@ export const FolderItem: React.FC<FolderItemProps> = ({
   };
 
   const formatDefaultNoteName = () => {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const now = new Date();
-    const dateStr = `${monthNames[now.getMonth()]} ${now.getDate()}`;
-    return dateStr;
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const handleCreateFileInFolder = async (customName?: string) => {
