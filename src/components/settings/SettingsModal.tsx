@@ -12,6 +12,12 @@ import {
 } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { isTauriEnvironment } from '../../store/ipc';
+import {
+  checkForAppUpdate,
+  downloadAndInstallUpdate,
+  safeRelaunchApp,
+  UpdateInfo,
+} from '../../utils/updater';
 
 export interface SettingsModalProps {
   isOpen: boolean;
@@ -39,6 +45,50 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const [shortcutKey] = useState('Option+Shift+Space');
   const [isApplying, setIsApplying] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // In-app updater states
+  const [updateStatus, setUpdateStatus] = useState<
+    'idle' | 'checking' | 'available' | 'up-to-date' | 'downloading' | 'ready' | 'error'
+  >('idle');
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+
+  const handleCheckUpdates = async () => {
+    setUpdateStatus('checking');
+    setUpdateError(null);
+    try {
+      const update = await checkForAppUpdate();
+      if (update) {
+        setUpdateInfo(update);
+        setUpdateStatus('available');
+      } else {
+        setUpdateStatus('up-to-date');
+      }
+    } catch (err: any) {
+      setUpdateStatus('error');
+      setUpdateError(err?.message || 'Failed to check for updates.');
+    }
+  };
+
+  const handleDownloadUpdate = async () => {
+    setUpdateStatus('downloading');
+    setDownloadProgress(0);
+    setUpdateError(null);
+    try {
+      await downloadAndInstallUpdate((_downloaded, _total, percent) => {
+        setDownloadProgress(percent);
+      });
+      setUpdateStatus('ready');
+    } catch (err: any) {
+      setUpdateStatus('error');
+      setUpdateError(err?.message || 'Download failed or signature verification failed.');
+    }
+  };
+
+  const handleRelaunch = async () => {
+    await safeRelaunchApp();
+  };
 
   const applyTheme = (themeName: 'warm-paper' | 'nordic-slate' | 'forest-moss') => {
     setSelectedTheme(themeName);
@@ -489,23 +539,97 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   </p>
                 </div>
 
-                <div className="p-4 bg-sand-50 rounded-xl border border-sand-200 space-y-2 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Version</span>
-                    <span className="font-mono text-slate-700">0.1.0-alpha</span>
+                <div className="p-4 bg-sand-50 rounded-xl border border-sand-200 space-y-2.5 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Current Version</span>
+                    <span className="font-mono text-slate-700 font-medium">v0.1.0-alpha.2</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-slate-500">Architecture</span>
                     <span className="text-slate-700">Tauri v2 + React 18 + Rust Core</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-slate-500">Storage Backend</span>
                     <span className="text-slate-700">Plaintext Markdown (Filesystem)</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-slate-500">Sync & Privacy</span>
                     <span className="text-emerald-700 font-medium">100% Local / Zero Cloud Leak</span>
                   </div>
+                </div>
+
+                {/* Software Update Card */}
+                <div className="p-4 bg-white rounded-xl border border-sand-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-slate-800">Software Updates</div>
+                      <div className="text-[11px] text-slate-500">
+                        {updateStatus === 'idle' && 'Check for latest improvements and security updates.'}
+                        {updateStatus === 'checking' && 'Checking GitHub Releases for updates...'}
+                        {updateStatus === 'available' && `New release v${updateInfo?.version} is available!`}
+                        {updateStatus === 'up-to-date' && 'QuietFlow is up to date.'}
+                        {updateStatus === 'downloading' && `Downloading update... ${downloadProgress}%`}
+                        {updateStatus === 'ready' && 'Update downloaded! Ready to install.'}
+                        {updateStatus === 'error' && (updateError || 'Failed to check for updates.')}
+                      </div>
+                    </div>
+
+                    {updateStatus === 'idle' || updateStatus === 'up-to-date' || updateStatus === 'error' ? (
+                      <button
+                        type="button"
+                        data-testid="check-updates-btn"
+                        onClick={handleCheckUpdates}
+                        className="px-3 py-1.5 text-xs font-semibold text-forest-700 bg-sand-100 hover:bg-sand-200 border border-sand-300 rounded-lg transition-colors"
+                      >
+                        Check for Updates
+                      </button>
+                    ) : updateStatus === 'checking' ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="px-3 py-1.5 text-xs font-semibold text-slate-400 bg-sand-50 border border-sand-200 rounded-lg cursor-not-allowed"
+                      >
+                        Checking...
+                      </button>
+                    ) : updateStatus === 'available' ? (
+                      <button
+                        type="button"
+                        data-testid="download-update-btn"
+                        onClick={handleDownloadUpdate}
+                        className="px-3 py-1.5 text-xs font-semibold text-white bg-forest-700 hover:bg-forest-800 shadow-xs rounded-lg transition-colors"
+                      >
+                        Download & Install
+                      </button>
+                    ) : updateStatus === 'ready' ? (
+                      <button
+                        type="button"
+                        data-testid="relaunch-update-btn"
+                        onClick={handleRelaunch}
+                        className="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 shadow-xs rounded-lg transition-colors"
+                      >
+                        Relaunch Now
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {/* Download Progress Bar */}
+                  {updateStatus === 'downloading' && (
+                    <div className="w-full bg-sand-100 rounded-full h-2 overflow-hidden border border-sand-200">
+                      <div
+                        data-testid="update-progress-bar"
+                        className="bg-forest-600 h-2 rounded-full transition-all duration-150"
+                        style={{ width: `${downloadProgress}%` }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Release Notes Preview */}
+                  {updateInfo?.body && (
+                    <div className="p-2.5 bg-sand-50/80 rounded-lg border border-sand-200/80 text-[11px] text-slate-600 whitespace-pre-line">
+                      <div className="font-semibold text-slate-700 mb-1">Release Notes:</div>
+                      {updateInfo.body}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

@@ -9,6 +9,7 @@ import { QuickCaptureModal } from './components/capture';
 import { SettingsModal } from './components/settings';
 import { ArchiveModal } from './components/archive/ArchiveModal';
 import { BreadcrumbBanner } from './components/breadcrumb/BreadcrumbBanner';
+import { UpdateToast } from './components/updater/UpdateToast';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
 export default function App() {
@@ -112,6 +113,9 @@ export default function App() {
 
       {/* 7. Cognitive Re-entry Breadcrumb Banner */}
       <BreadcrumbBanner />
+
+      {/* 8. In-App Auto Update Toast Notification */}
+      <UpdateToast />
     </div>
   );
 }
