@@ -41,7 +41,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDcyNjE5REMzRTNGRTkyNzcKUldSM2t2N2p3NTFoY3Zsa3YvdnA0dXlhZmNtamdxZGJ3eXVoMzNVOWRlSXBiQ1JsUytVSG96a3UK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU1QTdCQTNGNDc3MzYwNTAKUldSUVlITkhQN3FuNVRlVHNaYjEzU0hSR0h2aTJ3cUVQdHAyT0lGMmFMSkhhUVpaTDNWUlRIYksK",
       "endpoints": [
         "https://github.com/cemendes/QuietFlow/releases/latest/download/latest.json"
       ]
