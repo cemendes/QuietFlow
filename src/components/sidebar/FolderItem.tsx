@@ -14,6 +14,7 @@ import { ipc } from '../../store/ipc';
 import { useVaultStore } from '../../store';
 import { resolveFolderIcon } from '../../services/logoService';
 import FolderContextMenu from './FolderContextMenu';
+import { FileHistoryModal } from '../history/FileHistoryModal';
 
 export interface FolderItemProps {
   node: VaultNode;
@@ -42,6 +43,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
   const [newSubName, setNewSubName] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const vaultPath = useVaultStore((state) => state.vaultPath);
   const logoConfig = useVaultStore((state) => state.logoConfig);
   const setStoreFolderIcon = useVaultStore((state) => state.setFolderIcon);
@@ -178,6 +180,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragOver(false);
 
     // 1. Check if a task was dropped
@@ -237,7 +240,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
         data-testid={`folder-container-${node.path}`}
         className={`flex flex-col select-none rounded-md transition-colors ${
           isDragOver ? 'bg-forest-100/60 ring-1 ring-forest-500' : ''
-        }`}
+        } ${level === 0 ? 'border-l-2 border-forest-500/40 ml-1' : ''}`}
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
@@ -466,6 +469,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
         onDragOver={handleDragOver}
         onDragEnter={(e) => {
           e.preventDefault();
+          e.stopPropagation();
           setIsDragOver(true);
         }}
         onDragLeave={handleDragLeave}
@@ -544,9 +548,18 @@ export const FolderItem: React.FC<FolderItemProps> = ({
           onDelete={async () => {
             await deleteEntry(node.path);
           }}
+          onViewHistory={() => setIsHistoryOpen(true)}
           onSetEmoji={handleSetEmoji}
           onUploadLogo={handleUploadLogo}
           onClose={() => setShowContextMenu(false)}
+        />
+      )}
+
+      {isHistoryOpen && (
+        <FileHistoryModal
+          isOpen={isHistoryOpen}
+          filePath={node.path}
+          onClose={() => setIsHistoryOpen(false)}
         />
       )}
     </div>

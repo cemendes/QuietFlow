@@ -47,6 +47,13 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Run Unit, Autonomous & Stress Test Suite
+        run: |
+          npm run test
+          npx playwright install --with-deps chromium
+          npm run test:autonomous
+          npm run test:chaos
+
       - name: Build Tauri App (Produces .dmg, .exe / .msi, and .deb / .AppImage)
         uses: tauri-apps/tauri-action@v0
         env:

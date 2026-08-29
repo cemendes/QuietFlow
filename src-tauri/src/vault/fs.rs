@@ -106,6 +106,9 @@ pub fn write_file_atomic(path: String, content: String) -> Result<(), String> {
             .map_err(|e| format!("Failed to create parent directory '{}': {}", parent.display(), e))?;
     }
 
+    // Automatically preserve a pre-write swap snapshot if file already exists on disk
+    let _ = crate::vault::snapshots::create_pre_write_snapshot_if_needed(parent, &target_path);
+
     let file_name = target_path
         .file_name()
         .ok_or_else(|| format!("Invalid file name: '{}'", path))?

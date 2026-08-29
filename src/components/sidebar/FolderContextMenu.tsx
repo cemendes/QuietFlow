@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Edit3, FilePlus, FolderPlus, Trash2, Image, Smile } from 'lucide-react';
+import { Edit3, FilePlus, FolderPlus, Trash2, Image, Smile, History } from 'lucide-react';
 
 export interface FolderContextMenuProps {
   folderName: string;
@@ -8,6 +8,7 @@ export interface FolderContextMenuProps {
   onRename: (newName: string) => void;
   onAddNote?: () => void;
   onAddSubfolder?: () => void;
+  onViewHistory?: () => void;
   onDelete: () => void;
   onSetEmoji?: (emoji: string) => void;
   onUploadLogo?: (dataUrl: string) => void;
@@ -22,6 +23,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
   onRename,
   onAddNote,
   onAddSubfolder,
+  onViewHistory,
   onDelete,
   onSetEmoji,
   onUploadLogo,
@@ -153,6 +155,20 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
             <Edit3 className="w-3.5 h-3.5 text-stone-500" />
             <span>Rename</span>
           </button>
+
+          {!isDirectory && onViewHistory && (
+            <button
+              type="button"
+              onClick={() => {
+                onViewHistory();
+                onClose();
+              }}
+              className="flex w-full items-center gap-2 px-3 py-1.5 hover:bg-sand-100 transition-colors text-left"
+            >
+              <History className="w-3.5 h-3.5 text-stone-500" />
+              <span>Version History</span>
+            </button>
+          )}
 
           {isDirectory && onAddNote && (
             <button

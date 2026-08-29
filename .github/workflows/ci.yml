@@ -1,0 +1,56 @@
+name: CI & Autonomous Testing Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-and-verify:
+    name: Unit, Autonomous & Stress Testing
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers & OS Dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Setup Rust Stable Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux System Dependencies for Tauri
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: 1. Run Rust Core Unit & Native FS Tests (Cargo)
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: 2. Run Frontend Unit, Component & Fuzzing Tests (Vitest)
+        run: npm run test
+
+      - name: 3. Run Autonomous Menu & State Crawler (Playwright)
+        run: npm run test:autonomous
+
+      - name: 4. Run Chaos & Monkey Stress Test (Gremlins.js)
+        run: npm run test:chaos
+
+      - name: Upload Test Results & Findings Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quietflow-autonomous-test-reports
+          path: test-results/
+          retention-days: 14

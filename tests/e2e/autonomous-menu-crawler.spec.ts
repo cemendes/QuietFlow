@@ -192,24 +192,27 @@ test.describe('QuietFlow Autonomous Menu & View State Crawler', () => {
 
     for (let i = 0; i < fileCount; i++) {
       const fileItem = fileItems.nth(i);
-      const fileName = (await fileItem.innerText()).split('\n')[0] || `Note-${i}`;
+      if (await fileItem.isVisible()) {
+        const fileName = (await fileItem.innerText()).split('\n')[0] || `Note-${i}`;
 
-      await recordAction('Navigation', `Select Note: ${fileName}`, async () => {
-        await fileItem.click();
-        await page.waitForTimeout(200);
-      });
+        await recordAction('Navigation', `Select Note: ${fileName}`, async () => {
+          await fileItem.click();
+          await page.waitForTimeout(200);
+        });
 
-      await recordAction('Context Menu', `Note Context Menu: ${fileName}`, async () => {
-        await fileItem.click({ button: 'right' });
-        await page.waitForTimeout(200);
-        const contextMenu = page.locator('[data-testid="folder-context-menu"]');
-        if (await contextMenu.isVisible()) {
-          await expect(contextMenu.locator('text=Rename')).toBeVisible();
-          await expect(contextMenu.locator('text=Delete')).toBeVisible();
-          await page.keyboard.press('Escape');
-          await page.waitForTimeout(100);
-        }
-      });
+        await recordAction('Context Menu', `Note Context Menu: ${fileName}`, async () => {
+          await fileItem.click({ button: 'right' });
+          await page.waitForTimeout(200);
+          const contextMenu = page.locator('[data-testid="folder-context-menu"]');
+          if (await contextMenu.isVisible()) {
+            await expect(contextMenu.locator('text=Rename')).toBeVisible();
+            await expect(contextMenu.locator('text=Version History')).toBeVisible();
+            await expect(contextMenu.locator('text=Delete')).toBeVisible();
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(100);
+          }
+        });
+      }
     }
 
     // -------------------------------------------------------------
@@ -287,7 +290,12 @@ test.describe('QuietFlow Autonomous Menu & View State Crawler', () => {
       await page.waitForTimeout(150);
       await expect(settingsModal.locator('text=Google Gemini API Key')).toBeVisible();
 
-      // Tab 2: Theme & Colors (Cycle all 3 themes)
+      // Tab 2: Snapshots & Swap
+      await settingsModal.locator('button:has-text("Snapshots & Swap")').click();
+      await page.waitForTimeout(150);
+      await expect(settingsModal.locator('text=Vault Snapshots & Swap Recovery')).toBeVisible();
+
+      // Tab 3: Theme & Colors (Cycle all 3 themes)
       await settingsModal.locator('button:has-text("Theme & Colors")').click();
       await page.waitForTimeout(150);
 
@@ -298,12 +306,12 @@ test.describe('QuietFlow Autonomous Menu & View State Crawler', () => {
       await settingsModal.locator('[data-testid="theme-option-warm-paper"]').click();
       await page.waitForTimeout(100);
 
-      // Tab 3: Shortcuts
+      // Tab 4: Shortcuts
       await settingsModal.locator('button:has-text("Shortcuts")').click();
       await page.waitForTimeout(150);
       await expect(settingsModal.locator('text=Global Quick Capture')).toBeVisible();
 
-      // Tab 4: About & Software Updates
+      // Tab 5: About & Software Updates
       await settingsModal.locator('button:has-text("About & Status")').click();
       await page.waitForTimeout(150);
       await expect(settingsModal.locator('text=QuietFlow Desktop')).toBeVisible();

@@ -62,3 +62,8 @@ dist-ssr/
 # Rust & Tauri Builds
 target/
 src-tauri/target/
+
+# Test Results & Artifacts
+test-results/
+playwright-report/
+blob-report/

@@ -9,6 +9,7 @@ import { QuickCaptureModal } from './components/capture';
 import { SettingsModal } from './components/settings';
 import { ArchiveModal } from './components/archive/ArchiveModal';
 import { BreadcrumbBanner } from './components/breadcrumb/BreadcrumbBanner';
+import { CorruptionWarningBanner } from './components/history/CorruptionWarningBanner';
 import { UpdateToast } from './components/updater/UpdateToast';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
@@ -96,6 +97,7 @@ export default function App() {
 
       {/* 2. Main Content Canvas: Full-Page Task Detail OR Task List / Kanban Board */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
+        <CorruptionWarningBanner />
         {activeTaskId ? (
           <TaskDetailPage onBack={() => setActiveTaskId(null)} />
         ) : activeView === 'kanban' ? (

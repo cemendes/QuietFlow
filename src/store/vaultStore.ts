@@ -35,6 +35,8 @@ const INITIAL_STATE: VaultStoreState = {
   selectedTag: null,
   selectedPriority: null,
   logoConfig: {},
+  snapshots: [],
+  corruptedFileWarning: null,
   isLoading: false,
   isSaving: false,
   error: null,
@@ -262,12 +264,26 @@ async function selectFile(filePath: string): Promise<void> {
       filePath,
     }));
 
+    // Check for potential corruption: file is 0 bytes / empty but has previous snapshots
+    let corrupted = false;
+    if (content.trim() === '') {
+      try {
+        const snapList = await ipc.listSnapshots(getState().vaultPath || '', filePath);
+        if (snapList && snapList.length > 0) {
+          corrupted = true;
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
     set((prev) => ({
       ...prev,
       activeFile: filePath,
       activeFolder: null,
       activeDocument: doc,
       tasks: tasksWithFile,
+      corruptedFileWarning: corrupted ? filePath : null,
       isLoading: false,
     }));
   } catch (err: any) {
@@ -277,6 +293,46 @@ async function selectFile(filePath: string): Promise<void> {
       error: err?.message || err?.toString() || `Failed to read file: ${filePath}`,
     }));
   }
+}
+
+async function loadSnapshotsForFile(filePath: string): Promise<SnapshotMetadata[]> {
+  const vaultPath = getState().vaultPath || '';
+  try {
+    const list = await ipc.listSnapshots(vaultPath, filePath);
+    set({ snapshots: list });
+    return list;
+  } catch (err) {
+    console.error('Failed to load snapshots:', err);
+    return [];
+  }
+}
+
+async function restoreSnapshotForFile(filePath: string, snapshotId: string): Promise<void> {
+  const vaultPath = getState().vaultPath || '';
+  try {
+    await ipc.restoreSnapshot(vaultPath, filePath, snapshotId);
+    set({ corruptedFileWarning: null });
+    await refreshActiveFile();
+    await loadSnapshotsForFile(filePath);
+  } catch (err) {
+    console.error('Failed to restore snapshot:', err);
+  }
+}
+
+async function createManualSnapshot(filePath: string): Promise<SnapshotMetadata | null> {
+  const vaultPath = getState().vaultPath || '';
+  try {
+    const snap = await ipc.createManualSnapshot(vaultPath, filePath);
+    await loadSnapshotsForFile(filePath);
+    return snap;
+  } catch (err) {
+    console.error('Failed to create manual snapshot:', err);
+    return null;
+  }
+}
+
+function dismissCorruptionWarning(): void {
+  set({ corruptedFileWarning: null });
 }
 
 async function refreshActiveFile(): Promise<void> {
@@ -669,6 +725,10 @@ const actions = {
   deleteEntry,
   setFolderIcon,
   getFolderIcon,
+  loadSnapshotsForFile,
+  restoreSnapshotForFile,
+  createManualSnapshot,
+  dismissCorruptionWarning,
   setTasks,
   toggleTask,
   updateTask,

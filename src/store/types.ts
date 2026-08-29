@@ -30,6 +30,16 @@ export type VaultTree = VaultNode;
 
 export type ViewMode = 'list' | 'kanban';
 
+export interface SnapshotMetadata {
+  id: string;
+  timestamp: string;
+  fileName: string;
+  relativePath: string;
+  sizeBytes: number;
+  snapshotPath: string;
+  taskCount: number;
+}
+
 export interface VaultStoreState {
   vaultPath: string | null;
   vaultTree: VaultTree | null;
@@ -43,6 +53,8 @@ export interface VaultStoreState {
   selectedTag: string | null;
   selectedPriority: TaskPriority | null;
   logoConfig: Record<string, string>;
+  snapshots: SnapshotMetadata[];
+  corruptedFileWarning: string | null;
   isLoading: boolean;
   isSaving: boolean;
   error: string | null;
@@ -59,6 +71,12 @@ export interface VaultStoreActions {
   deleteEntry: (path: string) => Promise<void>;
   setFolderIcon: (folderPath: string, iconDataOrEmoji: string) => Promise<void>;
   getFolderIcon: (folderPath: string) => string | null;
+
+  // Snapshot & Swap Recovery operations
+  loadSnapshotsForFile: (filePath: string) => Promise<SnapshotMetadata[]>;
+  restoreSnapshotForFile: (filePath: string, snapshotId: string) => Promise<void>;
+  createManualSnapshot: (filePath: string) => Promise<SnapshotMetadata | null>;
+  dismissCorruptionWarning: () => void;
 
   // Task operations
   setTasks: (tasks: TaskItem[]) => void;

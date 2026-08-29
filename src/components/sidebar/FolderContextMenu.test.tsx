@@ -6,8 +6,8 @@ describe('FolderContextMenu Component', () => {
   it('renders Rename, Add Note, Choose Folder Icon, Upload Logo, and Delete options', () => {
     render(
       <FolderContextMenu
-        folderName="PRivia"
-        folderPath="/vault/PRivia"
+        folderName="Projects"
+        folderPath="/vault/Projects"
         isDirectory={true}
         onRename={vi.fn()}
         onAddNote={vi.fn()}
@@ -28,8 +28,8 @@ describe('FolderContextMenu Component', () => {
     const handleRename = vi.fn();
     render(
       <FolderContextMenu
-        folderName="PRivia"
-        folderPath="/vault/PRivia"
+        folderName="Projects"
+        folderPath="/vault/Projects"
         isDirectory={true}
         onRename={handleRename}
         onDelete={vi.fn()}
@@ -39,10 +39,10 @@ describe('FolderContextMenu Component', () => {
 
     fireEvent.click(screen.getByText('Rename'));
     const input = screen.getByRole('textbox');
-    fireEvent.change(input, { target: { value: 'PRivia V2' } });
+    fireEvent.change(input, { target: { value: 'Projects V2' } });
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
-    expect(handleRename).toHaveBeenCalledWith('PRivia V2');
+    expect(handleRename).toHaveBeenCalledWith('Projects V2');
   });
 
   it('dismisses popup on click outside and on Escape key press', () => {
@@ -51,8 +51,8 @@ describe('FolderContextMenu Component', () => {
       <div>
         <div data-testid="outside-element">Outside Area</div>
         <FolderContextMenu
-          folderName="PRivia"
-          folderPath="/vault/PRivia"
+          folderName="Projects"
+          folderPath="/vault/Projects"
           isDirectory={true}
           onRename={vi.fn()}
           onDelete={vi.fn()}

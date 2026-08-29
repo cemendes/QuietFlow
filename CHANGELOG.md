@@ -11,6 +11,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.0-alpha.5] - 2026-08-29
+
+### Added
+- **Vault Snapshots & Swap Recovery Engine**:
+  - Automatic rate-limited pre-write snapshots (every 2 minutes per file) before saving edits, stored in `.quietflow/snapshots/`.
+  - Rolling retention policy: keeps the last 20 snapshots per note with a 14-day expiration auto-pruning window.
+  - Portable and hidden: backups travel with the vault across cloud drives while staying hidden from sidebar navigation.
+- **Proactive File Corruption Guard & Recovery Banner**:
+  - Automatically detects empty (0-byte) or damaged note files and presents an instant recovery banner: *"Empty or Corrupted File Detected. [Restore from Snapshot]"*.
+- **Note Version History Modal & Settings Tab**:
+  - Right-click any note in the sidebar $\rightarrow$ **"Version History"** to preview snapshot revisions, timestamps, file sizes, and 1-click restore.
+  - Manual **"Snapshot Now"** button to capture on-demand snapshots.
+  - Dedicated **"Snapshots & Swap"** information panel in Settings.
+- **Full-Page Task Detail View**:
+  - Dedicated full-canvas task view with markdown notes editor and chronologically sorted comments feed.
+- **Autonomous Menu Crawler & State Exploration Engine**:
+  - Dynamic 17-state Playwright crawler testing all system views, focus filters, folder/note right-click context menus, and preferences tabs.
+- **Chaos Monkey Stress Test Harness**:
+  - Gremlins.js stress testing harness firing 1,000 rapid randomized user actions at ~59 actions/sec with 0 unhandled exceptions.
+- **Markdown Parser Fuzzing & Robustness Suite**:
+  - 100-iteration synthetic garbage fuzzer, deep subtask nesting tests, and preservation of URL fragments (`#section`) and issue tags (`#45`).
+- **Rust Backend Testing in CI & Pre-Version Gatekeeper**:
+  - Added native `cargo test` step to GitHub Actions CI workflow.
+  - Release gatekeeper hook (`npm run preversion`) verifying Rust backend tests, Vitest suite, and Playwright autonomous crawler before version bumps.
+- **Dynamic Version & Dev Build Indicator**:
+  - Displays runtime app bundle version with Git commit SHA badge in local development.
+
+### Fixed
+- **Markdown Tag Parsing**: Fixed regex tag extraction so URL anchors (`http://...#section`) and numerical issue numbers (`[PR #45]`) are preserved in task titles instead of being stripped as `#tags`.
+- **Archive Modal Escape Dismissal**: Added `Escape` key listener to `ArchiveModal.tsx` for consistent keyboard navigation.
+- **Settings Modal Version Display**: Replaced hardcoded version label with dynamic `@tauri-apps/api/app` `getVersion()` query.
+
+---
+
 ## [0.1.0-alpha.4] - 2026-08-28
 
 ### Added

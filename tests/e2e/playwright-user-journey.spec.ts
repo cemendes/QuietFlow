@@ -23,11 +23,11 @@ test.describe('QuietFlow Desktop User Journey & Usability E2E Tests', () => {
     if (await addFolderBtn.isVisible()) {
       await addFolderBtn.click();
       const folderInput = page.locator('input[placeholder="Folder name..."]');
-      await folderInput.fill('PRivia');
+      await folderInput.fill('Projects');
       await page.keyboard.press('Enter');
 
-      // Check that PRivia folder and PRivia.md are rendered
-      await expect(page.locator('text=PRivia')).toBeVisible();
+      // Check that Projects folder and Projects.md are rendered
+      await expect(page.locator('text=Projects')).toBeVisible();
       const step2Path = path.join(ARTIFACT_DIR, 'journey_step2_folder_created.png');
       await page.screenshot({ path: step2Path });
     }

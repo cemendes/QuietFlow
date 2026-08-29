@@ -22,7 +22,7 @@ describe('In-App Updater Lifecycle & Security Simulation Test Suite', () => {
     const updateInfo = await checkForAppUpdate();
     expect(updateInfo).not.toBeNull();
     expect(updateInfo?.version).toBe('0.2.0-alpha.1');
-    expect(updateInfo?.currentVersion).toBe('0.1.0-alpha.3');
+    expect(updateInfo?.currentVersion).toBe('0.1.0-alpha.4');
     expect(updateInfo?.body).toContain('auto-updater integration');
 
     // Simulate progress callback

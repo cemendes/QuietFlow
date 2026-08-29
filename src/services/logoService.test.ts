@@ -17,10 +17,10 @@ describe('logoService', () => {
   });
 
   it('getFolderRelativePath computes correct relative paths', () => {
-    expect(getFolderRelativePath(mockVault, '/MockVault/Privia')).toBe('Privia');
+    expect(getFolderRelativePath(mockVault, '/MockVault/Alpha')).toBe('Alpha');
     expect(getFolderRelativePath(mockVault, '/MockVault/Clients/Acme')).toBe('Clients/Acme');
     expect(getFolderRelativePath(mockVault, '/MockVault')).toBe('');
-    expect(getFolderRelativePath(mockVault, 'Privia')).toBe('Privia');
+    expect(getFolderRelativePath(mockVault, 'Alpha')).toBe('Alpha');
   });
 
   it('loadLogoConfig returns empty object if file does not exist', async () => {
@@ -30,8 +30,8 @@ describe('logoService', () => {
 
   it('saveLogoConfig and loadLogoConfig persist mapping to .logos/config.json', async () => {
     const mockConfig = {
-      Privia: 'privia_icon.png',
-      Google: 'google_icon.png',
+      Alpha: 'alpha_icon.png',
+      Beta: 'beta_icon.png',
     };
 
     await saveLogoConfig(mockVault, mockConfig);
@@ -49,9 +49,9 @@ describe('logoService', () => {
 
   it('resolveFolderIcon resolves data URL directly', async () => {
     const config = {
-      Privia: 'data:image/png;base64,mockdata',
+      Alpha: 'data:image/png;base64,mockdata',
     };
-    const icon = await resolveFolderIcon(mockVault, '/MockVault/Privia', config);
+    const icon = await resolveFolderIcon(mockVault, '/MockVault/Alpha', config);
     expect(icon).toBe('data:image/png;base64,mockdata');
   });
 

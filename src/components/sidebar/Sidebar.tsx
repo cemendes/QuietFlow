@@ -8,6 +8,8 @@ import {
   Plus,
   Folder,
   FolderPlus,
+  Library,
+  Vault,
 } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { isTauriEnvironment, ipc } from '../../store/ipc';
@@ -34,7 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return saved ? parseInt(saved, 10) : 240;
   });
   const [isResizing, setIsResizing] = useState(false);
-  const [activeScope, setActiveScope] = useState<'today' | 'inbox' | 'starred' | null>('today');
+  const [activeScope, setActiveScope] = useState<'today' | 'inbox' | 'vault' | 'starred' | null>('today');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
@@ -99,9 +101,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Compute counts for Inbox badge
   const inboxTasksCount = tasks.filter((t) => {
-    const isInboxTask = t.filePath?.toLowerCase().includes('inbox') || activeFile?.toLowerCase().includes('inbox');
-    return isInboxTask && t.status !== 'done';
+    return t.filePath?.toLowerCase().includes('inbox') && t.status !== 'done';
   }).length;
+
+  const handleVaultClick = async () => {
+    setActiveScope('vault');
+    if (!vaultPath) return;
+    await selectFolder(vaultPath);
+  };
 
   const handleInboxClick = async () => {
     setActiveScope('inbox');
@@ -239,8 +246,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
 
-      {/* System Views Navigation (Inbox Only) */}
-      <div className="px-2 py-1 space-y-0.5">
+      {/* System Views Navigation */}
+      <div className="px-2 pt-3 pb-1 space-y-0.5">
+        {/* My Vault — loads all tasks across entire vault */}
+        <button
+          type="button"
+          onClick={handleVaultClick}
+          title="My Vault"
+          className={`flex w-full items-center px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+            activeScope === 'vault' || activeFolder === vaultPath
+              ? 'bg-sand-200/90 text-forest-700 font-semibold shadow-xs'
+              : 'text-stone-600 hover:bg-sand-200/50 hover:text-stone-900'
+          }`}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xs leading-none shrink-0 w-4 text-center">🗄️</span>
+            {!isCollapsed && <span className="truncate">My Vault</span>}
+          </div>
+        </button>
+
+        {/* Inbox */}
         <button
           type="button"
           onClick={handleInboxClick}
@@ -278,14 +303,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <>
             <div className="flex items-center justify-between px-2 py-1 mb-1">
               <span className="text-[10px] font-bold tracking-wider text-stone-400 uppercase">
-                Folders
+                Projects
               </span>
               <button
                 type="button"
                 data-testid="add-folder-btn"
                 onClick={() => setIsCreatingFolder(!isCreatingFolder)}
-                title="New folder"
-                aria-label="New folder"
+                title="New project"
+                aria-label="New project"
                 className="p-1 text-stone-400 hover:text-forest-700 hover:bg-sand-200/60 rounded transition-colors"
               >
                 <FolderPlus className="w-3.5 h-3.5" />
