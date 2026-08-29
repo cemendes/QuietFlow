@@ -278,7 +278,11 @@ export const FolderItem: React.FC<FolderItemProps> = ({
                 title="New file in folder"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleCreateFileInFolder();
+                  const defaultName = formatDefaultNoteName();
+                  setNewSubName(defaultName);
+                  setIsCreatingFile(true);
+                  setIsCreatingSubfolder(false);
+                  if (!isExpanded) onToggleFolder(node.path);
                 }}
                 className="p-1 text-stone-400 hover:text-forest-700 hover:bg-sand-300/50 rounded"
               >
@@ -289,8 +293,10 @@ export const FolderItem: React.FC<FolderItemProps> = ({
                 title="New subfolder"
                 onClick={(e) => {
                   e.stopPropagation();
+                  setNewSubName('');
                   setIsCreatingSubfolder(true);
                   setIsCreatingFile(false);
+                  if (!isExpanded) onToggleFolder(node.path);
                 }}
                 className="p-1 text-stone-400 hover:text-forest-700 hover:bg-sand-300/50 rounded"
               >

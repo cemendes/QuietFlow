@@ -33,6 +33,10 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setRenamedValue(folderName);
+  }, [folderName]);
+
+  useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         onClose();
