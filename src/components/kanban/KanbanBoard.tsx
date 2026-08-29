@@ -35,10 +35,55 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
   const setSelectedTag = useVaultStore((state) => state.setSelectedTag);
   const setSelectedPriority = useVaultStore((state) => state.setSelectedPriority);
-  const setSearchQuery = useVaultStore((state) => state.setSearchQuery);
-
   const activeFolder = useVaultStore((state) => state.activeFolder);
+  const vaultPath = useVaultStore((state) => state.vaultPath);
+  const logoConfig = useVaultStore((state) => state.logoConfig);
   const getFolderIcon = useVaultStore((state) => state.getFolderIcon);
+
+  const [headerIcon, setHeaderIcon] = React.useState<string | null>(null);
+
+  // Compute target folder path for the current view
+  const currentFolderPath = useMemo(() => {
+    if (activeFolder) return activeFolder;
+    if (activeFile) {
+      const parent = activeFile.substring(0, activeFile.lastIndexOf('/'));
+      return parent || null;
+    }
+    return null;
+  }, [activeFile, activeFolder]);
+
+  // Synchronously compute initial icon and asynchronously resolve Tauri asset / base64 if needed
+  React.useEffect(() => {
+    let isMounted = true;
+    if (!currentFolderPath) {
+      setHeaderIcon(null);
+      return;
+    }
+
+    // 1. Synchronous check
+    const syncIcon =
+      (getFolderIcon ? getFolderIcon(currentFolderPath) : null) ||
+      (typeof localStorage !== 'undefined' ? localStorage.getItem(`folder-icon-${currentFolderPath}`) : null);
+
+    if (syncIcon) {
+      setHeaderIcon(syncIcon);
+    }
+
+    // 2. Async resolution (for Tauri convertFileSrc / disk files)
+    if (vaultPath) {
+      import('../../services/logoService').then(({ resolveFolderIcon }) => {
+        resolveFolderIcon(vaultPath, currentFolderPath, logoConfig).then((resolved) => {
+          if (isMounted && resolved) {
+            setHeaderIcon(resolved);
+          }
+        });
+      });
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentFolderPath, vaultPath, logoConfig, getFolderIcon]);
 
   // Determine display title
   const computedTitle = useMemo(() => {
@@ -46,7 +91,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     if (activeFile) {
       const fileName = activeFile.split('/').pop()?.replace(/\.md$/, '') || 'Tasks';
       if (fileName.toLowerCase() === 'inbox') {
-        return '📥 Inbox';
+        return 'Inbox';
       }
       if (fileName.toLowerCase() === 'today') {
         return "Today's Focus";
@@ -134,20 +179,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       >
         <FocusHeader
           title={computedTitle}
-          icon={
-            activeFile
-              ? (getFolderIcon ? getFolderIcon(activeFile.substring(0, activeFile.lastIndexOf('/'))) || getFolderIcon(activeFile) : null) ||
-                (typeof localStorage !== 'undefined'
-                  ? localStorage.getItem(`folder-icon-${activeFile.substring(0, activeFile.lastIndexOf('/'))}`) ||
-                    localStorage.getItem(`folder-icon-${activeFile}`)
-                  : null)
-              : activeFolder
-              ? (getFolderIcon ? getFolderIcon(activeFolder) : null) ||
-                (typeof localStorage !== 'undefined'
-                  ? localStorage.getItem(`folder-icon-${activeFolder}`)
-                  : null)
-              : null
-          }
+          icon={headerIcon}
           completedCount={completedCount}
           totalCount={totalCount}
           activeFocusBucket={activeFocusBucket}
