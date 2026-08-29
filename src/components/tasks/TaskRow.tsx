@@ -168,10 +168,14 @@ export const TaskRow: React.FC<TaskRowProps> = ({
       <div className="flex-1 min-w-0 flex items-center gap-2">
         <span
           className={`text-sm leading-snug truncate ${
-            isDone ? 'line-through text-slate-400 font-normal' : 'text-slate-800 font-medium'
+            isDone
+              ? 'line-through text-slate-400 font-normal'
+              : !task.title || !task.title.trim()
+              ? 'text-slate-400 italic font-normal'
+              : 'text-slate-800 font-medium'
           }`}
         >
-          {task.title}
+          {task.title && task.title.trim() ? task.title : 'Untitled task (click to edit)'}
         </span>
       </div>
 

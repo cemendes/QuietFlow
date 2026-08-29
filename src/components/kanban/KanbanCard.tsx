@@ -98,11 +98,15 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
       <div className="flex items-start gap-2 w-full">
         <GripVertical className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 shrink-0 mt-0.5 transition-colors" />
         <h4
-          className={`text-xs font-semibold leading-relaxed break-words flex-1 tracking-tight ${
-            isDone ? 'line-through text-slate-400' : 'text-slate-800'
+          className={`text-xs leading-relaxed break-words flex-1 tracking-tight ${
+            isDone
+              ? 'line-through text-slate-400 font-normal'
+              : !task.title || !task.title.trim()
+              ? 'text-slate-400 italic font-normal'
+              : 'text-slate-800 font-semibold'
           }`}
         >
-          {task.title}
+          {task.title && task.title.trim() ? task.title : 'Untitled task'}
         </h4>
       </div>
 

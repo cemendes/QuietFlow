@@ -178,10 +178,12 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
       <div className="flex items-start justify-between gap-2 p-5 pb-3">
         <input
           type="text"
+          autoFocus={!activeTask.title || !activeTask.title.trim()}
           value={activeTask.title}
           onChange={(e) => handleTitleChange(e.target.value)}
+          placeholder="Task title..."
           aria-label="Task title"
-          className="flex-1 text-lg font-semibold text-slate-800 bg-transparent border-0 border-b border-transparent hover:border-sand-300 focus:border-forest-500 focus:outline-none px-1 py-0.5 rounded transition-colors"
+          className="flex-1 text-lg font-semibold text-slate-800 placeholder-slate-400 bg-transparent border-0 border-b border-transparent hover:border-sand-300 focus:border-forest-500 focus:outline-none px-1 py-0.5 rounded transition-colors"
         />
         <div className="flex items-center gap-1">
           <button
