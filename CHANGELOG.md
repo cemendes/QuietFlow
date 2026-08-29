@@ -1,0 +1,36 @@
+# Changelog
+
+All notable changes to QuietFlow will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [Unreleased]
+
+### Added
+- **In-App Automatic Software Updates**: Native self-updater powered by Tauri 2.0 and Minisign Ed25519 cryptographic signing with GitHub Releases integration.
+- **Update Notifications & UI**: Non-intrusive `UpdateToast` alert and interactive "Check for Updates" panel with real-time download progress bar in Settings > About.
+- **Right-Click Context Menu for Notes**: Rename, emoji picker, custom logo upload, and delete options for note rows.
+- **Cognitive Re-entry Breadcrumb Banner**: Restores context and working memory trail across folders and active tasks.
+- **Simulated Upgrade Test Suites**: 4 lifecycle and security upgrade test scenarios.
+
+### Changed
+- **Default Vault Path**: Automatically points to `$HOME/Documents/QuietFlowVault` on first launch for zero-friction macOS sandbox initialization.
+- **ISO Note Naming Scheme**: Notes created inside folders now default to `YYYY-MM-DD.md` (e.g. `2026-08-28.md`).
+- **Collision Suffix Generator**: Duplicate dates inside the same folder now append short random alphanumeric suffixes (e.g. `2026-08-28-a3f9`).
+
+### Fixed
+- **Inline Rename & Creation Text Selection**: Pre-filled note names now reliably appear highlighted (`select()`) for instant overwrite or Enter confirmation.
+- **Untitled Task Fallback**: Added interactive placeholder (`Untitled task (click to edit)`) and auto-focus for blank tasks.
+- **Folder Context Menu Dismissal**: Added global outside click and `Escape` key listeners to immediately dismiss popup menus.
+- **WiX Installer Build Error**: Configured NSIS installer target for Windows runners.
+
+---
+
+## [0.1.0-alpha.2] - 2026-08-28
+
+### Added
+- Multi-platform GitHub Actions build pipeline for macOS Universal (`.dmg`), Windows (`.exe`), and Linux (`.deb` / `.AppImage`).
+- Initial alpha release of QuietFlow desktop task and note manager.
