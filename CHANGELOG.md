@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Simulated Upgrade Test Suites**: 4 lifecycle and security upgrade test scenarios.
 
 ### Changed
+- **Folder List Clean View**: Removed distracting numeric note count badges from folder rows for a cleaner, calmer sidebar interface.
+- **Folder Text Full Width Layout**: Folder names now expand naturally across the full width of the sidebar without getting prematurely truncated or squished.
 - **Default Vault Path**: Automatically points to `$HOME/Documents/QuietFlowVault` on first launch for zero-friction macOS sandbox initialization.
 - **ISO Note Naming Scheme**: Notes created inside folders now default to `YYYY-MM-DD.md` (e.g. `2026-08-28.md`).
 - **Collision Suffix Generator**: Duplicate dates inside the same folder now append short random alphanumeric suffixes (e.g. `2026-08-28-a3f9`).

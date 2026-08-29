@@ -272,7 +272,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
             </button>
 
             {/* Quick Actions: Add subfolder / Add file */}
-            <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity">
+            <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity shrink-0">
               <button
                 type="button"
                 title="New file in folder"
@@ -303,15 +303,6 @@ export const FolderItem: React.FC<FolderItemProps> = ({
                 <FolderPlus className="w-3 h-3" />
               </button>
             </div>
-
-            {node.fileCount > 0 && !isCreatingSubfolder && !isCreatingFile && (
-              <span
-                data-testid={`folder-badge-${node.name}`}
-                className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-sand-200 text-stone-600 group-hover:bg-sand-300/80 transition-colors shrink-0"
-              >
-                {node.fileCount}
-              </span>
-            )}
           </div>
 
           {showContextMenu && (

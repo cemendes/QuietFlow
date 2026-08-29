@@ -88,14 +88,6 @@ describe('Sidebar Component', () => {
     expect(screen.getByText('notes')).toBeInTheDocument();
   });
 
-  it('displays file count badges on folders', () => {
-    render(<Sidebar />);
-    // Customers folder has 2 files
-    expect(screen.getByTestId('folder-badge-Customers')).toHaveTextContent('2');
-    // Internal folder has 1 file
-    expect(screen.getByTestId('folder-badge-Internal')).toHaveTextContent('1');
-  });
-
   it('collapses and expands folders on click', () => {
     render(<Sidebar />);
     // Acme Corp should initially be visible because folders start expanded
