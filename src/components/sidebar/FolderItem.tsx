@@ -77,7 +77,26 @@ export const FolderItem: React.FC<FolderItemProps> = ({
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    const baseDate = `${year}-${month}-${day}`;
+
+    // If folder already has files, find next unique candidate name
+    if (!node.children || node.children.length === 0) {
+      return baseDate;
+    }
+
+    const existingNames = new Set(
+      node.children.map((c) => c.name.replace(/\.md$/i, ''))
+    );
+
+    if (!existingNames.has(baseDate)) {
+      return baseDate;
+    }
+
+    let counter = 2;
+    while (existingNames.has(`${baseDate} (${counter})`)) {
+      counter++;
+    }
+    return `${baseDate} (${counter})`;
   };
 
   const handleCreateFileInFolder = async (customName?: string) => {
@@ -296,9 +315,17 @@ export const FolderItem: React.FC<FolderItemProps> = ({
                 await ipc.moveEntry(node.path, newPath);
                 await refreshVault();
               }}
-              onAddNote={() => handleCreateFileInFolder()}
+              onAddNote={() => {
+                const defaultName = formatDefaultNoteName();
+                setNewSubName(defaultName);
+                setIsCreatingFile(true);
+                setIsCreatingSubfolder(false);
+                if (!isExpanded) onToggleFolder(node.path);
+              }}
               onAddSubfolder={() => {
+                setNewSubName('');
                 setIsCreatingSubfolder(true);
+                setIsCreatingFile(false);
                 if (!isExpanded) onToggleFolder(node.path);
               }}
               onDelete={() => deleteEntry(node.path)}
@@ -318,6 +345,12 @@ export const FolderItem: React.FC<FolderItemProps> = ({
             <input
               type="text"
               autoFocus
+              ref={(input) => {
+                if (input && isCreatingFile) {
+                  // Select the text so the user can easily overwrite or tweak it
+                  input.select();
+                }
+              }}
               value={newSubName}
               onChange={(e) => setNewSubName(e.target.value)}
               onKeyDown={(e) => {
