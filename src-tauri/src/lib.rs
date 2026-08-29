@@ -1,7 +1,7 @@
 pub mod vault;
 
 use std::sync::{Arc, Mutex};
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 use vault::{SafeVaultWatcher, VaultWatcherState};
 
 
