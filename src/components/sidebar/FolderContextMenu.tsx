@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Edit3, FilePlus, FolderPlus, Trash2, Image, Smile } from 'lucide-react';
 
 export interface FolderContextMenuProps {
@@ -30,6 +30,30 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
   const [isRenaming, setIsRenaming] = useState(false);
   const [renamedValue, setRenamedValue] = useState(folderName);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    // Use mousedown so clicks outside register immediately
+    document.addEventListener('mousedown', handleOutsideClick);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -70,6 +94,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
 
   return (
     <div
+      ref={menuRef}
       data-testid="folder-context-menu"
       className="absolute right-2 top-8 z-50 w-52 bg-white border border-sand-200 rounded-xl shadow-xl py-1.5 text-xs text-slate-700 animate-in fade-in zoom-in-95 duration-100"
       onClick={(e) => e.stopPropagation()}

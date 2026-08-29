@@ -44,4 +44,29 @@ describe('FolderContextMenu Component', () => {
 
     expect(handleRename).toHaveBeenCalledWith('PRivia V2');
   });
+
+  it('dismisses popup on click outside and on Escape key press', () => {
+    const handleClose = vi.fn();
+    render(
+      <div>
+        <div data-testid="outside-element">Outside Area</div>
+        <FolderContextMenu
+          folderName="PRivia"
+          folderPath="/vault/PRivia"
+          isDirectory={true}
+          onRename={vi.fn()}
+          onDelete={vi.fn()}
+          onClose={handleClose}
+        />
+      </div>
+    );
+
+    // Click outside
+    fireEvent.mouseDown(screen.getByTestId('outside-element'));
+    expect(handleClose).toHaveBeenCalledTimes(1);
+
+    // Press Escape
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(handleClose).toHaveBeenCalledTimes(2);
+  });
 });
