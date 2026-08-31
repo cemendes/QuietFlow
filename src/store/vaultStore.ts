@@ -261,7 +261,7 @@ async function selectFolder(folderPath: string): Promise<void> {
 }
 
 async function selectFile(filePath: string): Promise<void> {
-  set({ isLoading: true, error: null, activeFile: filePath, activeFolder: null });
+  set({ isLoading: true, error: null, activeFile: filePath, activeFolder: null, activeDocument: null });
   try {
     const content = await ipc.readFile(filePath);
     const doc = parseMarkdownDocument(content, filePath);
@@ -758,12 +758,13 @@ async function saveDocumentProse(filePath: string, newProse: string): Promise<vo
   const currentDoc = state.activeDocument;
   let newContent = newProse;
 
-  if (currentDoc && currentDoc.tasks.length > 0) {
-    const taskLines: string[] = [];
-    for (const t of currentDoc.tasks) {
-      taskLines.push(...serializeTaskBlock(t));
+  // Preserve frontmatter block if present in current document
+  if (currentDoc && currentDoc.rawContent) {
+    const fmMatch = currentDoc.rawContent.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
+    if (fmMatch) {
+      const frontmatterBlock = fmMatch[0].trim();
+      newContent = `${frontmatterBlock}\n\n${newProse.trim()}\n`;
     }
-    newContent = `${taskLines.join('\n')}\n\n${newProse.trim()}`;
   }
 
   set({ isSaving: true });

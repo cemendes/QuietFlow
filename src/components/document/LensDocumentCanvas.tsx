@@ -27,25 +27,27 @@ export const LensDocumentCanvas: React.FC = () => {
   const [newTaskTitle, setNewTaskTitle] = useState<string>('');
   const [isTasksCollapsed, setIsTasksCollapsed] = useState<boolean>(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastLoadedFileRef = useRef<string | null>(null);
 
-  // Sync active document body into local edit state
+  // Sync active document body into local edit state only on file transition
   useEffect(() => {
-    if (activeDocument) {
+    if (activeDocument && activeFile && lastLoadedFileRef.current !== activeFile) {
+      lastLoadedFileRef.current = activeFile;
       setLocalProse(activeDocument.body || '');
     }
-  }, [activeFile]);
+  }, [activeFile, activeDocument]);
 
   // Auto-Adaptive Lenses: evaluate when active file loads
   useEffect(() => {
     if (!activeDocument || !activeFile) return;
-    const taskCount = activeDocument.tasks?.length || 0;
-    const hasProse = (activeDocument.body || '').trim().length > 0;
-
     const savedState = useVaultStore.getState().documentViewState[activeFile];
     if (savedState?.lensMode) {
       setLensViewMode(savedState.lensMode, activeFile);
       return;
     }
+
+    const taskCount = activeDocument.tasks?.length || 0;
+    const hasProse = (activeDocument.body || '').trim().length > 0;
 
     if (taskCount === 0 && hasProse) {
       setLensViewMode('notes', activeFile);
@@ -54,7 +56,7 @@ export const LensDocumentCanvas: React.FC = () => {
     } else {
       setLensViewMode('split', activeFile);
     }
-  }, [activeFile]);
+  }, [activeFile, activeDocument?.filePath]);
 
   // Debounced auto-save for prose
   const handleProseChange = (text: string) => {
