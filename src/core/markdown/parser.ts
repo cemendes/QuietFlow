@@ -149,7 +149,161 @@ function extractFrontmatter(content: string): { frontmatter: Frontmatter; body: 
   }
 }
 
-export function parseMarkdownDocument(content: string): VaultDocument {
+function extractDocumentSpans(
+  lines: string[],
+  tasks: TaskItem[],
+  startIndex: number
+): DocumentSpan[] {
+  const spans: DocumentSpan[] = [];
+  const taskMap = new Map<number, TaskItem>();
+  for (const t of tasks) {
+    if (t.lineIndex !== undefined) {
+      taskMap.set(t.lineIndex, t);
+    }
+  }
+
+  let i = startIndex;
+  let spanCounter = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // Empty lines
+    if (trimmed.length === 0) {
+      i++;
+      continue;
+    }
+
+    // Check if line is start of task
+    if (taskMap.has(i)) {
+      const task = taskMap.get(i)!;
+      const startLine = i;
+      let endLine = i;
+      let j = i + 1;
+      while (j < lines.length && /^(\s{2,}|\t)/.test(lines[j]) && lines[j].trim().length > 0) {
+        endLine = j;
+        j++;
+      }
+      const rawSpanText = lines.slice(startLine, endLine + 1).join('\n');
+      spans.push({
+        id: `span-task-${task.id}`,
+        type: 'task',
+        rawText: rawSpanText,
+        startLine,
+        endLine,
+        taskId: task.id,
+      });
+      i = endLine + 1;
+      continue;
+    }
+
+    // Code block span
+    if (trimmed.startsWith('```')) {
+      const startLine = i;
+      let endLine = i;
+      let j = i + 1;
+      while (j < lines.length) {
+        if (lines[j].trim().startsWith('```')) {
+          endLine = j;
+          break;
+        }
+        endLine = j;
+        j++;
+      }
+      const rawSpanText = lines.slice(startLine, endLine + 1).join('\n');
+      spans.push({
+        id: `span-${spanCounter++}`,
+        type: 'code',
+        rawText: rawSpanText,
+        startLine,
+        endLine,
+      });
+      i = endLine + 1;
+      continue;
+    }
+
+    // Heading span
+    if (/^#{1,6}\s+/.test(line)) {
+      spans.push({
+        id: `span-${spanCounter++}`,
+        type: 'heading',
+        rawText: line,
+        startLine: i,
+        endLine: i,
+      });
+      i++;
+      continue;
+    }
+
+    // Thematic break
+    if (/^(\*\*\*|---|___)$/.test(trimmed)) {
+      spans.push({
+        id: `span-${spanCounter++}`,
+        type: 'thematic-break',
+        rawText: line,
+        startLine: i,
+        endLine: i,
+      });
+      i++;
+      continue;
+    }
+
+    // Callout / blockquote
+    if (trimmed.startsWith('>')) {
+      const startLine = i;
+      let endLine = i;
+      let j = i + 1;
+      while (j < lines.length && lines[j].trim().startsWith('>')) {
+        endLine = j;
+        j++;
+      }
+      const rawSpanText = lines.slice(startLine, endLine + 1).join('\n');
+      spans.push({
+        id: `span-${spanCounter++}`,
+        type: 'callout',
+        rawText: rawSpanText,
+        startLine,
+        endLine,
+      });
+      i = endLine + 1;
+      continue;
+    }
+
+    // General prose paragraph
+    const startLine = i;
+    let endLine = i;
+    let j = i + 1;
+    while (j < lines.length) {
+      const nextTrimmed = lines[j].trim();
+      if (
+        nextTrimmed.length === 0 ||
+        taskMap.has(j) ||
+        nextTrimmed.startsWith('```') ||
+        /^#{1,6}\s+/.test(lines[j]) ||
+        /^(\*\*\*|---|___)$/.test(nextTrimmed) ||
+        nextTrimmed.startsWith('>')
+      ) {
+        break;
+      }
+      endLine = j;
+      j++;
+    }
+    const rawSpanText = lines.slice(startLine, endLine + 1).join('\n');
+    spans.push({
+      id: `span-${spanCounter++}`,
+      type: 'prose',
+      rawText: rawSpanText,
+      startLine,
+      endLine,
+    });
+    i = endLine + 1;
+  }
+
+  return spans;
+}
+
+export function parseMarkdownDocument(content: string, filePath?: string): VaultDocument {
   const { frontmatter, body } = extractFrontmatter(content);
 
   const lines = content.split(/\r?\n/);
@@ -157,6 +311,7 @@ export function parseMarkdownDocument(content: string): VaultDocument {
   const slugCounts = new Map<string, number>();
 
   let inFrontmatter = false;
+  let frontmatterEndIndex = 0;
   let inCodeBlock = false;
   let currentTask: TaskItem | null = null;
   let currentNotes: string[] = [];
@@ -173,6 +328,9 @@ export function parseMarkdownDocument(content: string): VaultDocument {
       }
       if (currentComments.length > 0) {
         currentTask.comments = [...currentComments];
+      }
+      if (filePath) {
+        currentTask.filePath = filePath;
       }
       tasks.push(currentTask);
       currentTask = null;
@@ -194,6 +352,7 @@ export function parseMarkdownDocument(content: string): VaultDocument {
     if (inFrontmatter) {
       if (trimmed === '---') {
         inFrontmatter = false;
+        frontmatterEndIndex = i + 1;
       }
       continue;
     }
@@ -213,6 +372,9 @@ export function parseMarkdownDocument(content: string): VaultDocument {
       finalizeCurrentTask();
       const parsedTask = parseTaskLine(line, i, slugCounts);
       if (parsedTask) {
+        if (filePath) {
+          parsedTask.filePath = filePath;
+        }
         currentTask = parsedTask;
       }
       continue;
@@ -280,11 +442,19 @@ export function parseMarkdownDocument(content: string): VaultDocument {
 
   finalizeCurrentTask();
 
+  const spans = extractDocumentSpans(lines, tasks, frontmatterEndIndex);
+  const wordCount = body.trim().length > 0 ? body.trim().split(/\s+/).length : 0;
+  const readingTimeMinutes = Math.max(1, Math.ceil(wordCount / 200));
+
   return {
+    filePath,
     frontmatter,
     tasks,
+    spans,
     rawContent: content,
     body,
+    wordCount,
+    readingTimeMinutes,
   };
 }
 

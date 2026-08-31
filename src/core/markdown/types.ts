@@ -43,11 +43,27 @@ export interface Frontmatter {
   [key: string]: any;
 }
 
+export type DocumentSpanType = 'heading' | 'prose' | 'code' | 'task' | 'callout' | 'thematic-break';
+
+export interface DocumentSpan {
+  id: string;
+  type: DocumentSpanType;
+  rawText: string;
+  startLine: number;
+  endLine: number;
+  taskId?: string;
+}
+
 export interface VaultDocument {
+  filePath?: string;
   frontmatter: Frontmatter;
   tasks: TaskItem[];
+  spans?: DocumentSpan[];
   rawContent: string;
   body: string;
+  wordCount?: number;
+  readingTimeMinutes?: number;
+  lastModified?: number;
 }
 
 export interface NewTaskInput {
