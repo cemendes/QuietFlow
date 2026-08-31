@@ -42,6 +42,14 @@ export interface SnapshotMetadata {
   taskCount: number;
 }
 
+export type LensViewMode = 'split' | 'tasks' | 'notes';
+
+export interface DocumentViewState {
+  lensMode: LensViewMode;
+  scrollY: number;
+  cursorPosition?: number;
+}
+
 export interface VaultStoreState {
   vaultPath: string | null;
   vaultTree: VaultTree | null;
@@ -52,6 +60,8 @@ export interface VaultStoreState {
   activeTaskId: string | null;
   searchQuery: string;
   activeView: ViewMode;
+  lensViewMode: LensViewMode;
+  documentViewState: Record<string, DocumentViewState>;
   selectedTag: string | null;
   selectedPriority: TaskPriority | null;
   logoConfig: Record<string, string>;
@@ -87,6 +97,13 @@ export interface VaultStoreActions {
   addTask: (task: NewTaskInput, targetSection?: string) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   moveTask: (taskId: string, sourcePath: string, destPath: string) => Promise<void>;
+
+  // Lens & Document Cognitive State
+  setLensViewMode: (mode: LensViewMode, filePath?: string) => void;
+  setDocumentScrollPosition: (filePath: string, scrollY: number) => void;
+  getDocumentViewState: (filePath: string) => DocumentViewState;
+  saveDocumentProse: (filePath: string, newProse: string) => Promise<void>;
+  flushActiveDocument: () => Promise<void>;
 
   // UI state
   setActiveTaskId: (taskId: string | null) => void;

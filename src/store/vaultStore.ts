@@ -4,6 +4,7 @@ import {
   deleteTaskFromDocument,
   parseMarkdownDocument,
   updateTaskInDocument,
+  serializeTaskBlock,
 } from '../core/markdown';
 import {
   loadLogoConfig,
@@ -13,6 +14,8 @@ import {
 } from '../services/logoService';
 import { ipc } from './ipc';
 import {
+  DocumentViewState,
+  LensViewMode,
   NewTaskInput,
   SnapshotMetadata,
   TaskItem,
@@ -33,6 +36,8 @@ const INITIAL_STATE: VaultStoreState = {
   activeTaskId: null,
   searchQuery: '',
   activeView: 'list',
+  lensViewMode: 'split',
+  documentViewState: {},
   selectedTag: null,
   selectedPriority: null,
   logoConfig: {},
@@ -716,6 +721,73 @@ function reset(): void {
   set({ ...INITIAL_STATE });
 }
 
+function setLensViewMode(mode: LensViewMode, filePath?: string): void {
+  const targetPath = filePath || state.activeFile;
+  const nextDocState = { ...state.documentViewState };
+  if (targetPath) {
+    nextDocState[targetPath] = {
+      ...(nextDocState[targetPath] || { scrollY: 0 }),
+      lensMode: mode,
+    };
+  }
+  set({
+    lensViewMode: mode,
+    documentViewState: nextDocState,
+  });
+}
+
+function setDocumentScrollPosition(filePath: string, scrollY: number): void {
+  const nextDocState = { ...state.documentViewState };
+  nextDocState[filePath] = {
+    ...(nextDocState[filePath] || { lensMode: state.lensViewMode }),
+    scrollY,
+  };
+  set({ documentViewState: nextDocState });
+}
+
+function getDocumentViewState(filePath: string): DocumentViewState {
+  return state.documentViewState[filePath] || {
+    lensMode: state.lensViewMode,
+    scrollY: 0,
+  };
+}
+
+async function saveDocumentProse(filePath: string, newProse: string): Promise<void> {
+  const currentDoc = state.activeDocument;
+  let newContent = newProse;
+
+  if (currentDoc && currentDoc.tasks.length > 0) {
+    const taskLines: string[] = [];
+    for (const t of currentDoc.tasks) {
+      taskLines.push(...serializeTaskBlock(t));
+    }
+    newContent = `${taskLines.join('\n')}\n\n${newProse.trim()}`;
+  }
+
+  set({ isSaving: true });
+  try {
+    await writeVaultFile(filePath, newContent);
+    const parsed = parseMarkdownDocument(newContent, filePath);
+    set({
+      activeDocument: parsed,
+      tasks: state.activeFile === filePath ? parsed.tasks : state.tasks,
+      isSaving: false,
+    });
+  } catch (err: any) {
+    set({ error: err?.message || 'Failed to save document prose', isSaving: false });
+  }
+}
+
+async function flushActiveDocument(): Promise<void> {
+  if (state.activeFile && state.activeDocument) {
+    try {
+      await writeVaultFile(state.activeFile, state.activeDocument.rawContent);
+    } catch {
+      // Ignored
+    }
+  }
+}
+
 const actions = {
   loadVault,
   refreshVault,
@@ -736,6 +808,11 @@ const actions = {
   addTask,
   deleteTask,
   moveTask,
+  setLensViewMode,
+  setDocumentScrollPosition,
+  getDocumentViewState,
+  saveDocumentProse,
+  flushActiveDocument,
   setActiveTaskId,
   setSearchQuery,
   setActiveView,
