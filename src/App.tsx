@@ -13,6 +13,7 @@ import { CorruptionWarningBanner } from './components/history/CorruptionWarningB
 import { UpdateToast } from './components/updater/UpdateToast';
 import { LensDocumentCanvas } from './components/document/LensDocumentCanvas';
 import { QuickFileSwitcher } from './components/document/QuickFileSwitcher';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
 export default function App() {
@@ -107,15 +108,17 @@ export default function App() {
       {/* 2. Main Content Canvas: Task Detail / Document Lens / Kanban / List */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
         <CorruptionWarningBanner />
-        {activeTaskId ? (
-          <TaskDetailPage onBack={() => setActiveTaskId(null)} />
-        ) : activeView === 'document' ? (
-          <LensDocumentCanvas />
-        ) : activeView === 'kanban' ? (
-          <KanbanBoard />
-        ) : (
-          <TaskList />
-        )}
+        <ErrorBoundary fallbackTitle="Unable to display this view">
+          {activeTaskId ? (
+            <TaskDetailPage onBack={() => setActiveTaskId(null)} />
+          ) : activeView === 'document' ? (
+            <LensDocumentCanvas />
+          ) : activeView === 'kanban' ? (
+            <KanbanBoard />
+          ) : (
+            <TaskList />
+          )}
+        </ErrorBoundary>
       </div>
 
       {/* 3. Quick File Switcher (Cmd+O) */}

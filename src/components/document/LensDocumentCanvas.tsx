@@ -10,7 +10,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { useVaultStore } from '../../store/vaultStore';
-import { LensViewMode } from '../../store/types';
+import { LensViewMode, TaskItem } from '../../store/types';
 import { DocumentTaskCard } from './DocumentTaskCard';
 import { MarkdownEditor } from '../editor/MarkdownEditor';
 
@@ -80,25 +80,41 @@ export const LensDocumentCanvas: React.FC = () => {
     };
   }, []);
 
+  const isLoading = useVaultStore((state) => state.isLoading);
+
   if (!activeDocument || !activeFile) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-slate-400 bg-sand-50/50">
-        <FileText className="w-12 h-12 stroke-[1.5] mb-3 text-slate-300" />
-        <h3 className="text-base font-medium text-slate-700">No document selected</h3>
-        <p className="text-sm mt-1 text-slate-500">
-          Select a customer note from the sidebar or press <kbd className="px-1.5 py-0.5 rounded bg-slate-200 text-xs font-semibold">Cmd+O</kbd> to search.
-        </p>
+        {isLoading ? (
+          <>
+            <div className="w-8 h-8 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin mb-3" />
+            <h3 className="text-sm font-medium text-slate-600">Loading document...</h3>
+          </>
+        ) : (
+          <>
+            <FileText className="w-12 h-12 stroke-[1.5] mb-3 text-slate-300" />
+            <h3 className="text-base font-medium text-slate-700">No document selected</h3>
+            <p className="text-sm mt-1 text-slate-500">
+              Select a customer note from the sidebar or press <kbd className="px-1.5 py-0.5 rounded bg-slate-200 text-xs font-semibold">Cmd+O</kbd> to search.
+            </p>
+          </>
+        )}
       </div>
     );
   }
 
-  const tasks = activeDocument.tasks || [];
-  const completedTasks = tasks.filter((t) => t.status === 'done');
-  const pendingTasks = tasks.filter((t) => t.status !== 'done');
-  const fileName = activeFile.split('/').pop() || activeFile;
-  const folderName = activeFile.includes('/') ? activeFile.split('/').slice(0, -1).join('/') : '';
-  const frontmatterTitle = activeDocument.frontmatter?.title || fileName.replace(/\.md$/, '');
-  const tags = activeDocument.frontmatter?.tags || [];
+  const tasks: TaskItem[] = Array.isArray(activeDocument.tasks) ? activeDocument.tasks : [];
+  const completedTasks = tasks.filter((t) => t && t.status === 'done');
+  const pendingTasks = tasks.filter((t) => t && t.status !== 'done');
+  const fileName = typeof activeFile === 'string' && activeFile.includes('/') ? activeFile.split('/').pop() || activeFile : String(activeFile);
+  const folderName = typeof activeFile === 'string' && activeFile.includes('/') ? activeFile.split('/').slice(0, -1).join('/') : '';
+  const frontmatterTitle = String(activeDocument.frontmatter?.title || fileName.replace(/\.md$/, ''));
+  const rawTags = activeDocument.frontmatter?.tags;
+  const tags: string[] = Array.isArray(rawTags)
+    ? rawTags.map(String)
+    : typeof rawTags === 'string'
+    ? [rawTags]
+    : [];
 
   const handleQuickAddTask = (e: React.FormEvent) => {
     e.preventDefault();

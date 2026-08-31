@@ -124,8 +124,21 @@ function extractFrontmatter(content: string): { frontmatter: Frontmatter; body: 
       };
     }
     const parsed = matter(content);
+    const data = (parsed.data as Frontmatter) || {};
+
+    // Normalize tags to string[]
+    if (data.tags !== undefined) {
+      if (typeof data.tags === 'string') {
+        data.tags = [data.tags];
+      } else if (Array.isArray(data.tags)) {
+        data.tags = (data.tags as any[]).map(String);
+      } else {
+        data.tags = [];
+      }
+    }
+
     return {
-      frontmatter: (parsed.data as Frontmatter) || {},
+      frontmatter: data,
       body: parsed.content || '',
     };
   } catch {
@@ -143,7 +156,19 @@ function extractFrontmatter(content: string): { frontmatter: Frontmatter; body: 
       if (parts.length >= 2) {
         const key = parts[0].trim();
         const val = parts.slice(1).join(':').trim().replace(/^['"](.*)['"]$/, '$1');
-        (frontmatter as any)[key] = val;
+        if (key === 'tags') {
+          if (val.startsWith('[') && val.endsWith(']')) {
+            frontmatter.tags = val
+              .slice(1, -1)
+              .split(',')
+              .map((s) => s.trim().replace(/^['"](.*)['"]$/, '$1'))
+              .filter(Boolean);
+          } else if (val) {
+            frontmatter.tags = [val];
+          }
+        } else {
+          (frontmatter as any)[key] = val;
+        }
       }
     }
     return { frontmatter, body };
