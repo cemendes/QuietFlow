@@ -89,3 +89,26 @@ export function serializeTaskBlock(task: TaskItem | NewTaskInput): string[] {
 
   return lines;
 }
+
+export function patchTaskInDocumentContent(
+  rawContent: string,
+  updatedTask: TaskItem,
+  originalTask: TaskItem
+): string {
+  const lines = rawContent.split(/\r?\n/);
+  const startLine = originalTask.lineIndex ?? 0;
+  let endLine = startLine;
+
+  for (let i = startLine + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^(\s{2,}|\t)/.test(line) && line.trim().length > 0) {
+      endLine = i;
+    } else {
+      break;
+    }
+  }
+
+  const serializedLines = serializeTaskBlock(updatedTask);
+  lines.splice(startLine, endLine - startLine + 1, ...serializedLines);
+  return lines.join('\n');
+}
