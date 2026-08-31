@@ -30,6 +30,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `.github/workflows/openwiki-update.yml` for automated documentation updates on merge and scheduled cron.
   - Added `AGENTS.md` evidence index for coding agent navigation.
 
+### Fixed
+- **Note Selection Freeze & Watcher Loop**:
+  - Fixed infinite disk write loop in `saveDocumentProse` that duplicated task blocks upon save/blur.
+  - Resolved `App.tsx` auto-initialization loop by stabilizing `useEffect` mount dependencies.
+  - Replaced side-effect lens evaluation with pure reactive derivation during render.
+- **Application Resilience & Error Boundaries**:
+  - Added global and document canvas `ErrorBoundary` component to prevent white screen unmounting during render edge cases.
+  - Normalized YAML frontmatter tags and added defensive array coercion across document tasks and AST components.
+
 ---
 
 ## [0.1.0-alpha.5] - 2026-08-29
