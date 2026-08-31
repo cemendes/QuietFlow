@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:2c7af5660686458d9639b6c0032763ff9f94f1bf6cc33cdb8152cec42c5c8e8e",
+  "claims": [
+    {
+      "id": "claim_818047003de1404b8cd37449d7ab517b",
+      "statement": "useGlobalShortcuts registers system-level OS hotkeys via @tauri-apps/plugin-global-shortcut in Tauri environments and fallback browser keyboard listeners for Option+Shift+Space and Cmd+K to toggle Quick Capture.",
+      "evidence": [
+        {
+          "resource": "repo://src/hooks/useGlobalShortcuts.ts#L9-L75",
+          "version": "repo-lines-v1:sha256:c8d2cdd582df689c558ff78d4f84fc07b9e291664cddd5eadc168599f235917f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzNWE2ZGI1MDg0ZTAxODk2NmZhZWRlMTAyNmI3NzU4ZDkxMTQ0N2FiOWRiZTc0YTFhYjIwNDVmNDgxMzM3NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiZWZiYjhhY2JkY2YxNzhhMjdkNTRkYTQ4NGQ2ZTc2MzVkODk1OGFlYzFkZjZlMWVmZmExMGU0OGE2YzcyMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3YjE4MDIyMGVlYTFmODQxZmE5ZGU4NDM1NzdlZGQzMGIxNDY0YjFkZjIxZDQxNjIxMGUyM2MwMjhmMTg4ZTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ced9d365a5134e798326feaf4de812a1",
+      "statement": "App.tsx listens for in-app keyboard shortcuts Cmd+N to open Quick Capture and Cmd+, to open settings while attaching useGlobalShortcuts for global capture toggling.",
+      "evidence": [
+        {
+          "resource": "repo://src/App.tsx#L48-L76",
+          "version": "repo-lines-v1:sha256:90d49ad9c5544c2cce0428b146d15d1092cc0939ca614ca84f62b7d1c6def00c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NjZmYmZhODg5OThkYTc0NjU2YzUwMTk0OTU2YzI1ZjA4NDk0NTc2NjBjMDA5ZmU2M2QxZTlmYTlkYzkzMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkYzUyZjA4YjM5YjA4YjAxYzhkMzA4YmY4ODBiMGJlZjAyZmQxZGZjYzlkOWFhOTNhNGQxYjVmNGQ1OGI2Y2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMWYyYzM3MDlhNjZiMTRkNWFmY2ZmODZiNGUwOGEzY2E4MzY4ZDE3MWMwNGI3OGUxNTQ0NTY2YzU0OTU4ZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyZGRlNGE4OTU0NTMzZmU4ZjUxOTdiOTgyMjVlOTQwOWMwMTllOGQ4ZmIyOGY1NDRjZWYyM2JmZmI4Yzk1YmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_23216a2d33c3471985565e5c9938bc5c",
+      "statement": "QuickCaptureModal automatically focuses its input field on mount and resolves capture target files in priority order of active file, inbox document, or first available markdown vault file.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/capture/QuickCaptureModal.tsx#L132-L162",
+          "version": "repo-lines-v1:sha256:4a0191a8e7ee171b54f0fb15ccc69eb9237992678ff02d98a240f7c2cafe8287:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NjZmYmZhODg5OThkYTc0NjU2YzUwMTk0OTU2YzI1ZjA4NDk0NTc2NjBjMDA5ZmU2M2QxZTlmYTlkYzkzMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjOTAyMjMxMDYyMmY3NGMzYjM4NTI5ZGFlN2JkNjQ0NzMxODc0NGRiMDI4ZGYzMjkwZTdlNjBiOTg1NDYzMzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwMWYzZjU4M2NlZjY4NGUyNjIwMjAyODUxNmJjYmE3ZDYxOGU2NmUyN2FkOTBiMDMwMDkzZGNmMThhYWE3NjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkZmY2ZmNmZDdkOTE3N2Q5Yzg2NGM1NTViMzRlOTM4OGEzYmFiMjA3NjQ2ZTNkMjk0ZDIzNjI0ZjVjNDk4NzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f54c9a0ce364ee6a67f6479fc8ffe88",
+      "statement": "parseNaturalLanguageInput extracts @priority tokens, #tags, and due:YYYY-MM-DD or date keywords from input text to produce clean task titles and structured metadata.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/capture/QuickCaptureModal.tsx#L63-L110",
+          "version": "repo-lines-v1:sha256:e02183c59fd68a91e3abd88e5affc0de4da1f3e9ed829b404bc5ee41581f7d04:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkZDM4NjdlZWFkMzkxMTc5ZjQ2MTJkOTZkYzY2ODkyMGYyMmEwMjY0MDQyNWZkY2UzYjlhODM5NWU1NTdiMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwZThlNDA0NWM0ZTc5ZjQyMjdlYjY1NGE4MzY3ZTAwNDViYTJkMDUwYjdkZjQwNWM0ODQwMWMzMmVkMTNjYWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwZTM0MzcwYTIwMzgwZDkzZGNlMDJiMDc3M2I5ZjFlMGQyODk1NThiNTI0NzJlOWJmY2UzZjA2MDJkMjE3YjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3bd7e081f1ae48d3a5e6174e0bd01b53",
+      "statement": "QuickCaptureModal persists newly captured tasks into active store state or writes them directly into non-active target markdown files using addTaskToDocument and atomic IPC writes.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/capture/QuickCaptureModal.tsx#L206-L221",
+          "version": "repo-lines-v1:sha256:0ae15bba9fcc6adba9a58473329c23e5d51f7d0c04f372f56bcd46b2a0985cb2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3YTkzYTlkOTE4MGNmZjUxZjVkYjQwODM3Y2Y4MGJiODQ0OWRiYjUwNzc5M2E1YjljYTljMTI5NTY0YmVmOTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MDA1ZDU3MTA2YTM2MmViMDAwZGFmM2RhNDY3NGM4MmI1MThmZjVhMmUyZjY3ZWU4ZTc1N2EzMzNjMmFmNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlMGNiNDdhYWRkNTQ0YTNmOTY4MDYyMTIwZjk2ZDUzYmI1YjcxNmE1OTIwYTAzMTUzMzcwZjIzMDgyZDMzYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlNmUyNDU4ZmJjZDgxYjE5MWU5ZThhNGVjNWYzOTI4MDczZmVkMjkxNThmZTBhMTZjMjA2YTgzNDA3NGU1NTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bce26cab36d544b9b0c5781f3452548b",
+      "statement": "QuickCaptureModal appends quick notes formatted with timestamp headers directly into target files via atomic IPC writes and refreshes active file state when targeting the active document.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/capture/QuickCaptureModal.tsx#L222-L232",
+          "version": "repo-lines-v1:sha256:5e6861ea56618c9e2636b8147bdc52b231dec7f67fc7b507b96cf63d1382ec95:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2OTgyNTE3OTI0ZmU4ZDNlMTU2NjcxMTViMWY1YTIwMThlMGQ1NWNlNWEwMDFiMWUyZDVlMzFiOGIyNDEyMmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YmJhMzNhZDJlZmIzYTdiNTFiNDRhYmY0ZGM5ZGEwYzhhMGMzYWFlZDI2YWZkYjJiNzlhNDkyYjEyM2Y0ZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhZDVhODJkMTJlNDMwMWM0Y2NkZWQ5ZTMzNzRmNjNiZWE5NTliY2VhYTczMjBlZGI5ZGY1ODA3NWM2OWNmMzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_11cab2fe291e4984835c6ad262497d4c",
+      "statement": "QuickCaptureModal.test.tsx validates modal spotlight rendering, input autofocus, capture mode switching, destination file selection, NLP token parsing, Enter key submission, and Escape key dismissal.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/capture/QuickCaptureModal.test.tsx#L45-L206",
+          "version": "repo-lines-v1:sha256:480ed7a572d6e5c6563968e61a09ef934a5e2319e19d52c1e6ecef8b02dc6252:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlMjg1NzQyOWI0ZTI0M2M4MTgxYzZjMzk4ODNiNGUzN2FkYjBlNmExZjBiMGJhYjdjM2UzNzk0OGI3YTUyMWY3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzYTNlNDZmOTQyNzZiNmY2ZjRlZDFmMDJhZjc4YmVmNmEyZWUxYzQzOWRkNTU4NGI5NzM5NDgzMTMyMTRkMmI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxOTQ2OTY2NWY5MWI4NDdhOGM2ZTVlNDA0ODVjYjRiYjE5ZGJjYTAyYmJlOGVhN2FiY2UwMmIzMjFmODA5YjMxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MSwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIn0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-31T14:53:08.961Z"
+  }
+}

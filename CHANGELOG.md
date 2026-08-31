@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **OpenWiki Knowledge Base & Automated Sync Workflow**:
+  - Full 15-page grounded architectural and operational documentation under `openwiki/`.
+  - Added `.github/workflows/openwiki-update.yml` for automated documentation updates on merge and scheduled cron.
+  - Added `AGENTS.md` evidence index for coding agent navigation.
+
 ---
 
 ## [0.1.0-alpha.5] - 2026-08-29

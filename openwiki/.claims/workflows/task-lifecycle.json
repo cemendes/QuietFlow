@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:9e363bb3ed2a6192052f7626036ba3b4f406bf9ade1f02b016eb643b4c6c0b6e",
+  "claims": [
+    {
+      "id": "claim_c07c22342c8541bf93e8db78cbabfde5",
+      "statement": "VaultStore maintains task state and provides optimistic UI updates with automatic state rollback on disk persistence failures for task operations including toggleTask, updateTask, addTask, and deleteTask.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/vaultStore.ts#L394-L576",
+          "version": "repo-lines-v1:sha256:948a09efed72698b3511344e2a958e38ad037257ac9dc99bcc592d45ba4d1f75:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4NmZmNTc1N2U3OTJjZDlhMzI2MWY4YjdmODRiNmE4YmMwNTJmOTVhZmYzMjJiOGI3NjgwNjI0MjZjYTI1NGFhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5NjJhMjMzYWQxMjkwN2RlMmViMWQ3N2E5M2Q1YWVlMWQ3NjVkNzAwMzhjYzVmN2VhMGNiNjk0YTk2ZjJkOTViIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmOGI2M2Q2NmYwZjE5NjdhZThmYzhmZGQ5Yjg5Yzg5NGU2NmFmODFhZDAwMjIxZTRmNTFkZGE1OTFjNjYyYTc2In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_579ca71ba9ef4c72ab1e8ab0423d2879",
+      "statement": "The Markdown parser parseMarkdownDocument converts raw Markdown content into TaskItem structures by extracting inline metadata tags (@status, @due, @priority, @completed, #tags), subtask checkmarks, indented note blocks, and author-timestamped comments.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/markdown/parser.ts#L152-L289",
+          "version": "repo-lines-v1:sha256:0cdc7d31648f979f7da7084e6f5391eaad321599f155c74d47412d034f8c9044:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiYTg0YTcwNTYzMWYwMTE2MGExZDFlNGUzYmUxMzcwMGU5ZTU5MzY1ZjI5ZGJkZjVmYWQxMWNlMDUxODgwZDUwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmYjU4MGU5NjRmODNhNDczZjQzZDQ0Mzg0NjI5NDlkNjhiNTYwMGZkYTc4N2YxNjM3NDVkMDBkZTg5Y2JmMzZhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlYWQwNjJjMjFlMzE2YTczMzdjZDVjYmU3YTQyNDhkOTk4NzkwNjRlM2U5NjkyNjM3MGI4ZDU3MTBmMjU0MGNlIn0"
+        },
+        {
+          "resource": "repo://src/core/markdown/parser.ts#L22-L115",
+          "version": "repo-lines-v1:sha256:27bd1f850ef8c56cb782adec5b91b960fc8c7918bd85748f2d80b0d0624ab0d8:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYTI1MmExMzE1NmI2NzIwYzkwZTI3NmZhOGNmOGZkMTJhMjM0N2RiZTY4MTEwMzExMjM5YTdkMjU1MWEwZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1ZjliYjQzNWY4NTgwMGYzMjM4OWU3NjNjMjAzZDJlZjQ4NDJlYWNiYjE5ZWU3NjQwN2I1YjZmMzIwM2IzNzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiZDRkNGYxODBmZTRmY2ZmZGQ4YzYyMTIyY2M1Y2FkNmQzYjRmMmUzNzAwNjhiNDUwMzkzZjYwMmM4MGZlMWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_06a98b338a9d4ac896ae79e2e4819389",
+      "statement": "The Markdown serializer functions serializeTaskBlock and updateTaskInDocument re-encode task properties, subtasks, notes, and comments into formatted Markdown blocks while preserving line structure and surrounding document content.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/markdown/parser.ts#L291-L341",
+          "version": "repo-lines-v1:sha256:8a32922472d22e1084d0fe1deac87a8a7ad203260db82d35f6519a3a61b46dae:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlYzc5ZTljMTI0NDIxM2E2NWE4NzQzNzc2MWRkZGQzM2FkOTA1Y2M4NjA2MTg1YjVhOTY0ZGQyY2I5ZDBhOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyYjU2MzRiOTI2ZDNlY2E2NjI3YmM0NzQxYzkwNDQ5MzU4YzA3NjQ5MWIyM2FjY2ZlZGFlM2RiM2I1NjE2ZDEifQ"
+        },
+        {
+          "resource": "repo://src/core/markdown/serializer.ts#L48-L91",
+          "version": "repo-lines-v1:sha256:b8feb7e5fb3e4829847912ef59d551bf0bbf49de7b1528d8d21a0ad88e5c93e9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmYWM3NzE4ZmNmMGVhOTIyMTQ3NzgwNzcyMDFmNjMwZjNmYjZhZjM2YWU0ZDg5NTJkMDNiMTNkZDcyMmI1NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2NzVlODMwNDUzOTQwYjk4YmY0ZTY4YzcyM2ViOThjNGRjOGY1ZTQ2ZjA2MWJlY2NjZDRkNzUyNjJjMGMxMWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3879f35fac6349af9e69df27eb60dcdd",
+      "statement": "QuickAddBar parses inline entry text into NewTaskInput objects by extracting priority annotations (@high, @medium, @low), tag labels (#tag), and due date keywords (due:YYYY-MM-DD, today, tomorrow).",
+      "evidence": [
+        {
+          "resource": "repo://src/components/tasks/QuickAddBar.tsx#L36-L84",
+          "version": "repo-lines-v1:sha256:d7bd8fe6ce083922db4cd353a60d67d670157919979838b77a71f19001ae1787:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzNmMxODdmZDEzNWUxY2QzOWJjNTY1ZDA5MmEwNWE3M2FiZjA3M2VmM2VhNjlhNmZjMWFhNjMzMTUyMzE2MTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjOWMxMmZkZDM5OGJlNzM2YjFkMDEwNjJmZjljNDc1ODVhYjA2ODcxNzBhYzc3ZjlhNzY0Yzc1ZDUzY2YxZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0Y2U3ZjljOTE0ZDMzNTFkYWFkYjEyYjI5MTBiODhjYWZhZDQ1OTI1YmJhMDgzYjA1NTQzY2M4ZjMyOWVlYjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b3b8780983a2486594fdc03e9ea5458e",
+      "statement": "KanbanBoard arranges tasks into four stage columns (backlog, todo, in-progress, done) and applies a soft Work-In-Progress (WIP) limit of 3 tasks to the in-progress column that highlights warning UI badges without preventing task drops.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/kanban/KanbanBoard.tsx#L14-L19",
+          "version": "repo-lines-v1:sha256:14832ae2a74b85347e1e73df6098a7a98d258c55193ddd6482cc2ca74638d1cc:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODIxZjkzYWY0NDYzZWVmODY0YmQxZGRlZGE1N2M4MjY1NGJjMjJhMWUxMTZhOWVjYjc0YjE2MWVmN2UwZjc0MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAyZDJjMGQ2ZGM1ZTc0ZDkyZmExNGI5MWRiZWEyNjQwOTBiZWIzNWZkYjkxODhkOWIzNDExODFkY2U5ZjRjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjBjMWZlM2ZkOWMwN2IxYTQ3NDhmZDVjMjU2MjE1MDQ0YjU3NGJlMzExZTA0MGEwOTliZWNjMWY5NTQ3MTFmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTZjODQyYmIyZDI0ZTg4NDdjNGJlOGU5ZDA1NzUwY2I4YWE2Y2IyYjBiNzYxNzNhNDA2NGE1M2I5ZDA2ODg0MCJ9"
+        },
+        {
+          "resource": "repo://src/components/kanban/KanbanBoard.tsx#L263-L281",
+          "version": "repo-lines-v1:sha256:aa9aa4e406b84245af8cadf3b63881a46aaff574eef991a957aafa07e2f449e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmMGI4NWM3YmE4NjNjYzhiNjMzODMyYzU4M2RmNWRlNmYzODJjODlkNGE5NjA2ZGRjZWVkMjM0ZDFhYWE2MDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3OTdkYTM3MTI3OGI4NTE2ZjRhYWU3YmRmOTE2YzIxYWIxZWRiYWIwMzlmYzk3NmU0YzliMWM1M2I3NzdhNDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5OTE3NWJjYzg5NTc0OTkxZGFhZWNlNTUwMjVkNmViZjg2MWQzZjEzNTJiZTkyYzEwMTNkZDUzZGJlMTY5NWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjODE5ZDZhNGRmYzZhOTU1MWU5ZmMxYjdmNDQyNjNiY2I3ZTI2NWM3OWE4ZmZlMzdjYzQzNzRmN2JmZjU1OWQifQ"
+        },
+        {
+          "resource": "repo://src/components/kanban/KanbanColumn.tsx#L103-L113",
+          "version": "repo-lines-v1:sha256:10362e1d3b5a1a6e11c76317b8780772464924de5ec41f42db1476293cc37885:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNDkwNWI3NjI2MWJlZmIwZTU1NGI2NDYyNTIzN2FkZDZmY2U2N2I1MGIxMjkwMmQ1YWE5ZWYxM2Q1YTQxMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwNTMyYTJhZTBiMTA2MjI2OWZmOWM2ZTcwMjM2ZGRhYjA3NzBhOTIzNTI4MWQ0ZjgwOTFlMTlmODI4NGFkNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwMjk4MjI5ZWMxZjY5ZTliNzVmZDA5NWZiOTIzYTFmNDBiNGI2OGNhNTlmOTQwNjczNGE5NjI5ZTEzMzBhMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlZjZkMjFjNzlmYzBlNTU2NTIyMzQ4ODVlZTVlMDViYmYyMzViMmIxOWYxYTg1NmFlODA5MjFkMDgxYmE3MjcifQ"
+        },
+        {
+          "resource": "repo://src/components/kanban/KanbanColumn.tsx#L50-L50",
+          "version": "repo-lines-v1:sha256:b808b8ed16edf2740461e9a27a812ece14acc2ffbf04e6beb5d22e6bbfe305aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjgwOGI4ZWQxNmVkZjI3NDA0NjFlOWEyN2E4MTJlY2UxNGFjYzJmZmJmMDRlNmJlYjVkMjJlNmJiZmUzMDVhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjgwOGI4ZWQxNmVkZjI3NDA0NjFlOWEyN2E4MTJlY2UxNGFjYzJmZmJmMDRlNmJlYjVkMjJlNmJiZmUzMDVhYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjE3ODA3MTkxYjgzZmMwNmM2MWQ2ZjkyZGQ0YWMyMmJjZjkwMDMyODFkODA1NTg3MDZmNjE3ZGFkOGEzYzhkMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjljYjRiMDcwNTcyODg5MjliNTRlNTU2ZGM2MmU0MGE3NzBlYzA5YWRhM2ZhNTI0MjhkYmUxZWJjNTY1NGEwMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b8ad1acffc574fef96687776097f3f5b",
+      "statement": "TaskDetailPage renders a full-page two-column task management view featuring title synchronization on blur, Markdown notes editing, subtask checklist CRUD with progress percentage calculation, tag management, comment feed posting, and back-navigation.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/editor/TaskDetailPage.tsx#L104-L215",
+          "version": "repo-lines-v1:sha256:0845795aed2c0a372742984ec110f0051b7f4764e2809a20edd95d69348ebc9c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwZDUzZDZkYjk3ZDU4YzY0ZjhkMWRmODllNWY3OWY4YjVhODc4OTBiMDRjNWU4NjJkY2Q1ZWE1ZDU3MjA1Zjg5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MmEyY2IyNWExMjJiNDQyMjFhNjIzNGVjNjYwYTdiNWZiN2Y5YmRlN2IzYjllMmIzYzU1OWEwZDk2ZmFjNzM5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2YWE3ZGQ1M2U0NzJmOTI5YzUxOGU1ZDY1NzI1ZDM1MTAxZWZiZjdmMzg0ODU2ZWI0NWQzMTYwZGU5MTdiYWMwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhMmVmNmYxYjhlYThlOGVmMGQyMTAyNjdhM2IxZDBjMDUxYjA3M2M1ZjdmNWQ1ZjA2NTE4ZDBiNzNiYWIzZTEwIn0"
+        },
+        {
+          "resource": "repo://src/components/editor/TaskDetailPage.tsx#L222-L300",
+          "version": "repo-lines-v1:sha256:39c2003318269141cce508a2c98babe4e5aa870df559c2c531c363b4107e7be5:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MjE2ZThlOWMwYTFhNjhkMDZjMmZiYWE1ZmQyMTM5NDgyYjhlZmQwYTE5MzE1YjkxNWU2Y2NlODQ5ZDg5ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhMzdkNWYyODg2MzI0NGMyZDJmMWM0NWI2YjMzMmZjYzBlZDJkMDg2NDNlY2FmMWVhNTNlZWY2ODc4YWY2ZDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1OGIwMjQ5ZDE4MDFjNjljZjM1YzFjYWFkMzVkNTM2Y2Q3OWNhODY4M2IwZWYzOTM1Y2RiMmJjOWM5OTNhNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0M2RmNTFkNjgzNTU1NDUxYjI4ODY5NjI1YTA1MzIwZmE1YzFkMzQ3MGQ4OWU5MDBhNDNhY2NkMDQ2YTE0MTgifQ"
+        },
+        {
+          "resource": "repo://src/components/editor/TaskDetailPage.tsx#L24-L60",
+          "version": "repo-lines-v1:sha256:fe6c955bb3c6a42e1bcf58da66c006e9090145cae4b6daecd8b5e75956c3c818:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwYjY5ODExNDI3YmFkMzA3OWNkMmFhNWI1ZGUzMzA2Y2I0OTMzMjgzOWYyNDkyMDMxYjg4NDM0ZTY2N2I4ZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkNDI2OTdlOGQ3NzcyMTc4YjBjYTdhNGU0NDhlNmM5MjNlMzY2MWYxNmRlMzM1MjM0YWI4OTNhN2Q2YTA1YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkZmY2ZmNmZDdkOTE3N2Q5Yzg2NGM1NTViMzRlOTM4OGEzYmFiMjA3NjQ2ZTNkMjk0ZDIzNjI0ZjVjNDk4NzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3be2705f55764cecb8c5c851cfe96b6e",
+      "statement": "App controls top-level view selection by rendering TaskDetailPage full-screen when activeTaskId is set, or displaying KanbanBoard or TaskList based on activeView.",
+      "evidence": [
+        {
+          "resource": "repo://src/App.tsx#L101-L108",
+          "version": "repo-lines-v1:sha256:249718dc85c17f960c7fa34a9fbcecd37fc01c67c75a52fd2dcdef1e28ce90e3:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGVhZWNiN2Q4NmVkMTIzNDRkZTg0NGJiOGI4ZTMzZTg0MDgyMTdjZjViYTFiYzVhZTRhNzU5OTA3YzQ5NjI1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJmM2NmZDExZGE2MTUwMTk3YWNlZWQwODQwNmFjNjRiMDUwMzQwZGU3YmMwNDEyNGE0Y2I3ZWZhNjcxMzQwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTcwYzEzMTJmYzZlOWRlOWVjYTE1MDJhNWRmODM3MmEyYTdkOGExZjhjNmE5YmE1ZTIxYmEyNzczMzhlYTg0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWQ1NTQyZjdhOGRmN2M4OGViMWFmNDdkMjFjMWM2ZTFkZDJmMTExYjhiOWNmODc4NDU1MDNlM2I1MTM3ZjU0OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f9835393c04d473299c9809734a2cd57",
+      "statement": "The vault write operation writeVaultFile uses ipc.writeFileAtomic and maintains lastSelfWriteTimestamp to suppress automatic active file reloading by the vault watcher within a 600 millisecond window.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/vaultStore.ts#L148-L161",
+          "version": "repo-lines-v1:sha256:f55aee98c8f820c1022ed244e7030f55fb9c2e98779912247fc4ff8a13abe3e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMmI0YjQ2NWRjMWEwMjY3ODE5ZGNhYmNiNTU3M2JjZjhkNGRkZTNhZWMyYzMyNGNiODUwYTZiZWU5ZTY0YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxN2FmMTEwMWM5N2I3YzJmNTI1NDA3ODJlNjM0Y2M0NDQwZjBlOTcwMzQxZTUyZjk3NTIzMTFkNzhiN2Q3ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxNTg1NmY2OTkxMmVkYjlmMTc2OGIzNjcyNjUxN2Q0MTI1NjI4YjM3YTljMGM0ODU1M2U4MDc5MjBjNjY4MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2NjFhMTVhMTUzYTBjM2Q4MjMyMWVkMTc0Y2U5YzJiY2RhMGVhNGVjOTRiNWZlZmY3OWM4ZGE4ZWMzNzFmNWIifQ"
+        },
+        {
+          "resource": "repo://src/store/vaultStore.ts#L77-L83",
+          "version": "repo-lines-v1:sha256:c9ec510d688612ee99e911f70b407a9bf4bf2b98690db35c944c3d41e08f6b53:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzFmZDY5YzVkMmYzNmJjYjExNThjYmRjNWQ3ZTQ2YjhjYzExMTc0MGE0Y2NiMGMxNjM4YmJmZWU5YTQzMWZkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTIwNDBlMDk1YTk0ZTJhZGE3NGU0MjFmMzcxODc1MWE5MWE4MTBiZmQ2NmY0OGY0ZTkzOWM3Yjc0ODBlYjY3MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjE4ODlhN2Q4NmZmZTU1NTZkNmUyNzg0ZjliY2UwY2Y3NjE3OTAyY2JjNGM1Zjc2NTk2OGRmZGQ3MjZkOTMwNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_dc65708b4cf343fb9553f09d3bd29170",
+      "statement": "The moveTask action relocates a task between Markdown files by deleting the task block from the source document, appending it to the destination document, and writing both files atomically.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/vaultStore.ts#L578-L643",
+          "version": "repo-lines-v1:sha256:016c654fcdcda7e3a08ee444c010d317965f4c5a28ba041dbd9dc7e4cc5111c8:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyZGEzNTUzMGI5NjcxOTMzNTRlYTNlODVhYTQwYWQxNTcyZjYyNzFlYmY4NjA0YWIyZTlkZTE5NzU1YmY4ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3NTNjZWRiN2EyOTM0YjJjZjgxMDMzODI2MTg5MjJhMDc2YmQyNGQyMzMxYzJkZjVjODM0ZTI5NDk5NzAzMTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4e744fe37e384445938e576ae6507a22",
+      "statement": "The parser utility deleteTaskFromDocument removes a target task block by computing the line span of the main task item and all contiguous indented child subtask, note, and comment lines.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/markdown/parser.ts#L394-L430",
+          "version": "repo-lines-v1:sha256:6b0423ba138579b71e4029098b306cb02be3b3720de0bdb72963a2b21753c52a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxM2QzODM0ZjVhZDllNjIyY2JiNDQ4YmQ1NTFjNDgwNjQ2NTY1OWJiZTFlNzU5MzkwNDc5OGQ2Yjg3Y2VjOWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiZTY4NWQyMzQ0NjA2ZWExNzFiOGNmMmM3NDZlNWM2OWJmM2JmOGU0NjE0ZjVlMGU5N2QyOWRlN2RhNTFmMGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-31T14:53:08.961Z"
+  }
+}

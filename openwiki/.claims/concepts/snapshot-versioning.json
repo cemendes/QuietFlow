@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:e5572891e7cd861b0444342d026e8f30dd59369e3f55f83a9843a6a3244657e1",
+  "claims": [
+    {
+      "id": "claim_901550bcfa964b2badb0e4b1de41f5d3",
+      "statement": "QuietFlow creates automatic pre-write safety snapshots of non-empty files in .quietflow/snapshots before atomic file writes, using Unix epoch timestamps and path sanitization.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/fs.rs#L109-L111",
+          "version": "repo-lines-v1:sha256:024289c2bf88de28557a24ef1596eece94b949ea2c98882262f8b11c1107f39e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjhjMWFmY2U0ZGVjOTYwZjU3OWVhZTUyMGEzZjJiY2FjZTRlNzUxYTIzZGY3ODM2ZTA4Zjk1Yjk1ODU2NjAzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzM2NGFiNGI3NGUyMjIxMTc3MTQzY2FkNDAzNGM1ZTJhMmRkY2ZjMTg4YTc3MWIzYjY4MDQ4NDQ3NjA1NDE4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTY2NTY4NDNmZDFjYzQ4NmFiMDM4YjgyNzg3ODRiNjQ0ODMyZWM4Yzg3OGRmMzA1OTM5YmFhOTMzYzgyNzg1MSJ9"
+        },
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L108-L122",
+          "version": "repo-lines-v1:sha256:2f2c8bee54720f92ece034faf590683b6f4abe518f2463a14d096db18a7455c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzMTU3YzJhMTdmNWFlMDQxNjFlZDNkNTQwM2I0M2Q3YjYyZWJhNjQwZDY4YWJmZDE3MDI5NGY0YTQzNDg2ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjYjM3NDc2YjFjYjgxMmMyZmQxMDdlYjI5NDE4YWJjMDEyMmRjM2NhM2U3NzJmNjc0NzM3NWE4NWU5ZDg1NzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5M2UwOTExM2FlZjEyMjhmYTQ1ZmUzNzE1NTRjYWMxNTUxMGE0MmJlODBkNTY1M2Q0NThhOWEzZDFjMjJiNTgifQ"
+        },
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L28-L40",
+          "version": "repo-lines-v1:sha256:6b15e4f6f197ba21cffe6ae28f7121b15eb56f88b8875408996b85cee74e4a2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5MGFlMjNkOGFiMzk3MWM5ZDRlZmEwN2Q4ZmVkMDIzZTVjNzM2NDBkN2VjN2EwYWIzZjU2MWJlOGY3N2ZlODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmYmZlMDRkOTIyMzIxMzg2NmM5OGUzMmI3M2Y5ODQ1MDM5MzFkMmU4ODVhNDdhMjFhOTNjYTM4MzJiMjdlOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMzE2OThmNTE3NzgzZDRhNDg4M2U2YmUwMWFhZTY3MjEwMWMwMDUwNDNjMjcxNTJiODJiZGQzYjljYjA1MGEifQ"
+        },
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L56-L74",
+          "version": "repo-lines-v1:sha256:f87caa6ed4bf0dae3c4a094d5c7b5c03db420cf4d12ebba3f4196c2910746029:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MDMyYmVhOWUzOGFiMWJiNDhmMjk2YWRlYjYwM2ZkMjU2MmIzYzc5MGNiNjA0MmE5NDFkN2ZmZDM5ZWFlODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiMTJmNTZlODVlNjk4ZGI2NmEyNmRkYWU5YTUyMWQwMTlhOGJkMDk2OTVjMjg1MTZkNDMzYmMxNjI0Nzc4YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1OTU5YjZiZjA2NTc5OGMyMDkwYzliNTFjYTY2YzM1NTE0OTM1YTk3OGYzZTgwZDdhODYwMTY2NThhMTg2YjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b029c76e34334b528f8021b5230d481c",
+      "statement": "Automatic snapshot creation per file is rate-limited to a 2-minute window (120 seconds), while manual snapshot creation bypasses this rate limit.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L24-L24",
+          "version": "repo-lines-v1:sha256:f4994ef6e39934bb4939239b5ec7de06dc602c5ef35b6ffae7d8bdf09e53dd71:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQ5OTRlZjZlMzk5MzRiYjQ5MzkyMzliNWVjN2RlMDZkYzYwMmM1ZWYzNWI2ZmZhZTdkOGJkZjA5ZTUzZGQ3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQ5OTRlZjZlMzk5MzRiYjQ5MzkyMzliNWVjN2RlMDZkYzYwMmM1ZWYzNWI2ZmZhZTdkOGJkZjA5ZTUzZGQ3MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTZmZjEyNjRlMDc1ZWRjMTY0YWU1MWNmMmExYTQ5M2JlOTcyZjEyMmJiMTY5OTFlMzU3ZmYwNGM1MTkzZTMyZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWZiZmUwNGQ5MjIzMjEzODY2Yzk4ZTMyYjczZjk4NDUwMzkzMWQyZTg4NWE0N2EyMWE5M2NhMzgzMmIyN2U4ZCJ9"
+        },
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L281-L327",
+          "version": "repo-lines-v1:sha256:82c6aedb0b6d348969d9aa507fde1cd7eae8139c09f957bce9a51ba2374ad369:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5YTAzMzRkNmM5NmYwMWNmMDY4ZDA5YWYwM2MxYjY2YmRiNDc1NWRjZTRhYzQzOTU3NjI5NzNlMjgyNjVlN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4Yjc2ZGRjYzQ2NTk0OWVkYzdjMDdjOWM1NWEyODhmNzI4ZGRiMWU2M2RkZDI0NTg4NGEzZDg4NzkzNWJjNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L78-L102",
+          "version": "repo-lines-v1:sha256:ba8ded5f12341cd78df498aea350b4c770330c2b467a61c6aea8aaae968f75c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZWJkN2Q5NzEwODg4NDEwNzA2Njc5M2M3NGIwYjAxMTllZmI5MjQwMDZjNzA5NTgxNjk5OWJlZmVjMjY3ZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1OTU5YjZiZjA2NTc5OGMyMDkwYzliNTFjYTY2YzM1NTE0OTM1YTk3OGYzZTgwZDdhODYwMTY2NThhMTg2YjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhMjkyYTg5ZDE2NTMyNzhmMGRjMWZlMmEwY2EzZGIzZmE0OWNlYTBhZjg0NjUyMjM1ZGJhNzA3NTg1ZjE1ZGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e53dd725a82247009a541161077eb7e3",
+      "statement": "The snapshot retention policy limits stored revisions to a maximum of 20 files per note and prunes snapshots older than 14 days inline after snapshot creation.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L123-L124",
+          "version": "repo-lines-v1:sha256:8ee23b8755517e70ee70b5a681e63c84e3197a31da318c42fce8a385c5c23b29:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODVjYThlOTNiNzIwYjBjMjI3MTE0NjEwYTBiOWJmNzQxNjlmMjBlY2JjZmQ0ZjA5Mjg0YjQzZjZjYWFlMDlhMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzk3YTg2ZDNjYTU1MzgyZGExNmQwY2QyNTcwMWY0OTE5ODY3NWU5YjNiNGEzODhlMzFkYWUzNWE2YTM2MzA5NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmM4ZTFhOWJjMDI3Yzc3NGZmMGE0NzkwZmFhMGQzNjcyNTBjZGZiZjExMjYwODIzZWEyNjBkNDg0ZWU0NWZlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTc0NDI5ZWE3ODFlZjRmNWRjNzcyMzMxMzk2MWYzNTVkNDIxNmI4MTg2NzBhMGEzMTliZjFlOTMzNTQ1YTY3ZSJ9"
+        },
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L220-L256",
+          "version": "repo-lines-v1:sha256:7d2a24637f48d22af49a6ff2c9690b5c9060f7836f5ca7a93bb93afc65dae475:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NjFjYWVjNzJiMmM5ZTgxZDNhYmJjNjJjNWJkNzg2NjI2ZmEyNGM3OTExOWJkOTRiNTM0ODdhNTJkOGIyYTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OTc3MWZlMWI2NjI4ODc1YWEyM2U3ZGJlNGFhNzE0NjFkMDBjZGZiNjZkZGYxMWI5ZDgyMGFjNTg5N2ZkZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiMzkyZTljNzg3NmU1Nzc0MDMzYTFlNWFiOGJmOTQ3NmM5ZWI3ZTY1MjY0NDIwMDYyNzM1MzAyMzA0MzE5MjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmN2JiM2U1Yzk0ZGExMDAxMzcwYzZhYjhhZTA4MDYwMWI4ZGJhODM0NGFiODMyZmExNjM4YmMzNDliNTQzODIifQ"
+        },
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L25-L26",
+          "version": "repo-lines-v1:sha256:5cc22e77654709cb2a2a98675069c856ea192a83c2ea0b01ccd52e1132785be0:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzEwYzVhN2VlZTNkZjE4YjFhZjBmOWU1OTYxODMzMzI1OGFlZjFjN2M0NDM2OWFmNGRjZmRhMWY0MjQxM2FlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNlNGFmMjEyODQxMzE3OWM5ZjhlZWQxN2MxMjg4NTcyZGE2YzAzOTFiNDA3N2E5ZWE3NTYxMWZiN2U1OWI5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2NjZmZjNGQ5NjA3OWI2OGZmY2YxZDlhYTdiY2RmNWM3MWUyNTc0YjEyNDhiYmM5ZTIyNjRjOTFkZTc0MTUxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDUwODI4NGUxOTBkM2Q3ZTBiYThhMmZiYTM3NjVjMTYxNTc2ZWY0MmRlZjZkMDM5ODYyMjIxNTQyNDQ3YjAxOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ad311b5688da44c4bb21b1df128ba529",
+      "statement": "File corruption is detected when opening a note with empty content (0 bytes) if previous snapshots exist, triggering a corrupted file warning banner in the UI.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/history/CorruptionWarningBanner.tsx#L15-L54",
+          "version": "repo-lines-v1:sha256:a8bcbd0fd46c5916ecb30d47b62fe487438788acc643fe867deeb6edf31035f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NjZmYmZhODg5OThkYTc0NjU2YzUwMTk0OTU2YzI1ZjA4NDk0NTc2NjBjMDA5ZmU2M2QxZTlmYTlkYzkzMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyZjNjZmQxMWRhNjE1MDE5N2FjZWVkMDg0MDZhYzY0YjA1MDM0MGRlN2JjMDQxMjRhNGNiN2VmYTY3MTM0MGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1MTFiNDZmNWE5MzIwYTc1MzFhYWMwMDY5ZjA2MDFjYzVkOTAwOWIzODE5MjBiYmQyODE2ZGJjZDI2ZjJhOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwYTFiZDZkNTFjYThmODU3YjI4MTc1ODE0ZGYxMWM3YzdmODI3YzAwYzIxNTFlNjZiNjdjMmRiNjRlODg0MjcifQ"
+        },
+        {
+          "resource": "repo://src/store/vaultStore.ts#L268-L289",
+          "version": "repo-lines-v1:sha256:df217e146398f32fe377ca89041795b9bad47fe34e682693f5afe581f5fbe1e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MmMyMzdkMDA1NGM0NTY1ZDY4OWE4MjY1MTYyYzk2MjI3MGViNGIxNDY1ZmI4NjIwNzI3YTgyZjY5OTQyZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNzQ2ZWEyODM0MTgzOTIzYjViNGIxY2EwOThmMmM0MWE1NWMyY2NkNGVkZWRiZjMyZWM1OTQ1MWUxYWE5NzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5NWQwNWY4ZWQ4ZjZmODg4NTJhNThmOGM0NjgwZDNiN2M3OTMxYTAwMTZlNjNiZGE0MzE3NTA4ZDE3NmEyZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhOTY1YWYyOTI1YWRkYjRjYTQ1MWRlYThmN2JhMTU4YjdkYjM2NjlkMjY0NTliZTczMzBjM2Y4OTdhYzdmOGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0a6669c3b8c64c29a27a4ac15262e057",
+      "statement": "Snapshot restoration atomically overwrites the target file using a temporary .restoring.<snapshot_id>.<uuid>.tmp file and sync_all before renaming.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L180-L216",
+          "version": "repo-lines-v1:sha256:dd296f7f3dc5ffe00a225856cb8cc7278eb648cb9361d3d132636b9b0764191b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwOGVjYmU0MjZkOTg0ZDBlOTgxNzBmYzA1MWExYmMzMWJlODI5Y2Q2ZGU0OWQ4MjVkN2M5ODc5YzYzOGU0MTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OTc3MWZlMWI2NjI4ODc1YWEyM2U3ZGJlNGFhNzE0NjFkMDBjZGZiNjZkZGYxMWI5ZDgyMGFjNTg5N2ZkZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxNTZkNDk3NTA0ODNhZmJkNmZiMjk4NWNmOTEwNGM2MjgyY2FkM2IzZGRiODBkYWM3ZThjNTkyMWYwOTQyOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiMzkyZTljNzg3NmU1Nzc0MDMzYTFlNWFiOGJmOTQ3NmM5ZWI3ZTY1MjY0NDIwMDYyNzM1MzAyMzA0MzE5MjcifQ"
+        },
+        {
+          "resource": "repo://src/store/vaultStore.ts#L311-L321",
+          "version": "repo-lines-v1:sha256:da9fc7b349eb4ec6cee54a368b1c3cac9c824399732b5261d207dc2f3d3fb62f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1Zjg2NWExNDEyMzJlYWJlNzVkMjFmNzk0MTEwY2NkYTU5ODQ4ZjVlMDI0MDg2MGNhMmQyNWE4OWZjNjNkM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyMmU4YjU1MzZkNmQyMGE0ZjQ1YTA0ZWYwNWRjMzU4ZjYxZGVkYWY1YTRkN2VlNjJhNjhlYjkxMThlZWE2YTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0c24d086cff74bb693f17580a645f905",
+      "statement": "The snapshot system parses task counts from markdown contents matching checkbox patterns and displays metadata including timestamps, task counts, and size in the version history modal.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L42-L53",
+          "version": "repo-lines-v1:sha256:7ad6daf7c6d3bea3c28f1ff9b8426b6d9d6047bd34df15579649b30c8596aaef:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzYzJjNTJkNDhlZjQxZjgxOTE5OTBjZmM1YzZlODc1MjhjNzk1ODZlMzFmYTgyZjJjZGM0NGQyNzU1MWM1MzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4MDk0N2ZjODczMDJmNWMyZDRiN2Y4N2UwZjdhNjZmODkwY2UwMDA1MmRlOTRkNThiMDUzOGRhYTZkZjFhYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlMmVkZGQyZDcwNzA3NzVjYmQxOWJiYmU5MDAxNWY5YmIwYTE4N2YxY2Y1MmYxMDBjZmMwODZhNGY2NmUyMzkifQ"
+        },
+        {
+          "resource": "repo://src/components/history/FileHistoryModal.tsx#L174-L187",
+          "version": "repo-lines-v1:sha256:a67388e90d1b12fe92e78b48ec8a3a67cbda957c27b23d73470d44a0082101e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4YWZjMDdhMTVjYWEwOGRhMjYzMjFmMWYxYWE5ZDg4NTU4YzcwOTQ3YjFmNjRlOGE4MTY3NGY1OTE3ODZiOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4ZmIyOTg2ZDIzMDQ1NDQyOGNhYjhjYmY1Y2E5Y2IxMDhlMDg1ZmYyMmY0MzAyMGZmZjcxZTNiNDNmZjkwNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkYWI3OGRmOWI0OWIwNDhhYTY0MTU2NDNkMGZhYzE3ZjRhODNiODMyZmE4NjE2NDYzMDFhNjUxMjIyNDFlNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlMDNkMGNjZjIxZjg0MzUwNzk3ZDNhZmU2ZGZhNjQ1ODUwNTk0ZTAxYjcxYjY5ZWY5ZWNiZjc3ZDUxMWU1M2QifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-31T14:53:08.961Z"
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:15c7b967006b1e8a47aea024b16354fe28066aae6e6f2bba16bf24b96cf7edb7",
+  "claims": [
+    {
+      "id": "claim_5a4cb133ce5e4894aa6a893644153654",
+      "statement": "QuietFlow employs a dual-layer desktop architecture where a Tauri 2 Rust process hosts a React 18 frontend inside a webview and provides native OS integration including filesystem persistence, dialogs, and global shortcuts.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/Cargo.toml#L15-L22",
+          "version": "repo-lines-v1:sha256:77e193d3fa304819026152fbab31316468d6d865589dfa471fec71a609435a55:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJkZjZjNzE0Yzk5NGQwOGRjODVhYWZmZTYxZWM2NGUwMjU1YmUyYjhiZjZjY2FjNzU2ZjE3OTBhYzk5NDBjNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTJmMGY5MDA4YjE3OGE0OTdiYTliYTMwOTFkNGY4NjhmM2E4YTI0NjIyN2U4YTliMjE0N2IyZmJmNWJjNTI4MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWM0MmNlNWQxNzExNjkxMDA1ZmIyZGY5MjNjMmIyMDg2Yzk2MWMwM2Q3MjM3NGY3M2M0NmRkMDNjYzY1YWQ0OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2VlNDNkZTY0MjNjNTQ4ZGNjNzU0ZjY0Nzg1Mjg2NDllMWEwMTFmYzRmYTNlMjIxNjkyOGMyNjg3OGI4NzcxZSJ9"
+        },
+        {
+          "resource": "repo://src-tauri/src/lib.rs#L78-L106",
+          "version": "repo-lines-v1:sha256:65b58604206b7f846d637aa73c919a948f1dd3f1e14b5846906073c4632a6daa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5YTQ3MDBkMzEyMmE3ZGIyZjIxMGVlZjRlOTMxNmQyZDVmZmQwNDkzMjhlZTllMDYyMTk4ZTJjOTkxNzgyNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ZGRmODA2YTk3NWM0Y2MzNTY2ZGQxMTI4NGQ3YWIyZTc0YmQ4ODc1NGJhY2RhNzIzYzI0ZTI1M2NlZjNkMzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3MjNkMjBkMjA3OWFjMzNiN2MxMDRhOTU0NzUzMjRmM2QxNTk4N2NlNmYwZGI5MjUxNWQ4NDJlZDA2ZDgxZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://src/App.tsx#L88-L134",
+          "version": "repo-lines-v1:sha256:d0b1a7986e1f90b5a3411c2e39feb88f05e95f2e399664749ace48dd26920589:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MjE2ZThlOWMwYTFhNjhkMDZjMmZiYWE1ZmQyMTM5NDgyYjhlZmQwYTE5MzE1YjkxNWU2Y2NlODQ5ZDg5ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0NmUxN2EwMTE3ZGNhMzEyYmYwMjk0OGVhOWUzYWNmMDkzYjc5NjcwYjg5NGU4ZjA2NGNkZDNkNGRmNzg5NWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f7682044ba204d698294b7a3aa072c05",
+      "statement": "The IPC abstraction layer in src/store/ipc.ts routes operations to native Tauri commands when running in a desktop container or transparently falls back to an in-memory mock implementation (BrowserMockIpc) in browser and test environments.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/ipc.ts#L11-L13",
+          "version": "repo-lines-v1:sha256:8f1a0282d4f70cdf0a98677997c5357f6ea76b1b10fde65434cb81cafa9b3e5d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQxODY5MzA4ZjEwMjI3Y2ZjYWNhN2YyMTVkY2FjODUwNDRjMTJhNmYxYTIyNTZhMWQyMWExOGJjOTUzYWY0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjg3NDA5MmUyYjhhMjFhNDgyYTUwMGExNzJiNmNkZTUwZDRkMzIwZDRhY2EyNTI4OWJlYTRkZGZjODY5NzY0MiJ9"
+        },
+        {
+          "resource": "repo://src/store/ipc.ts#L265-L384",
+          "version": "repo-lines-v1:sha256:7d30dd85ad4ec043a28627928a6f46afeab012c05bc1b6abf9fca1dfb7d978df:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkOWFhMTgxY2ZhY2UyYzc2YjEwNDBmNzU0YzUyMjVlNjJiN2U1NWE3YzU1YmEwYTI4NWVmYzYwNmY3ZmE1YTA5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhYTFkMWE2MzM5MDIyOWM3OTgzNDdlODNhMDQwNTQ0MWM5NDAwMDM1Mjg0YWQxNjhjMWJmNmNkZjFkNzBhMzcwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmN2IyMmY0Njc4NjIwZGQwNTNlMDBhYzJkZTg3YjZkMGMxM2M0NTQ2Y2JhODk5ZjcwZTVhNDk4ODA1OThiMmZiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://src/store/ipc.ts#L33-L39",
+          "version": "repo-lines-v1:sha256:116762455d2aae1feedc2114cdd48de7c995025245c3c76400a73cff9b239df4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Q3NjA3ZGIwOWNkN2NhNDQ3NmU2ODVjN2M5MjNjMzYyZWY0ZTI2NjIxMTJjOTdlMmQyZjU4ZGFmMDU4MWUwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmNmYzE0NDJkNmU0YzhlNjZhMDkxZTdlMGNhNDI1OTBhZWQwNWY2NGRlZDA3NzMwNzkxMGY4OTM0ZmJjMWFmOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmZmYTUxMGMzZGFkNzY4MDU5N2JlNzA4OThlZTRmMjYwMjZkYmEzMWM0MWMxZGZiMmY1Mzg4MWJhZmJkNjkxYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_104b4f6d70df418b936a431e027f2b06",
+      "statement": "Vault data is stored as local plaintext Markdown files and directory structures, which the Rust backend scans recursively via init_vault to build a hierarchical VaultTree while automatically ignoring hidden files and creating a default today.md note if missing.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/fs.rs#L189-L194",
+          "version": "repo-lines-v1:sha256:cdfd1fee5c3150ef67adba19eb347cef932f0f0476b492d1078be6f66a530f63:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2E0YTNhZGQ0OTBiZWVjMjlhYTY4ZTkwMDI3MTMzYmRlODA1ZWQ3Y2YxZjE4NjZhMDZhODM4YWIxNzVkZjNmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjI2MDhkYmYyMDg4YzkzMTFiMGRhM2FhNmZkNTcwZjRjZmIwNTIwZGM3NDczNDBjYmI2YmUwNjA4MGEzNzUwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://src-tauri/src/vault/fs.rs#L20-L87",
+          "version": "repo-lines-v1:sha256:3f07a02f1273b4fe7376e69a6626c601589386b65f6830b5d891cd08c2bba9de:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkMTdiMTU1ZmVlNTlkNGNiMTAzOTJjNjZiNmMxMGIxZjczODIwYTU3MTM2ZTBhNWE2ZmY2MzQ5Y2U0NmFlYWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3ZTU0ZmI3NzhjMGZmYWZhZjVlYTFmZWY0M2JjOTRhMmI0MGQzNGY1ZjQ0MDA0YzY1NTdmODU3YjgwMWExZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzYWU1YjgyMzdlNDYzZjFiMTU3ZDIyMWM2NmI3MWViNmY1Y2Q0M2M4MjIyZmU4MmJiZThhOGE3ZDFjYzIzODgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f22e08f732274f74bd0e94d53c9ada6c",
+      "statement": "File modifications are performed atomically by write_file_atomic, which writes content to a hidden temporary file with a unique UUID, syncs it to disk, and renames it over the target path to prevent data corruption.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/fs.rs#L95-L137",
+          "version": "repo-lines-v1:sha256:5cef1249dfb98686072cc03a14248c0017ea0b0e9c27d02bc26ab8d976cddf06:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYzRiYzczYzE0ZGIzYzU4MThmODcwNzk2MmE2Y2RjY2VhNTNiMDVjZDY0ODQ0YTg5YjBkZTk3YWQwNWIzOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxNmUzNTQxODIxZWU1ZGEwMTRhY2NiZWUyYWIyZjMzMTM2MWNmMDBkN2NiZTkwZTdjMGEzNWU1ODFlN2UzODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2MzJiNWI5ZTU5YTAzNGM2ZTEwZjYzMmNiODE1ZDk3Y2M1MmM5Y2NiMWZjZjc1ODY4NzM3ODkwOWFkMWU5YmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_905454bc97b8406999a754bac445fe69",
+      "statement": "Before overwriting an existing non-empty file, write_file_atomic triggers a pre-write snapshot that stores up to 20 historical versions per file in .quietflow/snapshots/ with a 2-minute rate limit and 14-day maximum age.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/fs.rs#L109-L110",
+          "version": "repo-lines-v1:sha256:23347b0600111d4994348a34ab138b54b8897ba840a6de9a78de6462dfce7024:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjhjMWFmY2U0ZGVjOTYwZjU3OWVhZTUyMGEzZjJiY2FjZTRlNzUxYTIzZGY3ODM2ZTA4Zjk1Yjk1ODU2NjAzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjI1ZGFjYWI5MDg2N2VhNTI4ZWVjM2Q2ZTJlNzMxZTE3NWI4NTViZmJhZDkzMTI3OTQwM2VlYTZkOWNjNDc4OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzM2NGFiNGI3NGUyMjIxMTc3MTQzY2FkNDAzNGM1ZTJhMmRkY2ZjMTg4YTc3MWIzYjY4MDQ4NDQ3NjA1NDE4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTc3YmY1NmE4NDA5Y2VmZjdjNDY2NmU5NDllNGYwMjRlZGQ1YzI1NzUxNmRiMjQyNWZkNTU2ZDNkZjdiZGFiMSJ9"
+        },
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L23-L26",
+          "version": "repo-lines-v1:sha256:80d27548f3eaca81e93b2ba8a37b2bb281081e94d5564d33c3a5fb0be3e348ed:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGJkNzFiNDM0MjA2Y2ZlODRjYTdhYzkxZGFiNWIyZmU2NjBiYWUxMWY2YTg2ZDk3OWZiY2FiOGJmNGM1NDdjYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNlNGFmMjEyODQxMzE3OWM5ZjhlZWQxN2MxMjg4NTcyZGE2YzAzOTFiNDA3N2E5ZWE3NTYxMWZiN2U1OWI5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWNmYzQ3NjdjNWUxNTU4Y2VmY2NmYTIzY2I5ZTBhYmNkNGQ4M2NmN2U0NWEyZDcwNjYwYzQ2OTQ1YjA2MDZlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDUwODI4NGUxOTBkM2Q3ZTBiYThhMmZiYTM3NjVjMTYxNTc2ZWY0MmRlZjZkMDM5ODYyMjIxNTQyNDQ3YjAxOCJ9"
+        },
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L56-L100",
+          "version": "repo-lines-v1:sha256:f489a30ddc404111aac7eef7552a2c2b7c1754c0991feab8aab1bdcb15f5e194:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MDMyYmVhOWUzOGFiMWJiNDhmMjk2YWRlYjYwM2ZkMjU2MmIzYzc5MGNiNjA0MmE5NDFkN2ZmZDM5ZWFlODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjJjNDJjZDE5YzZkMDNkODA4YzQ1MjcyMDU1MjgyNWI3ZWExYzViNDkxYjIxODUxMWNhYzc0MTVjZjlkOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiMTJmNTZlODVlNjk4ZGI2NmEyNmRkYWU5YTUyMWQwMTlhOGJkMDk2OTVjMjg1MTZkNDMzYmMxNjI0Nzc4YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5OWJkZWZlZWFjYTYzNDBlMDI5MGRjODZlODg5Yzg5ZDVlMTg5YWE1YmE0NGI1ODViM2I3MDczNGY0YTYyZDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f644ba3d814345438c90754b4e200626",
+      "statement": "The Rust file watcher uses notify::RecommendedWatcher to monitor vault directory changes recursively, applies a trailing 150ms debounce filter, and emits vault://changed events to the React application handle.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/watcher.rs#L16-L77",
+          "version": "repo-lines-v1:sha256:6e0f35678cac3adea21d405930d088452c33eeae0f2be92fad3a81e51a8b7064:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3ZjBjZGVkNjcwZWNiMDJhMmM2NTNiZGM1ZTIyNzcxYjAwNzM0MWZiMzA2YmU5Y2FmNjJlNDk0MmU2NGI2YjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OTc3MWZlMWI2NjI4ODc1YWEyM2U3ZGJlNGFhNzE0NjFkMDBjZGZiNjZkZGYxMWI5ZDgyMGFjNTg5N2ZkZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzZjZmMzYzNWVhODIwZmI1YTVkODI2MmUyZDc4MGVmYjMwNjA0YTgxMWVkOGFhNmJjYjYzZjI1OGY4NWQ4NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4546d68bd8e3424a9e8e40f2604414db",
+      "statement": "React application state is managed by an external store using useSyncExternalStore that listens for vault://changed events and reloads state while ignoring self-initiated writes via a 600ms timestamp threshold.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/vaultStore.ts#L1-L47",
+          "version": "repo-lines-v1:sha256:584e68835dedbf14d9bc52f337688164d30127fa1193bbf1b8823d4f7252e9ed:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwOWU4NDA1OGU1ZDBlOWZkZDA3YjljMGViYjRmODBlYmU4Y2IwNWIwZWYwYmVjYmUzYWFlZGNiMWE4NmE5MjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllYzJkMTA0YmI0ODU3N2ZjNjNmNzYxZGZjMjk5YWIzMGU2YzRjZTBkMDRmMTc1ODk5OGYwODIyYWM2NmNiZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjMzI5MjYxNDVhMDE5NzI2NmEzMjQ3OTk4Y2RkZDEwZGY0OWQzODFlNTMwMDZkNDcxYWU1ZjU3NDRiNzQyZmEifQ"
+        },
+        {
+          "resource": "repo://src/store/vaultStore.ts#L146-L164",
+          "version": "repo-lines-v1:sha256:38a4872674380e66a846820e9eca9546857a6ce48a8d31cb420393b0cc847e28:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExZGY4N2E0NzMxNmM3MDhjNTUwMjA5OGU5YWY2YzQ0NTM0ZWI4MGJlYWRjZjYwNjMwMjhlZmNhODU5MzdhYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzYTFjNmVlZDI0YzcxZGNmMjM3OTFlZWQyNmQ3Yzk1MjE3OTVhNzIyZDNlYzRlNzRmMDYwYzE3ZDU3MTUxZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxMGM0Y2Y4NTk0YjljMWVjOTNhNzQwZjQzZTcwZTc2N2YyYTZjZjkwMjYxYjhmMWM4MDNhMjIwOGU1ZDY4MjEifQ"
+        },
+        {
+          "resource": "repo://src/store/vaultStore.ts#L77-L83",
+          "version": "repo-lines-v1:sha256:c9ec510d688612ee99e911f70b407a9bf4bf2b98690db35c944c3d41e08f6b53:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzFmZDY5YzVkMmYzNmJjYjExNThjYmRjNWQ3ZTQ2YjhjYzExMTc0MGE0Y2NiMGMxNjM4YmJmZWU5YTQzMWZkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTIwNDBlMDk1YTk0ZTJhZGE3NGU0MjFmMzcxODc1MWE5MWE4MTBiZmQ2NmY0OGY0ZTkzOWM3Yjc0ODBlYjY3MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjE4ODlhN2Q4NmZmZTU1NTZkNmUyNzg0ZjliY2UwY2Y3NjE3OTAyY2JjNGM1Zjc2NTk2OGRmZGQ3MjZkOTMwNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ca5f3190ae5945309e57b878b95248f3",
+      "statement": "The Vite configuration configures the development server on port 1420, sets up Vitest testing with JSDOM, configures @ path aliases, and injects build-time commit hash and timestamp constants into the application.",
+      "evidence": [
+        {
+          "resource": "repo://vite.config.ts#L7-L37",
+          "version": "repo-lines-v1:sha256:47df0ac8e2d75ba8d6d74bafc23e493d3bf07a3c7871e651fac9210dc98ad8c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmZTQ1NGM1N2IxMzRmZDcyMzJhNDZmMmM5MzdiOTAwODY1YzY4NjU2ZTBlYTIxY2U5YmVkZTM4MWVhMTNhMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3NmZhYjcwMjQzOWRjNWNmMDFiNTVlMTA4NmIyMTg2NDQ1YjRhNTM2YzdmMGZjOTMxY2M1NThjZGNkZTJkZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-31T14:53:08.961Z"
+  }
+}

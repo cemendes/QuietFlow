@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:34622f734f2f7d3984e33b7ade6ca3407a52f09474a2e3653358853f07b82a43",
+  "claims": [
+    {
+      "id": "claim_68078df140be4e928580993fa59847d8",
+      "statement": "Native desktop application configuration in Tauri builds persists the saved vault path to vault_path.txt within the OS application configuration directory.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/lib.rs#L30-L69",
+          "version": "repo-lines-v1:sha256:ffe473832c6247bccb18f94c85f9de9e0853e6acf2c559c28be459083eda138a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMWVlMzNlZTk1ZmFlZTFjMTBlOWViZjNkM2RlNDFiYjE5MjUxNWNhZDc3Y2RhMjA1ZTU0NmRhMTcwMDFhNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxNzM1ZDc2NTdhM2JlMjYzODA0YWZhNTExNzYwMzRhN2M2MTBhNmUyNzVhYTZhMDNiNGFjYmFhMGFjYTFkZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzMTQ4MGYzY2ZlYWRjYTVkMjFhYzBiZGU2Y2UwM2IyZTg0MzA4ODRiMTY1ZTg0NGMwYjVjYWRlNGE2MjJjMTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cb6f8f3b71a34263aa83db2a2bd4fb7d",
+      "statement": "QuietFlow manages visual themes, local vault paths, AI credentials, window component metrics, and session timestamps using defined localStorage keys.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/breadcrumb/BreadcrumbBanner.tsx#L23-L29",
+          "version": "repo-lines-v1:sha256:7d0b56d651fa46352d378b55cf677a14f71f0c668b410141f34a4f423354ad1e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTAwNDVkYWIyMWU1YjQzN2JlM2Q2NmViYmM1NDY2ZGZlN2E3OTVjOWU2MjliM2I0MWQxOGJmMjgzMTBkZjIyZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGU2NDRmMWYxZWNkZGUyMjFmMmFkOGMwZWNmOWM5MzZiOGJhOGM5NDhlYmY3MTc1MDkzN2ExZWU0ODhmY2E0MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjEyZDg2ZGQwYzEzYjI2ZGZlN2NhMzNjNGY2YWFkZDI1ZmQ4ODg4NzA0OTNkZDVkZmU0MzJmNjM1MGYxNzM3MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTk1ZTNlNDViMWJlMTdlNDI0MTNlZTAxNDZmNGE0YmNjZjRkZGU3MTkxNWEwMTczMWQwYzI3ZWU5YjViMTUxZCJ9"
+        },
+        {
+          "resource": "repo://src/components/editor/TaskDetailPanel.tsx#L25-L42",
+          "version": "repo-lines-v1:sha256:f12a6e1daff68bac4e4f71f440f80ec333cc302661f0735a40d114a61150e07a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0ZGU4NjI3ZDRlYmUwNmRlYmVjNzZiZjU2NWZkZDdiM2UxOGZlYjZhYzQ4M2M5NjEyZmUwYzc0NzM5MGU5MzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyNGRhZWFiM2E1Y2FiZDA0YmI2MDIyZjFiZjY1NjAwNjI4MTcxNWNjNTc4ZDIyYWZmMzQ5MzhkMGVmYmYxNTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyNDIxNGU3YjQ3ZDJmMmM2OWJkOWJiZWMxYTE5MGUzNzI4MGM0Mjg1MzJjNWJiZDQzZWJiNTExMzQ2OGFmOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2ZWY0NmVmNzI5M2YzMTkwZjVlN2YyMDMwNmMwNDI0NDk2ZDQ4NzQ1Y2U5ZmVkN2U4N2I3YzcxMzM4YTdkZjYifQ"
+        },
+        {
+          "resource": "repo://src/components/settings/SettingsModal.tsx#L38-L47",
+          "version": "repo-lines-v1:sha256:66e8ba56a47b3655bd9750846096747c9c9cd5be36ceb7d5d459d14d3c37b257:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxNWIzN2NhNDlhMDU5OTA1OWRjZmU0MzA0ZGIyNjNiNDE4NDNjZWY4NDU0MTQyMzZiYWNjZjVmYjQ3OTI5NTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwN2Y3NDBmM2ExN2ZkNjA0NTFjMzdkOWJlZDc5N2JmMGQ3ODFhY2RiNGEzMTU4MjkxNjFmNWY3YmRhNWUzNTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwMDIzZmM1ZTNlMmM0YjMxMTdiN2Y2YmM4Mjg2YmY4NTBmNmZjY2Q1Mjc1MTA4ZWQ4MDUwOTA5MWI1Y2RmYzYifQ"
+        },
+        {
+          "resource": "repo://src/components/sidebar/Sidebar.tsx#L33-L54",
+          "version": "repo-lines-v1:sha256:7f88562c85e29102fb082b4f9033a3a4dca5ca8558292802fd89f925d3f0f084:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkMDA2MDU0ZDMwNzQ4MTcyZDhmMzdjMDY2MWVmZWFiNTBmYmU3NzMyMmM5YzMwYzBjYTZmYWI5ODg0ODBlMzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2M2Q2NDY5NDkwNDY4Yjk3NjY3YWQzN2UwMzViOGFiOTlmY2Y2N2YyNDc2NzlmNjMyMDE3ZWI1NWRjMThiMTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzOTI4YTU2NWUwZGMzYTFjM2I5MTU2MGMwNmUyMDg5Y2FmMTMzYzgwMjJjMmNmNGJiYjViZjMwNmQ0ODg1MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2ZWY0NmVmNzI5M2YzMTkwZjVlN2YyMDMwNmMwNDI0NDk2ZDQ4NzQ1Y2U5ZmVkN2U4N2I3YzcxMzM4YTdkZjYifQ"
+        },
+        {
+          "resource": "repo://src/services/logoService.ts#L60-L63",
+          "version": "repo-lines-v1:sha256:e6b29d99e3ddb04dc7ff90632ab2c7d9d5b875f93edcd9d4bb988002deb385e6:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODRlM2JmZDNlZjY4M2Q5MDI4MmUwZWYyZTA1ZThhYjc5OTNhN2YwMDliMmYyYzFjOWFlN2ZlYTE4YmFlZWQyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTNkOWYxNDAzYjY5OGE0ODU4YTMxNGRkOGY4OTYyOTk5NTFhMmEyNmQwOGY2NmEwYzc4YTIwZGU5NmM4ODgzMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWY3NDBkZTJlODZjZmQ0Yjc2NTU4MDA4OWExZTAzMjJhNWZkYjUxOTIwNzYxMmFkZDA2MzNkNDQ4Y2FiNjYyOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjRjMzQzZjFiMDQ4NDM0OGVkYjBmMDgzYWUxY2M4ZTBmMmMxZmQzMDQ4M2ZjN2MzNjJhNTVhOWNhMzRiNzMwYiJ9"
+        },
+        {
+          "resource": "repo://src/store/ipc.ts#L206-L217",
+          "version": "repo-lines-v1:sha256:34a194df29ed866680ccd95219ad0ccaea33fa45d14c38de18b564f6a0f5b0cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyN2I3YjZlNTdhYzY0Y2E0NWJmNWVmZjVhOGJiNTkzMWJlZDVhNzk2MzMzZDJkMWM2MmUxNDYzYmI3NjkyNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxM2MzOTA3OWQzNzQ5NTUwNGJmZGU4OWVmOTM5MzNiNmZkNWU1NDliN2U0ZWE2NmQ3OTAxMDJjMjg3NzVlNjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhMDdkODExOTdiZTJjMzg1NjAzMDJiZTUzOTY0OWRjNzYwNzJmZDgzMDk5MTEyOWUyNDg3YzU2NjdhMzFjM2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fc4d8beb71b341a48ed18796dae1602f",
+      "statement": "Theme selection in SettingsModal dynamically manages theme-warm-paper, theme-nordic-slate, and theme-forest-moss classes on document.documentElement, driving CSS custom variables mapped to Tailwind color tokens.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/settings/SettingsModal.tsx#L107-L117",
+          "version": "repo-lines-v1:sha256:06eb48729266abc6e02e91221081d6a5231f12dc0b5364792013a2569bec0626:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwMWY0MDY3MmM0NTliZWUzMjM0NGQ4NzRkZmFkODkwMjU3NGQ0MTI3YWRhYzU4MjhlM2Q3MDc4ZmJiNWU3ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkYzUyZjA4YjM5YjA4YjAxYzhkMzA4YmY4ODBiMGJlZjAyZmQxZGZjYzlkOWFhOTNhNGQxYjVmNGQ1OGI2Y2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkMjQxMjc3ZTMzYWI5OTU3Zjk0MjY0OGU2Yjc1NjAwM2UwYTc0NjYxNjVjZjljODcyMmI1NjkwYmExYzViMzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyMDczYjYzMzhiZjYwMzA4YzA1MWZhMDgyYmY0NDkxM2VjYTA4NzIyZWJmOWZlYjc0OTNlNmY0ZWU4ODJiNmMifQ"
+        },
+        {
+          "resource": "repo://src/index.css#L5-L39",
+          "version": "repo-lines-v1:sha256:3ce8216a9d09d88347dd8b60f3102bc6fdb729d318b7a0d64d3a3428ecd4461b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1YjAxYjNiMzdhZjU4NzY0NmNkYzI5MTBlMGE1MDZhMDAxODczNThiZGY4MjI0OGNmMDI2NDU4N2QwMjY1YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwYzEyYjI3ZDFjNzI0NzgwNzc5YzhmODJhNzAxZGU0NWViYmU3NzUyYjVjZjZjNzMzYTYyY2IyYzYwNDVmY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjMmU0ODNlOTQxNDNkMjlhYzZjZDBjNTc4YWI0YzE1MmNkMTA5ZWQ1ZGIzYjk3OTZmODY3MjI0NzI3Mjk0NzMifQ"
+        },
+        {
+          "resource": "repo://tailwind.config.js#L6-L27",
+          "version": "repo-lines-v1:sha256:d7ad1ec1abccea97f75a7add678e41a992f0016528511afffba04182b9bf68ac:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4NTk5NWQ2OTk1ZDZlODVkNDg3OTZmYjc2MDZiZTAxN2FiOWM5NjBkODhiN2ZjZWM3YTFkYWVlMTMxYWMwMzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NzhlMjUwM2I4Y2YzN2EwNmY3ZDZmMGEzYTZiNmZlMzU2OTFmYmNhYjUwYjg3NzVjYWI2ZmFiYzcxYzU5MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2MTg4MzQ2NTNkNTFmMmY5NzkxMmI1NjhhMWYyZGY3Y2UyYTkxZjMzZmQ1Y2QzODc2NzM1OTk4NjA2M2IyOGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmMjk3YmFlZWJmZWJlNTdkNzU3YTRmOGFlZDY5OTgwNWE1MWY1ODI1NzQ3ZjViZTY4MzljZmRkNzViNzZmZjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ade8aebac82642ca800ddba3b87f39ce",
+      "statement": "App.tsx reads quietflow-theme on component mount to initialize root document CSS classes before initial render and resolves the vault directory path via native IPC or browser storage fallbacks.",
+      "evidence": [
+        {
+          "resource": "repo://src/App.tsx#L30-L45",
+          "version": "repo-lines-v1:sha256:5bb86456c3da24ff110a3bcaf0eaa9adeaed13c50b8e69a7fdbfb086c1ba7957:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMTBlYjViMzMyNGZkY2JlYjVkMWRmYmM0NDg3NzExNTI4MjI1ZjQ4ZjA0YjE4YzNjYTAzYTdjMDliMDMzZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzE4Mzg0OTQxNTA3ZGQwZmRjMzdmOGY0OGU3ZWIxMjNmNzUxNzAxYTc1ZTE5MmQ4ZWM1MGM2NjMxMzE1OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiYzhmZTYxOWY2NjE4YWQzZDQ4ZTQzOTFmMjFiMzdhZjZhZDI1MWQ3M2FjMzk4Yjg0ZDNiMjY1ZjA3OGJkZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0NGRhYTFjOGZlNTNkMzk1ZmE0MWRjZDEyZTc0ZmQ0ZDMyNThjMmY0NTA0NDYwMTk0NWRiMzI2NWRkOTdiYWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f2c5de9c91e243a8b7fe691845e7b3b8",
+      "statement": "The Magic Slicer reads gemini_api_key and gemini_model from local storage to issue requests to the Google Generative Language API, automatically defaulting to an offline heuristic rule engine when no API key is set or network errors occur.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/settings/SettingsModal.tsx#L401-L406",
+          "version": "repo-lines-v1:sha256:ba1f92848b7e49e5c52c92a5626be0ee15751de3a2af984efe005b220131e29c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjEwMzNlZjM5NWZkZjYzOWI4YjVkMTVlNGQyYmFhYTM0ZDI3ZGMyMGZlZTU4MzhmMjJkOTc5OGE3YjZlNDM3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmUxYzExYjljYjNlOTgwOTk1ZTVhY2U2ODZkODg2NjcxMjIyOTZmOGU2MDBlOGNlNmYyNDlhMTZiNDI3ZTUzYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzVmZTQ2ZWY3MTgyYjc3MWQ1YjQ2OTRjNGM4YzAxYTFkMmYyYTU1OTc0ZTliZTA5YWY3YjUzZDI5N2VlYjU4ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODlkZGMzNTA3ZWE5NzYzYmRhZGZiNDQ5ZjAwODgzNWM0NmRkOWNiMDUxYjgyZGRkZGYxZmU1ZjIwYjMzM2E3MCJ9"
+        },
+        {
+          "resource": "repo://src/utils/slicer.ts#L11-L54",
+          "version": "repo-lines-v1:sha256:edf3816961bde8cb8fca00bea0a5ce207e5c703f03a2057f3db61ddace9b64a2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5N2Q4YTdlY2UyZjliNThkMzE4ZTgwYzc3ZDJlNzYxMzIyZmU1N2ViZmM2MWMzZmJlNmMzNDM1YmIyY2ExZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkNTU0M2RjNDA5ZWEyODBkYmVmM2FjMzdmOWUzMTI4MDQ0ZTc3OTU2MjkyZmRmMjY0MzkwMGE0ZTk3ZjZkMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxNmE1MjM0MGZiYzk1NDkzNGM5NDJmMDI5NWJiNzk5NWMwYzZjZTkwODUzNDU2YTI5YTg2OGM0YzNhYmMxMDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f3bd907ed2284bc797c7a519b9422444",
+      "statement": "The version synchronization script sync-tauri-version.mjs automatically synchronizes the version field from package.json into src-tauri/tauri.conf.json and src-tauri/Cargo.toml during npm version lifecycle executions.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L17-L17",
+          "version": "repo-lines-v1:sha256:c018aa270b9531b80e5639c965979eccbf8dda028802f9d7d8d27ff985492fe4:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzAxOGFhMjcwYjk1MzFiODBlNTYzOWM5NjU5NzllY2NiZjhkZGEwMjg4MDJmOWQ3ZDhkMjdmZjk4NTQ5MmZlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzAxOGFhMjcwYjk1MzFiODBlNTYzOWM5NjU5NzllY2NiZjhkZGEwMjg4MDJmOWQ3ZDhkMjdmZjk4NTQ5MmZlNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWUzMjRmZDQ4MTE3ZTRjMWY0YzI2MmVjNTViNzc3MTA4MjgxZGYwNDY4NTAzYzk3YjZmZGJkNzIyNzc2NDg1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDg5MWE2MjQ2MmQ2NGM2MmRiOGRlOWY1YzY0MTE5MDg5NDQ3M2QzOWNkYmE4NjM5NDY2MzM4NjE3N2I0ZDAyNCJ9"
+        },
+        {
+          "resource": "repo://scripts/sync-tauri-version.mjs#L1-L31",
+          "version": "repo-lines-v1:sha256:805bc72cbdddc3119d852ebfbbe9bf9ff8db10ab2001ffc3b492a4d9292f3c45:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NTRhMTI4NGFmY2JmODQ2MTI3OTBhZWNmOWVjZmYyZTMwNGI5YTdhN2E0NGY1MDEzOTUxZWVjNDQ3YmU4YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1906b5be7dd64d238e30bae59b2a5ba4",
+      "statement": "vite.config.ts injects compile-time constants __COMMIT_HASH__ and __BUILD_TIME__ into frontend builds and forces local dev server execution on port 1420.",
+      "evidence": [
+        {
+          "resource": "repo://vite.config.ts#L18-L30",
+          "version": "repo-lines-v1:sha256:fb1539fb3234a52d51013500b5c8a3a7d3bef7a6d1cac66d54157dee123c4fe3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2ODI4MGE2ZTYyZDcwYzIyMzlkMGE0ZGNmYzA3YmE1MWM0MWJkYzczNTMxOWU0Y2U4YzcwYjlmNjk4Njg1OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwNjI2ODgxYjFmODFkMWRmODUzMzM3OGE1ODliNDliMmFjMGE5NDc3Zjc5NzQyNDNiMjk0YjM0ZGJhMWVhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5ZGMxYTk0ZGUzZDgzNzk5NDEyZDNjMDAwYzQxNjEwNjEzYjFkMGY4MWJjNzZmOTc3NWZjMmE0NzAwZTliNGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_25debe5792964107955b98f5c93ab280",
+      "statement": "The Playwright journey script scripts/settings-journey.mjs automates preference modal validation, dynamic theme toggling, DOM documentElement class checks, and computed body background color assertion across visual themes.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/settings-journey.mjs#L66-L115",
+          "version": "repo-lines-v1:sha256:6e7238d0c26c22ba5e2c4a08c2dd2a50639bd4bf129dffbe3c850a1fccbc6f67:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhYTE0OTg3YWVmMWI0ZTU1ZWJjMzY5MjdiMjE3OTNmYThmNDlmZDg1MjgzM2ZlZDEwODZhMjQ3NmMwYWIzMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MGU4NjE0MTgzZGIyYTk3ZWZjNmU2MjFmNWUwMzU5YzIwZTZlYTZiOTk3MmNiMGIwN2QwZTU0Mjg0ZWI4YWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlNDgwZmIzZDlmZWI3M2M3MDhkMWVkMDIxMTMzODlkOTg5NThiNGIyZmVkMWQ3ZDVjMjM5NzFlZTdkMTdmNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljMTdmYmQ2NDk3ZGE3N2I2NDZjYzc5MzVhMDAzMzI5NGNmOGY0YzJlNmJiODc0MzgxY2YzZjJlYjc2ZTYxYjIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-31T14:53:08.961Z"
+  }
+}

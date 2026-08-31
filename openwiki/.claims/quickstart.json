@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:83fb202e7d38d3a2543f220f4eecd290b6fd3f8d535f9fd7efb1553f152dd3ab",
+  "claims": [
+    {
+      "id": "claim_e056aabc8d0847cd9a294b10517a855a",
+      "statement": "QuietFlow supports dual execution modes: a web browser mode powered by Vite and a native desktop mode powered by the Tauri 2 shell.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L44-L49",
+          "version": "repo-lines-v1:sha256:ca53c2877c4cf703db1f9bc12019495be3c2bd38f33418990a9d027f828d6933:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmEyZGQ5NTk0ODUwMzc4ODBiMmZmNzhhYzYyZmI4M2YyMjdkMWJhMDY5MzQzM2RiZTEwNzljYWE2MGUwMTZkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2Q5OWE1OTY4MDY5MmI3MTkzYzhjMDQwYzNlOWQzZTc0MDBiYzIyNjE0NzdmYzlmNzY1NTQwZDk5ZDA3MGY1ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        },
+        {
+          "resource": "repo://package.json#L6-L19",
+          "version": "repo-lines-v1:sha256:26faa66ad426b30c1d04a2882b9405ad3427b20852d41137f3bde3a1950edb9f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0ODMzZDU5NDljMDNhNDBjYTk1MjQ5MTYxMGE2NjU5NjQ0YjNhYTQ2NjM2MmY3OTkwMjBkYmYxOTgxNTQ3ZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4MWU0ZjdlMDU3NDVmY2EwMjEwMzQxNzZiNzk2NDQ4ZDUzYmU1YmRjZjBjYmU0YzdiMzQwNWMzMjFhYzhiZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1YzFjOTJmZDllMTY4MDNhYTUxZTkzNzZkYzMzMTFkYzg1MTYxMWE4MTcxN2IyNTI4ZjU5OTI0M2I3OTE3MmYifQ"
+        },
+        {
+          "resource": "repo://src/store/ipc.ts#L11-L13",
+          "version": "repo-lines-v1:sha256:8f1a0282d4f70cdf0a98677997c5357f6ea76b1b10fde65434cb81cafa9b3e5d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQxODY5MzA4ZjEwMjI3Y2ZjYWNhN2YyMTVkY2FjODUwNDRjMTJhNmYxYTIyNTZhMWQyMWExOGJjOTUzYWY0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjg3NDA5MmUyYjhhMjFhNDgyYTUwMGExNzJiNmNkZTUwZDRkMzIwZDRhY2EyNTI4OWJlYTRkZGZjODY5NzY0MiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fb12885744d0474a9a0093c4d78eaab5",
+      "statement": "In browser development mode, an in-memory mock IPC implementation provides a virtual vault filesystem with seed markdown files so frontend components can be developed and tested without a compiled Rust backend.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/ipc.ts#L33-L99",
+          "version": "repo-lines-v1:sha256:40f856b33967b061d5746e896258026d48f331830cc9ceaafc84060657628694:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkNzYwN2RiMDljZDdjYTQ0NzZlNjg1YzdjOTIzYzM2MmVmNGUyNjYyMTEyYzk3ZTJkMmY1OGRhZjA1ODFlMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjZmMxNDQyZDZlNGM4ZTY2YTA5MWU3ZTBjYTQyNTkwYWVkMDVmNjRkZWQwNzczMDc5MTBmODkzNGZiYzFhZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzMWI5OTkzNmRkMjUzMDQzNzllMTJiN2QwNzJlYjI5YTIxYTQ3OTA1OGViOWFmNzMyNTY2YTYzZWUxNzQ1NTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fa4875d4a1ed4ce5a37350dd1767f9af",
+      "statement": "The native Tauri Rust backend manages vault initialization, atomic file operations, directory watching, snapshot persistence, and native OS dialog interactions through custom Tauri command handlers.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/lib.rs#L10-L101",
+          "version": "repo-lines-v1:sha256:6b431d685318d16d0527fe172d4075c527283f7aead32505302efefe341dff17:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMWVlMzNlZTk1ZmFlZTFjMTBlOWViZjNkM2RlNDFiYjE5MjUxNWNhZDc3Y2RhMjA1ZTU0NmRhMTcwMDFhNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZmFhNDM3ZWZiMDkzMDhlNjQzMzI3ZDYwMDJiZWU4MWNlMzRkNWFjNzJmZmJhYTBjMjRhOGFlYTA2MDZmMzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0YThiMWNmMGIzNjYxYWM4YTdhNmQ4NTcyMDY0NTRhNmU2YTcwYjVlNjA1YTNmNGQ3YTFjYzk0ODEwYTNlNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5ZDU1YjJmZGIxYTYzYWQ0Mzg0ZmFiNGFjOWZhNTY0NmFkZDU0MDEwOGY4YmUwMDk4N2NkNDA1ZDgwMzIxNDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1ab8884b8aaf4c32b655adb29fa7e6be",
+      "statement": "During application initialization, QuietFlow determines the active vault path by checking saved backend configuration, browser localStorage, existing store state, and default OS folder locations.",
+      "evidence": [
+        {
+          "resource": "repo://src/App.tsx#L35-L45",
+          "version": "repo-lines-v1:sha256:7699f45cf1921abf658aee7cc9bdf46b73dc389ea79d3dd38f5976bd3671b767:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwOWIzMzAwYmY3MDhjZWIxOTRkMWE3NmNmNTg5YzQwOGM2ZTU3MDg4ZTcwZWMyZDM2NWI3MTJiMmQ5NTAxOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzE4Mzg0OTQxNTA3ZGQwZmRjMzdmOGY0OGU3ZWIxMjNmNzUxNzAxYTc1ZTE5MmQ4ZWM1MGM2NjMxMzE1OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3YTlmYzZiNGFiODlmMWI0NDU1Mzc1MzQyMGQzYTQ2OGQ1OTc3YmUxMTkwM2UyNjA0MTQxMzFhODZiNTkwZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0NGRhYTFjOGZlNTNkMzk1ZmE0MWRjZDEyZTc0ZmQ0ZDMyNThjMmY0NTA0NDYwMTk0NWRiMzI2NWRkOTdiYWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5ce4d815ffc24095bd350d6bbc48e97d",
+      "statement": "Version synchronization across package.json, tauri.conf.json, and Cargo.toml is automated by a release version script.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L17-L17",
+          "version": "repo-lines-v1:sha256:c018aa270b9531b80e5639c965979eccbf8dda028802f9d7d8d27ff985492fe4:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzAxOGFhMjcwYjk1MzFiODBlNTYzOWM5NjU5NzllY2NiZjhkZGEwMjg4MDJmOWQ3ZDhkMjdmZjk4NTQ5MmZlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzAxOGFhMjcwYjk1MzFiODBlNTYzOWM5NjU5NzllY2NiZjhkZGEwMjg4MDJmOWQ3ZDhkMjdmZjk4NTQ5MmZlNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWUzMjRmZDQ4MTE3ZTRjMWY0YzI2MmVjNTViNzc3MTA4MjgxZGYwNDY4NTAzYzk3YjZmZGJkNzIyNzc2NDg1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDg5MWE2MjQ2MmQ2NGM2MmRiOGRlOWY1YzY0MTE5MDg5NDQ3M2QzOWNkYmE4NjM5NDY2MzM4NjE3N2I0ZDAyNCJ9"
+        },
+        {
+          "resource": "repo://scripts/sync-tauri-version.mjs#L12-L31",
+          "version": "repo-lines-v1:sha256:743d1ed4f3c5515eba295a6f0eaf115e9cb56b9f9b25bb11db2d2e923887ebae:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxODk0OTU3OTY4ZWMzMmY5ZDM2YjFjMGYyMTQ1Njg0OWZkMjUyMDJhZTQ4YzkxOTc5OTA0OGZlMzI5YzJkMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2OGM0YmFiNTkzNTE5OTdkZWVkNTY4YmM0Y2EzZjA2Mzg4MGI1YzEyNGEwZTFhYTExM2RkODJkNDE0YmU5NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2dc51c5939474aadab077d109fc95b87",
+      "statement": "QuietFlow's testing infrastructure includes Vitest frontend unit tests, Cargo Rust backend tests, Playwright E2E suites, and autonomous chaos and crawler journey tests.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L10-L16",
+          "version": "repo-lines-v1:sha256:5a45b9a418827378a010bfd6434a2cf0b45a0bb5bb43c3108994768389315994:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQxZmMyNDllZmE3MWIwZTdhOTdmN2Y0ZWI4Yjg5NDk0YTU5Y2IzZjg3ZDcxYmU2YWFkNjNhYTNiYTVlM2QzYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTBmMTJjNGJkZDM2NDEzZGEyMjRkOTZlNjJkNGY5NjM2NGVkZTI4MDY4MWY5MDgwYjBlOGFmZDdkMDE1NjM2OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzljYWViZWU0ZDY4Yzc2NTc5MTg5YjdiYWUyNmEzMmY0M2I2YTIxYTNiZjE0Yzg5Njg3YzlmZmY0ODA5Y2FhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTlkODZlMTE5YzZkYWIyMjYxNWZlYjA0NzY1YzdlYjM0MzgzMzgyOTQ1NzdmZWIzODdhM2ZiZDNjNWRkNDAzMSJ9"
+        },
+        {
+          "resource": "repo://vite.config.ts#L31-L37",
+          "version": "repo-lines-v1:sha256:b7f72c38bd04bdd31babc2b2a6148c5c420d59e111777ed34adc05d2a34fa28c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkzNmRmN2E1YTNhYWYxODBjZmZkMWQ2NWM2NDZlZjZhZWEzNTJjYzI3Nzc0Njg2MTk5Y2Q4ZmIzZTg5OWM3YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjNhY2RmZmQ3Y2ZiNTFjYWQ1NGNmNDk1YTEwYWE0NDU1NWI3MDUwMzE0MmVhODA0ODU2YzVlNjUzZDA3NWYzYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-31T14:53:08.961Z"
+  }
+}

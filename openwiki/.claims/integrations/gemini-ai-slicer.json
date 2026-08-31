@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:1bea3f857e2efe7f9f140de38a60377d7a08c09716b073afe64cf5814553e9a8",
+  "claims": [
+    {
+      "id": "claim_2916bf663dea4940baccea0e46e58a13",
+      "statement": "sliceTask accepts a task title string and options object, checking provided options or local storage for gemini_api_key and gemini_model before attempting API decomposition.",
+      "evidence": [
+        {
+          "resource": "repo://src/utils/slicer.ts#L6-L15",
+          "version": "repo-lines-v1:sha256:a5aa174197f89455332b35ff036024cc6988d2c19a37f584c3142fcb65275417:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhNzA2Y2FlOGEzMzA2YmUxOWVmYjJiN2E2MDg3Y2UzZmYwMGJmOWU3ZDQ0MWJiYmVmMWRkMTA2YWI0NTQ1OGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlN2M2OWViZWU4NjI1OGVkY2NmMWYxMzQ2YjFhNzYyZmZhOWIyYzgwNTVlYWM0YTZhNDdiMjAxOWQwOTAzMmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzYTFlOWFkYmI4ODAzZTk3MGY1ZjZlYzU3M2JhYTE3YzdkZWMyNzU2NGY5N2U1OTc5ZjE5M2ZkMjNmNDM3YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5NGUzMGJjYzRhMTM5YTM3NmE4NzM1ZGJkMGE1YzE4ODNiZmEzYTQzYWNmN2U4OTJkMTVlNTc5MThkYmM3YzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b4091c8c831423592ae4c37c9140eac",
+      "statement": "When an API key is configured, sliceTask issues a POST request to Google Generative Language API using structured JSON output configuration and low temperature (0.2).",
+      "evidence": [
+        {
+          "resource": "repo://src/utils/slicer.ts#L17-L39",
+          "version": "repo-lines-v1:sha256:d3ee4739c1f31d334fd3cf985f02231940027d66342d9ef92a6f2e3be85591bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNWMyMDgzZTQwOTczMjBjNTZmN2NiZDlmOWE0ZDRlOTZlNDg5YTAwZGE3MjY4OGJjYTFhOGQwZjc2NWQ4N2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxN2FmMTEwMWM5N2I3YzJmNTI1NDA3ODJlNjM0Y2M0NDQwZjBlOTcwMzQxZTUyZjk3NTIzMTFkNzhiN2Q3ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhMmVlMDg5ZWIxM2VkMzdiNmE2MDQxMWE1ZjBkM2FhNTFjNjZhYWY1NjQ4MWY0ZDY5NzA0ZDM5NDNiZjhlZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwNzQ4NzE3N2NmOWQyYTM5MGIwYmUxM2QyMGNlN2RiNDQ3MmM3YWFkZjY2NzlhZDYwNGE5MzFkYTA0MDRkNWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_02365939e0eb4493b816e18b0e9dd493",
+      "statement": "The Gemini AI system prompt configures the model as an ADHD executive dysfunction task breakdown specialist to generate 3 to 5 tiny, ultra-low-friction action steps formatted strictly as a JSON array.",
+      "evidence": [
+        {
+          "resource": "repo://src/utils/slicer.ts#L26-L29",
+          "version": "repo-lines-v1:sha256:f86dccfaaafb68030326b97ab9400b71c90401f94d0ca9c3b2413945c2a81611:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTFmZTFlNDc2Yzc4YjRhMTg3MGQ3NTdkZjAyYTI3MjMxNjI0Njk5YjdhMmI0ZWMxMWRjODkwOWZmYTU0Mzg3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWE2MGI0MTg3OTcxOTM0NmEzYzY3ZTk4Yjc2MmJmYjMwZDBjNjgwNWE4ZWIwYWQ3MDRkOGMyODNmOTA1OTVkZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTNlNDgxYTI1NjZjNmViNWRkZjIwMWQxNzI4ZTYwNDY2NzFjNDU2OTExYjA5MGM5ZWQwNTdkMzQwNDY5ZmVkZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjU1NGE4NDQxMDdkZGJkY2M4YzAxNGQ3ZjgzZDhhN2QxMDI3NTNiZWU3OGY1YzU2YTY2NzQ0ODNhY2I1MTlmZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bdf480fb197e4e1a8de801ac002be989",
+      "statement": "If the Gemini API request fails, returns an error status, or produces unparseable JSON, sliceTask catches the exception and gracefully falls back to the offline rule-based heuristic engine.",
+      "evidence": [
+        {
+          "resource": "repo://src/utils/slicer.ts#L51-L56",
+          "version": "repo-lines-v1:sha256:cd62f5e445e81cb9f2dffef400eb9651e4070c0f896da2b55e91b19f4084be77:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDFiOWE2NmY1ZTQwOWJiZWRkMWNjZDVkN2M0MDdjMjI2NTk0M2NmMDA1ZjZkOGVlN2FmN2IxOWQyNWY2NzhhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2MwNzczMzYwNTNiM2U1MGYyZjAwZDdjMjM2YTgyNzJhNjE4MmY2YzY4ZTFlZmQ4MmE1MGYxMTU1M2ZjMThiZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjQ5OWU4OGE0MGYyOGE5NjE5ODY5NTI5YTNkNmViZmJlYzljMzMxNzA4ZDQ4MjA5NTI2NDA5YWQwYzRmODczNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGUwNTQyNjQ5Zjk4ODBhMGMzZDU4ZjU1OWEzZjRmNDk4ZmI3NjNhNDAzYmU3ODg3NDY5Nzk4MDM4Y2UyNzVmOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_39e43e8988864d2886ec4dfeff65ca80",
+      "statement": "The offline heuristic task slicer uses case-insensitive title keyword matching for financial, document, and test/audit domains, falling back to a general 3-step action template when no domain matches.",
+      "evidence": [
+        {
+          "resource": "repo://src/utils/slicer.ts#L57-L92",
+          "version": "repo-lines-v1:sha256:5bb16e2197941e1f38efa548fa9ff6cbf99f2fe2975da3e500f240a3efe9c07b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNWE5YzEyNmM5YjM3ZDY0YzQ2ZDI1YWM0NTZjYTA1OWY1ZjM0MDZlZWNjM2NiZjJmMjc4N2QwY2Q5NjkxMTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5MTIxOWIyNzhmZmUxMDIwYzZjOWFiMWE1OGM5ZWY2Mzg3M2I0MjA4OTE0NTQzODg4ZDA5YmI5OTM3YjVmOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d4d90efe6c444d9985a05fbaed7a855a",
+      "statement": "TaskRow renders a Magic Slicer button that triggers sliceTask asynchronously, displays an animated loading spinner, and appends generated step items to the task's subtask list in the vault store.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/tasks/TaskRow.tsx#L119-L145",
+          "version": "repo-lines-v1:sha256:410d2b63f4788bdfdb3afe0f6edfd191268925f477a19ec321293147efdb7bad:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0YzU0OGYzYTIwMjE3YTEyNWFiYjQyNzU0YmFhMDFmM2FhMWRkMzI1NDcyMTExNjVmNDFlZDgxMmU2YmQ2ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzOWJmM2U4ZDMzMGU4MzQ2MzJmMTQxMWZkYzZkZTg1ODQ3YzFiMTkyYjE3OTdiMGQyZjI1YzY5ODBlODkzYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2MGVlOWViYmZlNTUyMGIwZTAyZmEwYWM0YmYwZjNhOWIyN2VhYTZiNjg4YmU0NjI0MmUxNDg3NzMzMzI2NGQifQ"
+        },
+        {
+          "resource": "repo://src/components/tasks/TaskRow.tsx#L270-L279",
+          "version": "repo-lines-v1:sha256:c68f4ddd335562113d2d56520424a81ead48f2ad54afe76cdb4b7ba0e4be0807:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyOGMyZmFiMzNhZWRjZDNiNDcyYzhlOTUwZDg4ZGNhZjZkNzAwODRjZmI2YTgyODIxMWRjYjczYWUwZGMxNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5NjQ3ZmY1NWFmMzU0NTdkNjRkYmUxNmU1NzhkN2U3MTRjN2JmZGYzYzI0MmJjNGUxNThmZWI1NDgwMDhjYzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjZjJhNjdhODAxODg5ZTZkNmRmZDZkOWNjZDBiYjc1NGRjMThiMTQ1NzUwZDg1NDk5OTIwMmNkZDNiYmU1ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwYmQ1ZjU0ZGY3NjJiZmE2NDYzZTA4NzE4YzNiOWY4YmZlOTY0YTUxYWMyZDNmYjMyZTJlMjQzMmI5OGFiNmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4ff10aa46efb4461bf3032d0f8897904",
+      "statement": "SettingsModal provides the user interface for entering and persisting the Google Gemini API key and selecting the model variant (gemini-2.5-flash or gemini-3.7-flash) in localStorage.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/settings/SettingsModal.tsx#L349-L410",
+          "version": "repo-lines-v1:sha256:fc5aa405b266e416b12caf3f31097545f29283aff42440858d804ecfc5824ab4:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NjRlNzcyZTczMmE4MGNlMWUwNWI4ZGRkYjhiZTk0Nzg0OTQ5ZmNjMjJjYTE4YWJjZjM1M2QyMWY0ZTJjMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5Y2MyNWY2MjJjNmJiOGEwMjE5ZWQ0NzIyNjg3OGQ0YTFkZDNlYzk1MDI1NjM3ZTIxOTY3ZmMyMjg5YzM2MGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4ZDczYzAzYjRjMzg3MjIzMzVmYTQ2NjNlYjNmYjEyMGI0NGE5NGU5Y2IyZjEyZjlhZWZjZDI2ZjAwNTQ2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczMTY4OWRkN2VlMjg3NDg4MmY5OGE4MzQ4M2EwZjU2Mjk1YzhmZWU2YjFmZWIxODAxNzRjMDJlYjBlYjg4NzkifQ"
+        },
+        {
+          "resource": "repo://src/components/settings/SettingsModal.tsx#L38-L43",
+          "version": "repo-lines-v1:sha256:70f65897530a9b5fa10334cd340dc1e82547543ade33becfdd4397d7309d0af7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTE1YjM3Y2E0OWEwNTk5MDU5ZGNmZTQzMDRkYjI2M2I0MTg0M2NlZjg0NTQxNDIzNmJhY2NmNWZiNDc5Mjk1NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzA3Zjc0MGYzYTE3ZmQ2MDQ1MWMzN2Q5YmVkNzk3YmYwZDc4MWFjZGI0YTMxNTgyOTE2MWY1ZjdiZGE1ZTM1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTgzMzg1OWY5NDdkZWI3NGFlZTgxODgyZjc4MTliMzAwZWEzY2EwZGFmOTljNjA5MGU1Nzg4NDJjMDUwMWE4ZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9550488a743447b1a572263c5b9013f3",
+      "statement": "Unit tests in slicer.test.ts verify both offline heuristic domain slicing and mocked Gemini API responses.",
+      "evidence": [
+        {
+          "resource": "repo://src/utils/slicer.test.ts#L4-L44",
+          "version": "repo-lines-v1:sha256:d437040de356c5be4604b73ba36b35f7e60117ce5d34b9e9fc4eecaf35950f42:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzODVjMGRlMTZlOGJjYTA2MzQ5Y2QzNTMwMzQ4N2M4MTYzMDg1YzJlOGRkNDg0YzM4MjhhNzA4NDY4Nzg1OTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkMDdkMTRlMTZjNThlNWM2ZjVlOTNiZjIxNTljM2JjMmI1ZjQxNTJiZWFkNjE4ZGQxYjYzYjVjYjhmNDIzMGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-31T14:53:08.961Z"
+  }
+}

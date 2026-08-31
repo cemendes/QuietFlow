@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:341be31799ed4a21e2cda2678dbf20cf60d5fe9a5bfc0f41d5b76d0911a2b173",
+  "claims": [
+    {
+      "id": "claim_ea5df36d77e7446f90bd540e7c251113",
+      "statement": "src/core/markdown defines core Markdown engine interfaces (VaultDocument, TaskItem, SubtaskItem, TaskComment, Frontmatter, and NewTaskInput) that map plain-text Markdown files into structured TypeScript domain objects.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/markdown/types.ts#L1-L63",
+          "version": "repo-lines-v1:sha256:56d1e68cad2d80e066500cbf4a834c163b0178461633ae93c2e92708b2b58d22:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNmZkNGJiMTY4OTRkODNjNmM3MjgwZDIyNjVmN2U4YjVkM2M4ZmE1MTI3MTdkMmY4MjBiYTQ3ZTQzYjQ2NjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2e14e31a509148ea8cab595c14cfb52a",
+      "statement": "extractFrontmatter extracts YAML frontmatter using gray-matter, polyfilling globalThis.Buffer in browser renderer environments to prevent crashes, and falling back to a line-by-line regex parser if YAML parsing fails.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/markdown/parser.ts#L117-L150",
+          "version": "repo-lines-v1:sha256:d0453598503ba6101eb2d75d445649484038ab19a0451a39cd6438f93a280fcf:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5YWQyZTFiYzhlOGU2OTIxNzliMjhlYzNlODliZTdlYTllMjgzZjE4NjUyYmM3YzM2NjA0MzMwZmQxZTk1ODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwMTIxZWU4YzE1ZDJkOThiOGE3NTE2ZjBiOWQzMjgxMDNkOTBlYTc2NzY2OTkwODBiMjRkZmU2Yzc4ZGRiMzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2b8640a9ea484e9a9fa2081b6c8606b6",
+      "statement": "Task IDs are generated using slugify and a document-scoped slugCounts Map to assign base slugs or numbered occurrence suffixes, ensuring stable IDs across line position shifts.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/markdown/parser.ts#L14-L20",
+          "version": "repo-lines-v1:sha256:068168b11ea5393bfa4ef68d81207462aac892ce6b839a5423c2bae46b22dd9f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQxZmJkY2I0NDdhMDc4MWE4MWM1NTRkNGE3MGNhYjZhNGRhMTJhOGI1ODQ3M2Y0MzYyODUwM2YyNWIwMWUxNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzZjYjA1MzU1Mjk2YWM0MGY3OWNkMDYwMDllMWE0OGM3NTY3ODA2ZmZlNTBhMTFlNTRmMjdiMzA5Mzg5ZmVkZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjM1ZjUxMGJmM2Y4NjQ1NmQ4ZWZjY2QzZDBjMzU0ODVhZTgzNDAxZjNhNWMyZDE5OGI4NDY2NGY5ZGViYTkxZCJ9"
+        },
+        {
+          "resource": "repo://src/core/markdown/parser.ts#L94-L102",
+          "version": "repo-lines-v1:sha256:42eb2b7f404cd3b56edc52349c4c1517e3f4f3dc9a0e269cab0346cfb95df0b1:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzU2ZDAzMzM2MjJhZTQ2NWNkMzExYzM5ODI0MDUzNTlkYTNkZmI2NDBmNjA0NTIzMzdkMDVjNGNhMmE2NTliMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzliM2VmNDllMGM2NmNjNDYwYTA0NWE2NGMyMzA4ZDM4ZGQ0YWVkOThiZjcxYmNlNzkxYzc0MGI2NjhmM2E5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGNlYjFjMGZlMjE4OTMyZjdhOTg2MjhlN2JjZjMwODA0ZDAzMzRhMDczNWY5MTc4YzAwMWI5ODA4NjQ4OTY5YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0fe8b118161a4a38a0410039dbcf95be",
+      "statement": "parseTaskLine extracts status checkboxes ([ ], [/], [x]), inline metadata tags (@due, @priority, @status, @completed), and #tags starting with letters or underscores while stripping annotation syntax to extract clean task titles.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/markdown/parser.ts#L22-L115",
+          "version": "repo-lines-v1:sha256:27bd1f850ef8c56cb782adec5b91b960fc8c7918bd85748f2d80b0d0624ab0d8:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYTI1MmExMzE1NmI2NzIwYzkwZTI3NmZhOGNmOGZkMTJhMjM0N2RiZTY4MTEwMzExMjM5YTdkMjU1MWEwZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1ZjliYjQzNWY4NTgwMGYzMjM4OWU3NjNjMjAzZDJlZjQ4NDJlYWNiYjE5ZWU3NjQwN2I1YjZmMzIwM2IzNzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiZDRkNGYxODBmZTRmY2ZmZGQ4YzYyMTIyY2M1Y2FkNmQzYjRmMmUzNzAwNjhiNDUwMzkzZjYwMmM4MGZlMWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e71f87794c8c4c4d89a5c5477eb76750",
+      "statement": "parseMarkdownDocument uses a single-pass state machine that collects indented lines under a top-level task to parse subtasks (SubtaskItem), author/timestamp-attributed comments (TaskComment), and multi-line task notes.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/markdown/parser.ts#L152-L289",
+          "version": "repo-lines-v1:sha256:0cdc7d31648f979f7da7084e6f5391eaad321599f155c74d47412d034f8c9044:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiYTg0YTcwNTYzMWYwMTE2MGExZDFlNGUzYmUxMzcwMGU5ZTU5MzY1ZjI5ZGJkZjVmYWQxMWNlMDUxODgwZDUwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmYjU4MGU5NjRmODNhNDczZjQzZDQ0Mzg0NjI5NDlkNjhiNTYwMGZkYTc4N2YxNjM3NDVkMDBkZTg5Y2JmMzZhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlYWQwNjJjMjFlMzE2YTczMzdjZDVjYmU3YTQyNDhkOTk4NzkwNjRlM2U5NjkyNjM3MGI4ZDU3MTBmMjU0MGNlIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_cefe01896b3347b5ba86901621bc9e9b",
+      "statement": "Fenced code blocks starting with triple backticks toggle an inCodeBlock state during parsing, ensuring checkbox lines inside code examples are ignored.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/markdown/parser.ts#L201-L209",
+          "version": "repo-lines-v1:sha256:f284bc7e72623c6d6a08a020f882fa6f25ae2c05a967c2efa09e3c88d0609b40:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M0ZDQwMWNlOWQyMDI0MTM0NzYxYmQwM2YxOThmNDdmMTBiN2IzMDY3NGYxNjAyZTdjYjQwNzYyNmVmOTBmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzdmN2M2ZjFhMWMwY2M5ZTJmYjQ4NjNiY2EwMTJlMzBmZjI2MzA5Zjk1NmEzZDVjMjAzMTEwOWM5YjE0MmRlMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzBmNjIyNGFjMzY0YTE1MTA2MDYxZDRhZTkzZmY1Nzk1ZjE3Y2EwYWIzYjYxM2EyNWVlZWY5YjM1NWZlYjFhMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e9f952856ada470f9e41048578de3066",
+      "statement": "getCheckboxForStatus maps task statuses to Markdown checkboxes, and serializeTaskLine formats task metadata in canonical order with @status(backlog), @due, @priority, @completed, and #tags.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/markdown/serializer.ts#L3-L46",
+          "version": "repo-lines-v1:sha256:2b5f3932580e6228b8b8ad10e420991553a33fa4e1dd38d22cfe73d8a4c000da:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1ODgzOWM4YzM2NjEzZDQ2ZTA5MjViYTRlYmE0MmRiZGY3ZGNiODYzMGU2ODc1ZWU1Zjg1NTU0MGRmY2FlYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2YmIyY2RlNWRmNmVmNjcyNTUzMjAzYzQzNTM2ZDk2ZGQ3Yzk3OTIxNmE1ODE3MjlmZTY5MTg0OTA4NWU0YjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkY2M2OWNjMWUwOTk2NGRiZmFmMjQ5ZTgyMzU1ZThkZTdhYzkzYmJiODhjMDljNDM1NDVhYTg2ZGMxZWQxOGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f1773469bf4c4053ae981f814f228fc0",
+      "statement": "serializeTaskBlock formats full task blocks into line arrays, outputting main task lines alongside 2-space indented notes, 2-space indented subtasks, and 2-space indented comment lines.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/markdown/serializer.ts#L48-L91",
+          "version": "repo-lines-v1:sha256:b8feb7e5fb3e4829847912ef59d551bf0bbf49de7b1528d8d21a0ad88e5c93e9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmYWM3NzE4ZmNmMGVhOTIyMTQ3NzgwNzcyMDFmNjMwZjNmYjZhZjM2YWU0ZDg5NTJkMDNiMTNkZDcyMmI1NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2NzVlODMwNDUzOTQwYjk4YmY0ZTY4YzcyM2ViOThjNGRjOGY1ZTQ2ZjA2MWJlY2NjZDRkNzUyNjJjMGMxMWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1a52ae6a81b945d09fb5278debc30b45",
+      "statement": "updateTaskInDocument mutates a target task block in-place in a Markdown document string without modifying surrounding prose, headings, or frontmatter, automatically clearing completedDate when transitioning away from done.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/markdown/parser.ts#L291-L341",
+          "version": "repo-lines-v1:sha256:8a32922472d22e1084d0fe1deac87a8a7ad203260db82d35f6519a3a61b46dae:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlYzc5ZTljMTI0NDIxM2E2NWE4NzQzNzc2MWRkZGQzM2FkOTA1Y2M4NjA2MTg1YjVhOTY0ZGQyY2I5ZDBhOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMDQwZTA5NWE5NGUyYWRhNzRlNDIxZjM3MTg3NTFhOTFhODEwYmZkNjZmNDhmNGU5MzljN2I3NDgwZWI2NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyYjU2MzRiOTI2ZDNlY2E2NjI3YmM0NzQxYzkwNDQ5MzU4YzA3NjQ5MWIyM2FjY2ZlZGFlM2RiM2I1NjE2ZDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a6e7ca978eec45c886cc72341abc13fa",
+      "statement": "addTaskToDocument inserts new task blocks into target section headers before subsequent headings or appends them to document end if no target section is found.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/markdown/parser.ts#L343-L392",
+          "version": "repo-lines-v1:sha256:3f56f0201e3548580ba8fd2ebd6ddaa21c423c90e4d9daff66b35d6aa844a62f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiYzJhNDY0MGUyYjFjNTllM2U2ZmMzNzQxYzgyZDAyMTZkZThlZWRiM2Q1Y2IxNjE0MWQ4YTNjZDYzYjhiODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiZTY4NWQyMzQ0NjA2ZWExNzFiOGNmMmM3NDZlNWM2OWJmM2JmOGU0NjE0ZjVlMGU5N2QyOWRlN2RhNTFmMGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0OWE2ZTlkNDVmNzg5NmUxNDQyYzY5NGNmODg5ZDEyMDNlMjllMjk2ODMzZjZmOTIzOTIwNzM5YTRiZTllMGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_97715e237d0347c4b7e6d007f20f8639",
+      "statement": "deleteTaskFromDocument measures the full line range of a task block including its indented subtasks, notes, and comments, and removes it from the document string.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/markdown/parser.ts#L394-L430",
+          "version": "repo-lines-v1:sha256:6b0423ba138579b71e4029098b306cb02be3b3720de0bdb72963a2b21753c52a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxM2QzODM0ZjVhZDllNjIyY2JiNDQ4YmQ1NTFjNDgwNjQ2NTY1OWJiZTFlNzU5MzkwNDc5OGQ2Yjg3Y2VjOWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiZTY4NWQyMzQ0NjA2ZWExNzFiOGNmMmM3NDZlNWM2OWJmM2JmOGU0NjE0ZjVlMGU5N2QyOWRlN2RhNTFmMGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1bf9da94a4a54f8885630d284fe9259b",
+      "statement": "vaultStore uses parseMarkdownDocument, updateTaskInDocument, addTaskToDocument, and deleteTaskFromDocument for document parsing and optimistic persistence, while QuickCaptureModal uses addTaskToDocument to write new tasks to files.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/capture/QuickCaptureModal.tsx#L219-L219",
+          "version": "repo-lines-v1:sha256:2450f7adca8e834de0e8c3bb9c4aecb2d1c3f6361ad5d3ae753118ccfd42839f:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ1MGY3YWRjYThlODM0ZGUwZThjM2JiOWM0YWVjYjJkMWMzZjYzNjFhZDVkM2FlNzUzMTE4Y2NmZDQyODM5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ1MGY3YWRjYThlODM0ZGUwZThjM2JiOWM0YWVjYjJkMWMzZjYzNjFhZDVkM2FlNzUzMTE4Y2NmZDQyODM5ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTlkNTJiN2YzY2IzYTIwYzY2M2U0OThkYTEwMDkwODYxNzg5NzA1N2MwZjYyZTlkZDZlODJjOGY4ZTU3ZGJjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGI4MzRhMDdhYzg4MDZkODI2MTgzYmRhMGMzMDk0ZTMyZTllOGYxZGRlYzQ5MTNkYzM0MzJhM2E2ODVlNmI0NCJ9"
+        },
+        {
+          "resource": "repo://src/store/vaultStore.ts#L228-L233",
+          "version": "repo-lines-v1:sha256:e6970f193c05a87717869ec13e094edc2768fe21a742ad1979fa07cc8a242ce5:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjZkOTI5OWJiOWJmN2YyMDI4MmU5ZTg3MjhiYzg3YjhmYjJkODYxODE4MzlkMDM5MTkzODIwMWI5ZTdlZDA0ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2I0MjhkNGE1ZDY0NzFjOWIzZjcwZmI2NWM5MWY5OWViNGFiZjAyNTMwZmFkYjQ3MTE4ZThjNDdjZDUwZWJjMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzdiYWNmODg1OGFlOGRlYjY3YjYwZDdjOGRhN2Y4OTdhNDdkZDI0OWI5ODJkYmM0MTJkMjE4ZTU1MDlkNzRmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWYwYjFlZTE5NGEyNDIyZGVlNWIzYTI0NDUyNmVkZDk3YjY2ZmU1NDc3NzY4NWJkNWZkNWY2MDMwNDJkMmZkZiJ9"
+        },
+        {
+          "resource": "repo://src/store/vaultStore.ts#L429-L433",
+          "version": "repo-lines-v1:sha256:3c3005eb2a384902205500a0d658d35297facf7e67ef66e78494e8226e8a7615:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTg2YTNiZTRkMjEyZTZjZDFkZTNlYjcwZTU1Yzg1ODAzN2E2NzJmYTRkYTZiODIxYzMyYzVjNzg1Y2RlMDg4ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMzYjg5ZjFjZWNjMWZjNDE5YjNiYjNjNTI1OTQxN2UyYWVkYTBhYzVlOTdjYTg0NTg3NmYxODUyMWIyOTMyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDU1MDRkYWY4MDkzYmJjMzZiMTBmMjZlMmVhZDE3YzRlMzk5ZTgxM2Y0NjZiM2U1YzE2NGNhMDg1ZDM5YWNiZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjM4Y2VjMDBiNDhlNTFjMzVhMDgyYThhZjhhNWMyMzhiZmE4NDE3MjI1MWY2N2EwNjk2MWM1NzAzOWYzNjgyMCJ9"
+        },
+        {
+          "resource": "repo://src/store/vaultStore.ts#L472-L477",
+          "version": "repo-lines-v1:sha256:b7e2ae918cde0fc8ae20b78e5f5bafc9c442fc67645092f398fbae1ca23e0a10:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNThmMzE3YjM1OGZlNzg5YTFiZmQ4M2JjNWNjMzY3ODdhZDUwM2ZhMWY5ODMyZDJmMzM1M2MyNjVkOWQzZDA5NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzA0ZTc2Zjc2YmMxMTU3YTBiOGQ2YmMyZmVhNTBkNzg2ZTZiYzM4NWM2OThmYTM3YWIxMDY5OGU0NDk4NTIyMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDU1MDRkYWY4MDkzYmJjMzZiMTBmMjZlMmVhZDE3YzRlMzk5ZTgxM2Y0NjZiM2U1YzE2NGNhMDg1ZDM5YWNiZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWQ3N2QwZjFhNDMxYWFlNzBlZjJlZmYxNWNiODVlODYyMTNhNDg3YTc4NGIyZTg4ODUxN2M2MDY0NWM2OGM4YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9afbd440daf04db09bfde54404ada5bb",
+      "statement": "The markdown engine handles malformed frontmatter gracefully and preserves URLs, email addresses, issue references like #45, and UTF-8 unicode or emoji characters without tag corruption or parsing errors.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/markdown/parser.fuzz.test.ts#L5-L105",
+          "version": "repo-lines-v1:sha256:9c79085852dcd252540b427e6203126ec8e8e1eac0c7759f0d4001857d1fd29c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjM2E0MmNhZDBlYzRkMDlkZDU0ZGU2NjlkOGNmYWUxYWI1NjM2MDZhYzRmZmQ4NWYzOTNjZjg0YjBlMmY5ZjQxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzYTNlNDZmOTQyNzZiNmY2ZjRlZDFmMDJhZjc4YmVmNmEyZWUxYzQzOWRkNTU4NGI5NzM5NDgzMTMyMTRkMmI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2NmU2ZTcxOGYxYTdhNTkyZTA0ODVjN2VkN2Q5MjMwOWVlN2E3YmUxMTVmMTk3NDc2MmUyOTQ0MmZlYmIxNWY5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjM2EyNWVmYjVjZGYyYmVhYzk0NTQ0Y2MwZjBkOTViZjA1ZDZmYTcxZGJiNzI2MzgyMzE4NDViNjgwY2RmNWRjIn0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-31T14:53:08.961Z"
+  }
+}
