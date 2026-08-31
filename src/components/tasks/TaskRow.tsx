@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Wand2, Sparkles } from 'lucide-react';
+import { Trash2, Wand2, Sparkles, FileText } from 'lucide-react';
 import { TaskItem, TaskPriority } from '../../store/types';
 import { triggerCompletionFeedback } from '../../utils/feedback';
 import { triggerCelebration } from '../../utils/celebrations';
@@ -194,6 +194,24 @@ export const TaskRow: React.FC<TaskRowProps> = ({
           {task.title && task.title.trim() ? task.title : 'Untitled task (click to edit)'}
         </span>
       </div>
+
+      {/* Note Backlink Badge */}
+      {task.filePath && (
+        <button
+          type="button"
+          data-testid={`note-backlink-${task.id}`}
+          title={`Open ${task.filePath.split('/').pop()}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            useVaultStore.getState().selectFile(task.filePath!);
+            useVaultStore.getState().setActiveView('document');
+          }}
+          className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/60 rounded-md transition-colors truncate max-w-[140px]"
+        >
+          <FileText className="w-3 h-3 text-emerald-600 shrink-0" />
+          <span className="truncate">{task.filePath.split('/').pop()?.replace(/\.md$/, '')}</span>
+        </button>
+      )}
 
       {/* Tags Chips */}
       {task.tags && task.tags.length > 0 && (

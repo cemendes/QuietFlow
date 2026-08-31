@@ -113,6 +113,11 @@ export const ZenTheaterModal: React.FC<ZenTheaterModalProps> = ({
               {task.notes}
             </p>
           )}
+          {task.filePath && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 bg-emerald-100/60 px-2.5 py-0.5 rounded-full">
+              📄 {task.filePath.split('/').pop()?.replace(/\.md$/, '')}
+            </span>
+          )}
         </div>
       </div>
 
