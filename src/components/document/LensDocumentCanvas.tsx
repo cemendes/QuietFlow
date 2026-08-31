@@ -38,20 +38,28 @@ export const LensDocumentCanvas: React.FC = () => {
     if (activeDocument) {
       setLocalProse(activeDocument.body || '');
     }
-  }, [activeFile, activeDocument?.filePath]);
+  }, [activeFile]);
 
-  // Auto-Adaptive Lenses: If 0 tasks -> notes; if 0 prose -> tasks; if both -> split
+  // Auto-Adaptive Lenses: evaluate when active file loads
   useEffect(() => {
-    if (!activeDocument) return;
+    if (!activeDocument || !activeFile) return;
     const taskCount = activeDocument.tasks?.length || 0;
     const hasProse = (activeDocument.body || '').trim().length > 0;
 
-    if (taskCount === 0 && hasProse && lensViewMode === 'tasks') {
-      setLensViewMode('notes', activeFile || undefined);
-    } else if (taskCount > 0 && !hasProse && lensViewMode === 'notes') {
-      setLensViewMode('tasks', activeFile || undefined);
+    const savedState = useVaultStore.getState().documentViewState[activeFile];
+    if (savedState?.lensMode) {
+      setLensViewMode(savedState.lensMode, activeFile);
+      return;
     }
-  }, [activeDocument, activeFile, lensViewMode, setLensViewMode]);
+
+    if (taskCount === 0 && hasProse) {
+      setLensViewMode('notes', activeFile);
+    } else if (taskCount > 0 && !hasProse) {
+      setLensViewMode('tasks', activeFile);
+    } else {
+      setLensViewMode('split', activeFile);
+    }
+  }, [activeFile]);
 
   // Debounced auto-save for prose
   const handleProseChange = (text: string) => {

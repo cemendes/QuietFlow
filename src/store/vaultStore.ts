@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore, useCallback } from 'react';
 import {
   addTaskToDocument,
   deleteTaskFromDocument,
@@ -51,8 +51,10 @@ const INITIAL_STATE: VaultStoreState = {
 let state: VaultStoreState = { ...INITIAL_STATE };
 const listeners = new Set<() => void>();
 let vaultUnlisten: (() => void) | null = null;
+let cachedStore: VaultStore;
 
 function notify() {
+  cachedStore = { ...state, ...actions };
   for (const listener of listeners) {
     listener();
   }
@@ -822,27 +824,29 @@ const actions = {
   reset,
 };
 
+cachedStore = {
+  ...state,
+  ...actions,
+};
+
 export function useVaultStore(): VaultStore;
 export function useVaultStore<T>(selector: (state: VaultStore) => T): T;
 export function useVaultStore<T>(selector?: (state: VaultStore) => T) {
-  const fullStore: VaultStore = {
-    ...state,
-    ...actions,
-  };
+  const getSnapshot = useCallback(
+    () => (selector ? selector(cachedStore) : cachedStore),
+    [selector]
+  );
 
   const slice = useSyncExternalStore(
     subscribe,
-    () => (selector ? selector({ ...state, ...actions }) : fullStore),
-    () => (selector ? selector({ ...state, ...actions }) : fullStore)
+    getSnapshot,
+    getSnapshot
   );
 
   return slice;
 }
 
-useVaultStore.getState = (): VaultStore => ({
-  ...state,
-  ...actions,
-});
+useVaultStore.getState = (): VaultStore => cachedStore;
 
 useVaultStore.setState = (partial: Partial<VaultStoreState>): void => {
   setState(partial);
