@@ -46,6 +46,22 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({ className = '' }) =>
         <span className="text-sm">☷</span>
         <span>Kanban</span>
       </button>
+
+      <button
+        type="button"
+        aria-label="Document View"
+        title="Document View"
+        data-active={activeView === 'document'}
+        onClick={() => setActiveView('document')}
+        className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+          activeView === 'document'
+            ? 'bg-white text-forest-700 shadow-sm'
+            : 'text-slate-500 hover:text-slate-700'
+        }`}
+      >
+        <span className="text-sm">📄</span>
+        <span>Document</span>
+      </button>
     </div>
   );
 };

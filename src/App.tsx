@@ -11,19 +11,26 @@ import { ArchiveModal } from './components/archive/ArchiveModal';
 import { BreadcrumbBanner } from './components/breadcrumb/BreadcrumbBanner';
 import { CorruptionWarningBanner } from './components/history/CorruptionWarningBanner';
 import { UpdateToast } from './components/updater/UpdateToast';
+import { LensDocumentCanvas } from './components/document/LensDocumentCanvas';
+import { QuickFileSwitcher } from './components/document/QuickFileSwitcher';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
 export default function App() {
   const vaultPath = useVaultStore((state) => state.vaultPath);
   const activeView = useVaultStore((state) => state.activeView);
+  const setActiveView = useVaultStore((state) => state.setActiveView);
   const activeTaskId = useVaultStore((state) => state.activeTaskId);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
   const loadVault = useVaultStore((state) => state.loadVault);
   const selectFile = useVaultStore((state) => state.selectFile);
   const createFile = useVaultStore((state) => state.createFile);
   const vaultTree = useVaultStore((state) => state.vaultTree);
+  const lensViewMode = useVaultStore((state) => state.lensViewMode);
+  const setLensViewMode = useVaultStore((state) => state.setLensViewMode);
+  const activeFile = useVaultStore((state) => state.activeFile);
 
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
+  const [isQuickFileSwitcherOpen, setIsQuickFileSwitcherOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
 
@@ -44,17 +51,28 @@ export default function App() {
     initDefaultVault();
   }, [loadVault, vaultPath, vaultTree]);
 
-  // Keyboard shortcut listener: Cmd+N for quick note creation
+  // Keyboard shortcuts: Cmd+N (Capture), Cmd+O (Quick Switcher), Cmd+E (Lens Cycle), Cmd+, (Settings)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
         e.preventDefault();
         setIsQuickCaptureOpen(true);
+      } else if ((e.metaKey || e.ctrlKey) && e.key === 'o') {
+        e.preventDefault();
+        setIsQuickFileSwitcherOpen(true);
+      } else if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
+        e.preventDefault();
+        const nextMode =
+          lensViewMode === 'split' ? 'tasks' : lensViewMode === 'tasks' ? 'notes' : 'split';
+        setLensViewMode(nextMode, activeFile || undefined);
+      } else if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+        e.preventDefault();
+        setIsSettingsOpen(true);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [lensViewMode, setLensViewMode, activeFile]);
 
   // Register global / in-app shortcut bindings
   useGlobalShortcuts({
@@ -62,18 +80,6 @@ export default function App() {
       setIsQuickCaptureOpen((prev) => !prev);
     },
   });
-
-  // Additional in-app keyboard shortcuts: Cmd+N (new note / capture), Cmd+, (settings)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === ',') {
-        e.preventDefault();
-        setIsSettingsOpen(true);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   // Handle new note creation
   const handleNewNote = async () => {
@@ -83,23 +89,29 @@ export default function App() {
     const newFilePath = `${vaultPath}/${fileName}`;
     const initialContent = `---\ntitle: New Note\ndate: ${now.toISOString().split('T')[0]}\n---\n\n# Tasks\n\n- [ ] `;
     await createFile(newFilePath, initialContent);
+    setActiveView('document');
   };
 
   return (
     <div className="flex h-screen w-screen bg-sand-50 text-slate-800 antialiased select-none overflow-hidden font-sans">
       {/* 1. Left Sidebar Navigation */}
       <Sidebar
-        onSelectFile={(filePath) => selectFile(filePath)}
+        onSelectFile={(filePath) => {
+          selectFile(filePath);
+          setActiveView('document');
+        }}
         onNewNote={handleNewNote}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenArchive={() => setIsArchiveOpen(true)}
       />
 
-      {/* 2. Main Content Canvas: Full-Page Task Detail OR Task List / Kanban Board */}
+      {/* 2. Main Content Canvas: Task Detail / Document Lens / Kanban / List */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
         <CorruptionWarningBanner />
         {activeTaskId ? (
           <TaskDetailPage onBack={() => setActiveTaskId(null)} />
+        ) : activeView === 'document' ? (
+          <LensDocumentCanvas />
         ) : activeView === 'kanban' ? (
           <KanbanBoard />
         ) : (
@@ -107,13 +119,19 @@ export default function App() {
         )}
       </div>
 
-      {/* 4. Quick Capture Modal Spotlight */}
+      {/* 3. Quick File Switcher (Cmd+O) */}
+      <QuickFileSwitcher
+        isOpen={isQuickFileSwitcherOpen}
+        onClose={() => setIsQuickFileSwitcherOpen(false)}
+      />
+
+      {/* 4. Quick Capture Modal Spotlight (Cmd+N) */}
       <QuickCaptureModal
         isOpen={isQuickCaptureOpen}
         onClose={() => setIsQuickCaptureOpen(false)}
       />
 
-      {/* 5. App Settings / Vault Configuration Modal */}
+      {/* 5. App Settings / Vault Configuration Modal (Cmd+,) */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
