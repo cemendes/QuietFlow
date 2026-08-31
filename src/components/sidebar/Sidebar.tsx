@@ -38,7 +38,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
-  const { vaultTree, vaultPath, activeFile, activeFolder, selectFile, selectFolder, tasks, refreshVault, getFolderIcon } = useVaultStore();
+  const vaultTree = useVaultStore((state) => state.vaultTree);
+  const vaultPath = useVaultStore((state) => state.vaultPath);
+  const activeFile = useVaultStore((state) => state.activeFile);
+  const activeFolder = useVaultStore((state) => state.activeFolder);
+  const selectFile = useVaultStore((state) => state.selectFile);
+  const selectFolder = useVaultStore((state) => state.selectFolder);
+  const tasks = useVaultStore((state) => state.tasks);
+  const refreshVault = useVaultStore((state) => state.refreshVault);
+  const getFolderIcon = useVaultStore((state) => state.getFolderIcon);
 
   // Handle drag resizing
   useEffect(() => {

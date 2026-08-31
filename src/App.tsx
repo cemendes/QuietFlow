@@ -21,10 +21,8 @@ export default function App() {
   const setActiveView = useVaultStore((state) => state.setActiveView);
   const activeTaskId = useVaultStore((state) => state.activeTaskId);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
-  const loadVault = useVaultStore((state) => state.loadVault);
   const selectFile = useVaultStore((state) => state.selectFile);
   const createFile = useVaultStore((state) => state.createFile);
-  const vaultTree = useVaultStore((state) => state.vaultTree);
   const lensViewMode = useVaultStore((state) => state.lensViewMode);
   const setLensViewMode = useVaultStore((state) => state.setLensViewMode);
   const activeFile = useVaultStore((state) => state.activeFile);
@@ -40,16 +38,17 @@ export default function App() {
     document.documentElement.classList.add(`theme-${savedTheme}`);
 
     const initDefaultVault = async () => {
-      if (!vaultTree) {
+      const currentVaultTree = useVaultStore.getState().vaultTree;
+      if (!currentVaultTree) {
         const savedBackend = await ipc.getSavedVaultPath().catch(() => null);
         const savedStorage = typeof localStorage !== 'undefined' ? localStorage.getItem('quietflow-vault-path') : null;
         const defaultPath = await ipc.getDefaultVaultPath();
-        const targetPath = savedBackend || savedStorage || vaultPath || defaultPath;
-        loadVault(targetPath);
+        const targetPath = savedBackend || savedStorage || defaultPath;
+        useVaultStore.getState().loadVault(targetPath);
       }
     };
     initDefaultVault();
-  }, [loadVault, vaultPath, vaultTree]);
+  }, []);
 
   // Keyboard shortcuts: Cmd+N (Capture), Cmd+O (Quick Switcher), Cmd+E (Lens Cycle), Cmd+, (Settings)
   useEffect(() => {

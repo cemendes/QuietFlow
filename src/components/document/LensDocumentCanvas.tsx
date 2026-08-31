@@ -10,6 +10,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { useVaultStore } from '../../store/vaultStore';
+import { LensViewMode } from '../../store/types';
 import { DocumentTaskCard } from './DocumentTaskCard';
 import { MarkdownEditor } from '../editor/MarkdownEditor';
 
@@ -23,6 +24,7 @@ export const LensDocumentCanvas: React.FC = () => {
   const saveDocumentProse = useVaultStore((state) => state.saveDocumentProse);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
 
+  const documentViewState = useVaultStore((state) => state.documentViewState);
   const [localProse, setLocalProse] = useState<string>('');
   const [newTaskTitle, setNewTaskTitle] = useState<string>('');
   const [isTasksCollapsed, setIsTasksCollapsed] = useState<boolean>(false);
@@ -37,26 +39,14 @@ export const LensDocumentCanvas: React.FC = () => {
     }
   }, [activeFile, activeDocument]);
 
-  // Auto-Adaptive Lenses: evaluate when active file loads
-  useEffect(() => {
-    if (!activeDocument || !activeFile) return;
-    const savedState = useVaultStore.getState().documentViewState[activeFile];
-    if (savedState?.lensMode) {
-      setLensViewMode(savedState.lensMode, activeFile);
-      return;
-    }
+  // Compute active lens mode reactively (with auto-adaptation for 0-task / 0-prose files)
+  const explicitMode = activeFile ? documentViewState[activeFile]?.lensMode : null;
+  const taskCount = activeDocument?.tasks?.length || 0;
+  const hasProse = (activeDocument?.body || '').trim().length > 0;
 
-    const taskCount = activeDocument.tasks?.length || 0;
-    const hasProse = (activeDocument.body || '').trim().length > 0;
-
-    if (taskCount === 0 && hasProse) {
-      setLensViewMode('notes', activeFile);
-    } else if (taskCount > 0 && !hasProse) {
-      setLensViewMode('tasks', activeFile);
-    } else {
-      setLensViewMode('split', activeFile);
-    }
-  }, [activeFile, activeDocument?.filePath]);
+  const currentLensMode: LensViewMode = explicitMode || (
+    taskCount === 0 && hasProse ? 'notes' : taskCount > 0 && !hasProse ? 'tasks' : lensViewMode || 'split'
+  );
 
   // Debounced auto-save for prose
   const handleProseChange = (text: string) => {
@@ -156,7 +146,7 @@ export const LensDocumentCanvas: React.FC = () => {
             data-testid="lens-split-btn"
             onClick={() => setLensViewMode('split', activeFile)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              lensViewMode === 'split'
+              currentLensMode === 'split'
                 ? 'bg-white text-emerald-800 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
             }`}
@@ -170,7 +160,7 @@ export const LensDocumentCanvas: React.FC = () => {
             data-testid="lens-tasks-only-btn"
             onClick={() => setLensViewMode('tasks', activeFile)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              lensViewMode === 'tasks'
+              currentLensMode === 'tasks'
                 ? 'bg-white text-emerald-800 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
             }`}
@@ -189,7 +179,7 @@ export const LensDocumentCanvas: React.FC = () => {
             data-testid="lens-notes-only-btn"
             onClick={() => setLensViewMode('notes', activeFile)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              lensViewMode === 'notes'
+              currentLensMode === 'notes'
                 ? 'bg-white text-emerald-800 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
             }`}
@@ -203,7 +193,7 @@ export const LensDocumentCanvas: React.FC = () => {
       {/* Main Canvas Scroll Area (Centered Max 850px) */}
       <div className="max-w-[850px] w-full mx-auto p-6 md:p-8 space-y-6 flex-1 flex flex-col">
         {/* TOP ZONE: Action Items & Deliverables */}
-        {(lensViewMode === 'split' || lensViewMode === 'tasks') && (
+        {(currentLensMode === 'split' || currentLensMode === 'tasks') && (
           <section data-testid="top-tasks-zone" className="space-y-4">
             <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
               <div className="flex items-center gap-2">
@@ -271,7 +261,7 @@ export const LensDocumentCanvas: React.FC = () => {
         )}
 
         {/* TONAL DIVIDER (Visible in Split View) */}
-        {lensViewMode === 'split' && (
+        {currentLensMode === 'split' && (
           <div className="relative py-2 flex items-center justify-center">
             <div className="w-full border-t border-dashed border-slate-200" />
             <span className="absolute bg-sand-50/80 backdrop-blur-xs px-3 text-[11px] font-medium text-slate-400 uppercase tracking-wider">
@@ -281,9 +271,9 @@ export const LensDocumentCanvas: React.FC = () => {
         )}
 
         {/* BOTTOM ZONE: Meeting Notes & Freeform Prose */}
-        {(lensViewMode === 'split' || lensViewMode === 'notes') && (
+        {(currentLensMode === 'split' || currentLensMode === 'notes') && (
           <section data-testid="bottom-notes-zone" className="flex-1 flex flex-col space-y-3">
-            {lensViewMode === 'notes' && (
+            {currentLensMode === 'notes' && (
               <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                 <h2 className="text-sm font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
                   <BookOpen className="w-4 h-4 text-emerald-600" />

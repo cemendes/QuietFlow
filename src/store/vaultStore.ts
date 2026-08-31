@@ -1,10 +1,9 @@
-import { useSyncExternalStore, useCallback } from 'react';
+import { useSyncExternalStore } from 'react';
 import {
   addTaskToDocument,
   deleteTaskFromDocument,
   parseMarkdownDocument,
   updateTaskInDocument,
-  serializeTaskBlock,
 } from '../core/markdown';
 import {
   loadLogoConfig,
@@ -51,10 +50,8 @@ const INITIAL_STATE: VaultStoreState = {
 let state: VaultStoreState = { ...INITIAL_STATE };
 const listeners = new Set<() => void>();
 let vaultUnlisten: (() => void) | null = null;
-let cachedStore: VaultStore;
 
 function notify() {
-  cachedStore = { ...state, ...actions };
   for (const listener of listeners) {
     listener();
   }
@@ -825,29 +822,22 @@ const actions = {
   reset,
 };
 
-cachedStore = {
-  ...state,
-  ...actions,
-};
+function getStoreSnapshot(): VaultStoreState {
+  return state;
+}
 
 export function useVaultStore(): VaultStore;
 export function useVaultStore<T>(selector: (state: VaultStore) => T): T;
 export function useVaultStore<T>(selector?: (state: VaultStore) => T) {
-  const getSnapshot = useCallback(
-    () => (selector ? selector(cachedStore) : cachedStore),
-    [selector]
-  );
-
-  const slice = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getSnapshot
-  );
-
-  return slice;
+  const storeState = useSyncExternalStore(subscribe, getStoreSnapshot, getStoreSnapshot);
+  const fullStore: VaultStore = { ...storeState, ...actions };
+  return selector ? selector(fullStore) : fullStore;
 }
 
-useVaultStore.getState = (): VaultStore => cachedStore;
+useVaultStore.getState = (): VaultStore => ({
+  ...state,
+  ...actions,
+});
 
 useVaultStore.setState = (partial: Partial<VaultStoreState>): void => {
   setState(partial);
