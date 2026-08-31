@@ -60,7 +60,7 @@ function extractAllMarkdownFiles(node: VaultNode | null): { name: string; path: 
   return results;
 }
 
-export function parseNaturalLanguageInput(raw: string): ParsedNLP {
+function parseNaturalLanguageInput(raw: string): ParsedNLP {
   let text = raw.trim();
   let priority: TaskPriority | undefined;
   const tags: string[] = [];

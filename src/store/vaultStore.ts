@@ -264,7 +264,7 @@ async function selectFile(filePath: string): Promise<void> {
   set({ isLoading: true, error: null, activeFile: filePath, activeFolder: null });
   try {
     const content = await ipc.readFile(filePath);
-    const doc = parseMarkdownDocument(content);
+    const doc = parseMarkdownDocument(content, filePath);
 
     // Attach filePath to tasks for convenience
     const tasksWithFile = doc.tasks.map((t) => ({

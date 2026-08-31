@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Clock, Calendar, Tag, MessageSquare, AlertCircle } from 'lucide-react';
+import { Check, Calendar, Tag, MessageSquare, AlertCircle } from 'lucide-react';
 import { TaskItem, TaskPriority } from '../../store/types';
 
 interface DocumentTaskCardProps {

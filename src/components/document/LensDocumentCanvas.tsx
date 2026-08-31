@@ -3,18 +3,13 @@ import {
   FileText,
   CheckCircle2,
   Columns,
-  Layers,
-  Clock,
-  Sparkles,
   Plus,
   ChevronDown,
   ChevronUp,
   Tag,
-  ExternalLink,
   BookOpen,
 } from 'lucide-react';
 import { useVaultStore } from '../../store/vaultStore';
-import { LensViewMode, TaskItem } from '../../store/types';
 import { DocumentTaskCard } from './DocumentTaskCard';
 import { MarkdownEditor } from '../editor/MarkdownEditor';
 

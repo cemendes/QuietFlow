@@ -1,5 +1,6 @@
 import matter from 'gray-matter';
 import {
+  DocumentSpan,
   Frontmatter,
   NewTaskInput,
   SubtaskItem,
