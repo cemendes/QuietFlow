@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Paradigm A: The Lens Document Canvas (`LensDocumentCanvas.tsx`)**:
+  - Dual-Zone Document Canvas for customer and project notes (`Acme Corp.md`) hosting actionable task cards at the top and freeform markdown prose notes below.
+  - 3-Way Lens view switcher pills (`[ ✨ Split View | ✅ Tasks Only | 📝 Notes Only ]`) with instant view switching.
+  - Auto-Adaptive Lenses: automatically defaults to Notes Only for 0-task docs and Tasks Only for 0-prose docs.
+  - Soft Hoisting: frictionless note-taking with local edit buffering, debounced auto-saving, and synchronous flush-on-blur without cursor jumping.
+  - Non-destructive task serializer (`patchTaskInDocumentContent`) maintaining exact line bounds and surrounding prose byte-for-byte.
+- **Cognitive Re-entry State Engine**:
+  - Per-document view memory retaining active lens mode, scroll position, and cursor across file switching.
+- **Quick File Switcher (`QuickFileSwitcher.tsx`)**:
+  - Spotlight modal triggered via `Cmd+O` for rapid fuzzy searching across customer folders and notes with arrow key navigation.
+- **Contextual Keyboard Shortcuts**:
+  - `Cmd+O`: opens Quick File Switcher.
+  - `Cmd+E`: cycles active document lens modes (`Split` $\rightarrow$ `Tasks Only` $\rightarrow$ `Notes Only`).
+- **Cross-View Note Backlinks**:
+  - Document note badges on `TaskRow` and `KanbanCard` enabling 1-click navigation directly into the parent document canvas.
 - **OpenWiki Knowledge Base & Automated Sync Workflow**:
   - Full 15-page grounded architectural and operational documentation under `openwiki/`.
   - Added `.github/workflows/openwiki-update.yml` for automated documentation updates on merge and scheduled cron.

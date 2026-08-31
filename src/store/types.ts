@@ -30,7 +30,7 @@ export interface VaultNode {
 
 export type VaultTree = VaultNode;
 
-export type ViewMode = 'list' | 'kanban';
+export type ViewMode = 'list' | 'kanban' | 'document';
 
 export interface SnapshotMetadata {
   id: string;

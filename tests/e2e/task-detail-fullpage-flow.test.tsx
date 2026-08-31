@@ -116,7 +116,7 @@ title: 2026-08-28
       expect(ipc.writeFileAtomic).toHaveBeenCalled();
     });
     expect(ccoMarkdown).toContain('Verify dataset sync');
-    expect(ccoMarkdown).toContain('Comment (2026-08-29');
+    expect(ccoMarkdown).toContain('Comment (Eduardo, 2026-08-29');
     expect(ccoMarkdown).toContain('Dataset sync verified in staging.');
 
     // 6. Click Back to Kanban button

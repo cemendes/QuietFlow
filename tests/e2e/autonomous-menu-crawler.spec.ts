@@ -352,7 +352,63 @@ test.describe('QuietFlow Autonomous Menu & View State Crawler', () => {
     });
 
     // -------------------------------------------------------------
-    // SECTION 9: Sidebar Collapse & Expand
+    // SECTION 9: Quick File Switcher (Cmd+O)
+    // -------------------------------------------------------------
+    await recordAction('Modal', 'Quick File Switcher (Cmd+O) Exploration', async () => {
+      await page.keyboard.press('Meta+o');
+      await page.waitForTimeout(300);
+
+      const switcherModal = page.locator('[data-testid="quick-file-switcher"]');
+      if (await switcherModal.isVisible()) {
+        const searchInput = page.locator('[data-testid="quick-file-switcher-input"]');
+        if (await searchInput.isVisible()) {
+          await searchInput.fill('Note');
+          await page.waitForTimeout(150);
+        }
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(200);
+      }
+    });
+
+    // -------------------------------------------------------------
+    // SECTION 10: Lens Document Canvas & 3-Way Toggle Pills
+    // -------------------------------------------------------------
+    await recordAction('View', 'Lens Document Canvas & 3-Way Toggle Exploration', async () => {
+      // Switch to document view if document button is visible
+      const docViewBtn = page.locator('button[title="Document View"]');
+      if (await docViewBtn.isVisible()) {
+        await docViewBtn.click();
+        await page.waitForTimeout(300);
+
+        // Test Split View Pill
+        const splitBtn = page.locator('[data-testid="lens-split-btn"]');
+        if (await splitBtn.isVisible()) {
+          await splitBtn.click();
+          await page.waitForTimeout(150);
+        }
+
+        // Test Tasks Only Pill
+        const tasksOnlyBtn = page.locator('[data-testid="lens-tasks-only-btn"]');
+        if (await tasksOnlyBtn.isVisible()) {
+          await tasksOnlyBtn.click();
+          await page.waitForTimeout(150);
+        }
+
+        // Test Notes Only Pill
+        const notesOnlyBtn = page.locator('[data-testid="lens-notes-only-btn"]');
+        if (await notesOnlyBtn.isVisible()) {
+          await notesOnlyBtn.click();
+          await page.waitForTimeout(150);
+        }
+
+        // Cycle via Cmd+E shortcut
+        await page.keyboard.press('Meta+e');
+        await page.waitForTimeout(150);
+      }
+    });
+
+    // -------------------------------------------------------------
+    // SECTION 11: Sidebar Collapse & Expand
     // -------------------------------------------------------------
     await recordAction('Sidebar', 'Collapse and Expand Sidebar', async () => {
       const toggleBtn = page.locator('[data-testid="sidebar-toggle-btn"]');
