@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -41,6 +41,17 @@ export const FolderItem: React.FC<FolderItemProps> = ({
   const [isCreatingSubfolder, setIsCreatingSubfolder] = useState(false);
   const [isCreatingFile, setIsCreatingFile] = useState(false);
   const [newSubName, setNewSubName] = useState('');
+  const newEntryInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if ((isCreatingFile || isCreatingSubfolder) && newEntryInputRef.current) {
+      newEntryInputRef.current.focus();
+      if (isCreatingFile) {
+        newEntryInputRef.current.select();
+      }
+    }
+  }, [isCreatingFile, isCreatingSubfolder]);
+
   const [isDragOver, setIsDragOver] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -396,18 +407,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
           >
             <input
               type="text"
-              autoFocus
-              ref={(input) => {
-                if (input && isCreatingFile) {
-                  input.focus();
-                  input.select();
-                }
-              }}
-              onFocus={(e) => {
-                if (isCreatingFile) {
-                  e.target.select();
-                }
-              }}
+              ref={newEntryInputRef}
               value={newSubName}
               onChange={(e) => setNewSubName(e.target.value)}
               onKeyDown={(e) => {

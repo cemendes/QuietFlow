@@ -33,6 +33,14 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
   const [renamedValue, setRenamedValue] = useState(folderName);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isRenaming && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [isRenaming]);
 
   useEffect(() => {
     setRenamedValue(folderName);
@@ -109,14 +117,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
         <div className="px-3 py-2 flex items-center gap-1.5">
           <input
             type="text"
-            autoFocus
-            ref={(input) => {
-              if (input) {
-                input.focus();
-                input.select();
-              }
-            }}
-            onFocus={(e) => e.target.select()}
+            ref={renameInputRef}
             value={renamedValue}
             onChange={(e) => setRenamedValue(e.target.value)}
             onKeyDown={(e) => {
