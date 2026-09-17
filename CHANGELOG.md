@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Unified WYSIWYG Notes Editor (`MarkdownEditor.tsx`)**:
+  - Unified Typora/Notion-style WYSIWYG notes editor with TipTap, markdown input shortcuts, and View Source toggle (`Cmd+/`).
 - **View Source Raw Markdown Toggle & Shortcut (`MarkdownEditor.tsx`)**:
   - Added a "View Source" toggle button (`toolbar-source-toggle-btn`) with dynamic tooltips `View Markdown Source (Cmd+/)` and `View Rich Text (Cmd+/)`.
   - Added `Cmd+/` / `Ctrl+/` keyboard shortcut to seamlessly toggle between TipTap WYSIWYG rich text editing and raw markdown `<textarea>` editing.
@@ -48,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Stripped out at compile time from production release builds (`debug_assertions = false`) to keep standard window lifecycle behavior intact.
 
 ### Changed
+- **Unified Live-Editing Canvas (`MarkdownEditor.tsx`)**:
+  - Merged separate Edit and Preview tabs into a single live-editing canvas with persistent CommonMark vault serialization.
 - **Split View Reorder & Proportions (Notes 2/3 Left, Tasks 1/3 Right)**:
   - Reordered the side-by-side split layout in [LensDocumentCanvas.tsx](file:///Users/cemolive/code/quietflow/src/components/document/LensDocumentCanvas.tsx) so that the active note editor occupies 2/3 of the screen on the left (`lg:w-2/3`) and task action items occupy 1/3 on the right (`lg:w-1/3`).
   - Removed the rigid `max-w-[850px]` canvas container constraint in [LensDocumentCanvas.tsx](file:///Users/cemolive/code/quietflow/src/components/document/LensDocumentCanvas.tsx), allowing the document typing space to dynamically expand edge-to-edge with the window with independent scroll areas.

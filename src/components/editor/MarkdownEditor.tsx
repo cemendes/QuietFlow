@@ -81,7 +81,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   });
 
   useEffect(() => {
-    if (editor && editor.storage?.markdown) {
+    if (!isSourceModeRef.current && editor && editor.storage?.markdown) {
       const currentMarkdown = editor.storage.markdown.getMarkdown();
       if (value !== currentMarkdown) {
         editor.commands.setContent(value, { emitUpdate: false });
@@ -100,12 +100,12 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       setIsSourceMode(false);
     } else {
       // Switching from WYSIWYG to Source
-      const currentMarkdown = editor?.storage.markdown?.getMarkdown() ?? value;
+      const currentMarkdown = editor?.storage.markdown?.getMarkdown() ?? sourceTextRef.current;
       setSourceText(currentMarkdown);
       sourceTextRef.current = currentMarkdown;
       setIsSourceMode(true);
     }
-  }, [editor, value]);
+  }, [editor]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
