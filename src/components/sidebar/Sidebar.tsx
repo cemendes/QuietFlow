@@ -48,6 +48,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const refreshVault = useVaultStore((state) => state.refreshVault);
   const getFolderIcon = useVaultStore((state) => state.getFolderIcon);
 
+  // Keep activeScope in sync with activeFile and activeFolder
+  useEffect(() => {
+    if (activeFile) {
+      const lower = activeFile.toLowerCase();
+      if (lower.endsWith('inbox.md')) {
+        setActiveScope('inbox');
+      } else if (lower.endsWith('today.md')) {
+        setActiveScope('today');
+      } else {
+        setActiveScope(null);
+      }
+    } else if (activeFolder) {
+      setActiveScope(null);
+    }
+  }, [activeFile, activeFolder]);
+
   // Handle drag resizing
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {

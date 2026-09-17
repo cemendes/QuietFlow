@@ -10,6 +10,7 @@ import {
   persistFolderEmoji,
   persistFolderLogo,
   getFolderRelativePath,
+  isValidRenderableIcon,
 } from '../services/logoService';
 import { ipc } from './ipc';
 import {
@@ -113,32 +114,57 @@ async function loadVault(vaultPath: string): Promise<void> {
       isLoading: false,
     }));
 
-    // Auto-select today.md or first note if activeFile is empty
-    let targetNode =
-      tree.children?.find((c) => !c.isDirectory && c.name.toLowerCase() === 'today.md') ||
-      tree.children?.find((c) => !c.isDirectory && c.name.endsWith('.md'));
-
-    if (!targetNode && vaultPath) {
-      // Auto-create today.md if none exists in this vault
-      try {
-        const todayPath = `${vaultPath}/today.md`;
-        const initialContent = `---\ntitle: Today's Focus\n---\n\n# Tasks\n`;
-        await writeVaultFile(todayPath, initialContent);
-        await refreshVault();
-        targetNode = {
-          name: 'today.md',
-          path: todayPath,
-          isDirectory: false,
-          children: [],
-          fileCount: 0,
-        };
-      } catch {
-        // Safe fallback in mock/read-only vaults
+    // 1. Try to restore saved active file or folder from previous session
+    let restored = false;
+    if (typeof localStorage !== 'undefined') {
+      const savedFile = localStorage.getItem('quietflow-last-active-file');
+      if (savedFile) {
+        const fileNode = findNodeByPath(tree, savedFile);
+        if (fileNode && !fileNode.isDirectory) {
+          await selectFile(savedFile);
+          restored = true;
+        }
+      }
+      if (!restored) {
+        const savedFolder = localStorage.getItem('quietflow-last-active-folder');
+        if (savedFolder) {
+          const folderNode = findNodeByPath(tree, savedFolder);
+          if (folderNode && folderNode.isDirectory) {
+            await selectFolder(savedFolder);
+            restored = true;
+          }
+        }
       }
     }
 
-    if (targetNode && !getState().activeFile) {
-      await selectFile(targetNode.path);
+    // 2. Auto-select today.md or first note only if no saved state was restored
+    if (!restored && !getState().activeFile && !getState().activeFolder) {
+      let targetNode =
+        tree.children?.find((c) => !c.isDirectory && c.name.toLowerCase() === 'today.md') ||
+        tree.children?.find((c) => !c.isDirectory && c.name.endsWith('.md'));
+
+      if (!targetNode && vaultPath) {
+        // Auto-create today.md if none exists in this vault
+        try {
+          const todayPath = `${vaultPath}/today.md`;
+          const initialContent = `---\ntitle: Today's Focus\n---\n\n# Tasks\n`;
+          await writeVaultFile(todayPath, initialContent);
+          await refreshVault();
+          targetNode = {
+            name: 'today.md',
+            path: todayPath,
+            isDirectory: false,
+            children: [],
+            fileCount: 0,
+          };
+        } catch {
+          // Safe fallback in mock/read-only vaults
+        }
+      }
+
+      if (targetNode && !getState().activeFile) {
+        await selectFile(targetNode.path);
+      }
     }
 
     // Clean up any existing listener
@@ -219,6 +245,10 @@ function findNodeByPath(root: VaultNode | null, targetPath: string): VaultNode |
 }
 
 async function selectFolder(folderPath: string): Promise<void> {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('quietflow-last-active-folder', folderPath);
+    localStorage.removeItem('quietflow-last-active-file');
+  }
   set({ isLoading: true, error: null, activeFolder: folderPath, activeFile: null });
   try {
     const root = getState().vaultTree;
@@ -258,6 +288,10 @@ async function selectFolder(folderPath: string): Promise<void> {
 }
 
 async function selectFile(filePath: string): Promise<void> {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('quietflow-last-active-file', filePath);
+    localStorage.removeItem('quietflow-last-active-folder');
+  }
   set({ isLoading: true, error: null, activeFile: filePath, activeFolder: null, activeDocument: null });
   try {
     const content = await ipc.readFile(filePath);
@@ -699,13 +733,18 @@ function getFolderIcon(folderPath: string): string | null {
   const { vaultPath, logoConfig } = getState();
   if (typeof localStorage !== 'undefined') {
     const cached = localStorage.getItem(`folder-icon-${folderPath}`);
-    if (cached) return cached;
+    if (cached) {
+      if (isValidRenderableIcon(cached)) return cached;
+      localStorage.removeItem(`folder-icon-${folderPath}`);
+    }
   }
   if (!vaultPath) {
-    return logoConfig[folderPath] || null;
+    const val = logoConfig[folderPath];
+    return val && isValidRenderableIcon(val) ? val : null;
   }
   const relPath = getFolderRelativePath(vaultPath, folderPath);
-  return logoConfig[relPath] || logoConfig[folderPath] || null;
+  const val = logoConfig[relPath] || logoConfig[folderPath];
+  return val && isValidRenderableIcon(val) ? val : null;
 }
 
 function setError(error: string | null): void {

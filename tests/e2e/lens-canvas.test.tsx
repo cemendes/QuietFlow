@@ -41,12 +41,18 @@ Discussed $120k budget approval.
     });
   });
 
-  it('renders top action items and bottom notes in split view', () => {
+  it('renders top action items and bottom notes in split view with 2/3 and 1/3 proportions', () => {
     render(<LensDocumentCanvas />);
 
     expect(screen.getByTestId('document-task-card-task-deliver-sow')).toBeDefined();
     expect(screen.getByTestId('document-task-card-task-initial-discovery-call')).toBeDefined();
-    expect(screen.getByTestId('bottom-notes-zone')).toBeDefined();
+    
+    const notesZone = screen.getByTestId('bottom-notes-zone');
+    const tasksZone = screen.getByTestId('top-tasks-zone');
+    expect(notesZone).toBeDefined();
+    expect(tasksZone).toBeDefined();
+    expect(notesZone.className).toContain('lg:w-2/3');
+    expect(tasksZone.className).toContain('lg:w-1/3');
   });
 
   it('hides notes when Tasks Only lens is selected', () => {

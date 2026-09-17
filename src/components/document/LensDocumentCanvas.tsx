@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useVaultStore } from '../../store/vaultStore';
 import { LensViewMode, TaskItem } from '../../store/types';
+import { resolveFolderIcon } from '../../services/logoService';
 import { DocumentTaskCard } from './DocumentTaskCard';
 import { MarkdownEditor } from '../editor/MarkdownEditor';
 
@@ -23,6 +24,9 @@ export const LensDocumentCanvas: React.FC = () => {
   const addTask = useVaultStore((state) => state.addTask);
   const saveDocumentProse = useVaultStore((state) => state.saveDocumentProse);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
+  const vaultPath = useVaultStore((state) => state.vaultPath);
+  const logoConfig = useVaultStore((state) => state.logoConfig);
+  const getStoreFolderIcon = useVaultStore((state) => state.getFolderIcon);
 
   const documentViewState = useVaultStore((state) => state.documentViewState);
   const [localProse, setLocalProse] = useState<string>('');
@@ -82,6 +86,34 @@ export const LensDocumentCanvas: React.FC = () => {
 
   const isLoading = useVaultStore((state) => state.isLoading);
 
+  const folderPath = typeof activeFile === 'string' && activeFile.includes('/')
+    ? activeFile.slice(0, activeFile.lastIndexOf('/'))
+    : '';
+
+  const [folderIcon, setFolderIcon] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (folderPath) {
+      const sync = getStoreFolderIcon ? getStoreFolderIcon(folderPath) : null;
+      if (sync) {
+        setFolderIcon(sync);
+      }
+      if (vaultPath) {
+        resolveFolderIcon(vaultPath, folderPath, logoConfig).then((resolved) => {
+          if (isMounted && resolved) {
+            setFolderIcon(resolved);
+          }
+        });
+      }
+    } else {
+      setFolderIcon(null);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [folderPath, vaultPath, logoConfig, getStoreFolderIcon]);
+
   if (!activeDocument || !activeFile) {
     return (
       <div
@@ -111,7 +143,8 @@ export const LensDocumentCanvas: React.FC = () => {
   const completedTasks = tasks.filter((t) => t && t.status === 'done');
   const pendingTasks = tasks.filter((t) => t && t.status !== 'done');
   const fileName = typeof activeFile === 'string' && activeFile.includes('/') ? activeFile.split('/').pop() || activeFile : String(activeFile);
-  const folderName = typeof activeFile === 'string' && activeFile.includes('/') ? activeFile.split('/').slice(0, -1).join('/') : '';
+  const folderName = folderPath.includes('/') ? folderPath.split('/').pop() || folderPath : folderPath;
+
   const frontmatterTitle = String(activeDocument.frontmatter?.title || fileName.replace(/\.md$/, ''));
   const rawTags = activeDocument.frontmatter?.tags;
   const tags: string[] = Array.isArray(rawTags)
@@ -141,6 +174,18 @@ export const LensDocumentCanvas: React.FC = () => {
         {/* Breadcrumb & Metadata */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+            {folderIcon && (
+              (folderIcon.startsWith('data:') || folderIcon.startsWith('http')) ? (
+                <img
+                  src={folderIcon}
+                  alt={folderName || 'Folder'}
+                  className="w-4 h-4 rounded object-contain shrink-0"
+                  onError={() => setFolderIcon(null)}
+                />
+              ) : !folderIcon.includes('.') && !folderIcon.includes('/') ? (
+                <span className="text-sm leading-none shrink-0 select-none">{folderIcon}</span>
+              ) : null
+            )}
             {folderName && (
               <>
                 <span className="truncate">{folderName}</span>
@@ -216,13 +261,40 @@ export const LensDocumentCanvas: React.FC = () => {
 
       {/* Main Fluid Canvas Area */}
       <div className="w-full flex-1 flex flex-col p-4 md:p-6 lg:p-8 min-h-0">
-        {/* SPLIT VIEW MODE: Responsive Side-by-Side on Desktop */}
+        {/* SPLIT VIEW MODE: Notes (2/3 Left) and Action Items (1/3 Right) */}
         {currentLensMode === 'split' && (
           <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 h-full">
-            {/* Left Column: Action Items */}
+            {/* Left Column: Documentation & Notes (2/3 width) */}
+            <section
+              data-testid="bottom-notes-zone"
+              className="w-full lg:w-2/3 flex-1 flex flex-col min-h-0 h-full space-y-3"
+            >
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200 shrink-0">
+                <h2 className="text-sm font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-emerald-600" />
+                  Documentation & Notes
+                </h2>
+                <div className="text-xs text-slate-400 flex items-center gap-3">
+                  <span>{activeDocument.wordCount || 0} words</span>
+                  <span>•</span>
+                  <span>{activeDocument.readingTimeMinutes || 1} min read</span>
+                </div>
+              </div>
+
+              <div onBlur={handleProseBlur} className="flex-1 flex flex-col min-h-0 h-full">
+                <MarkdownEditor
+                  value={localProse}
+                  onChange={handleProseChange}
+                  placeholder="Write meeting notes, architecture decisions, or press Cmd+Enter to hoist a task..."
+                  className="flex-1 min-h-[350px] h-full bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs focus-within:border-emerald-400"
+                />
+              </div>
+            </section>
+
+            {/* Right Column: Action Items (1/3 width) */}
             <section
               data-testid="top-tasks-zone"
-              className="w-full lg:w-1/2 flex flex-col min-h-0 space-y-3"
+              className="w-full lg:w-1/3 flex flex-col min-h-0 space-y-3"
             >
               <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-200/80 shrink-0">
                 <div className="flex items-center gap-2">
@@ -288,33 +360,6 @@ export const LensDocumentCanvas: React.FC = () => {
                   </form>
                 </div>
               )}
-            </section>
-
-            {/* Right Column: Documentation & Notes */}
-            <section
-              data-testid="bottom-notes-zone"
-              className="w-full lg:w-1/2 flex-1 flex flex-col min-h-0 h-full space-y-3"
-            >
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200 shrink-0">
-                <h2 className="text-sm font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-emerald-600" />
-                  Documentation & Notes
-                </h2>
-                <div className="text-xs text-slate-400 flex items-center gap-3">
-                  <span>{activeDocument.wordCount || 0} words</span>
-                  <span>•</span>
-                  <span>{activeDocument.readingTimeMinutes || 1} min read</span>
-                </div>
-              </div>
-
-              <div onBlur={handleProseBlur} className="flex-1 flex flex-col min-h-0 h-full">
-                <MarkdownEditor
-                  value={localProse}
-                  onChange={handleProseChange}
-                  placeholder="Write meeting notes, architecture decisions, or press Cmd+Enter to hoist a task..."
-                  className="flex-1 min-h-[350px] h-full bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs focus-within:border-emerald-400"
-                />
-              </div>
             </section>
           </div>
         )}

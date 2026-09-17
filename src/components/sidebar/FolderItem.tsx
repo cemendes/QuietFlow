@@ -295,16 +295,18 @@ export const FolderItem: React.FC<FolderItemProps> = ({
 
             {/* Custom Logo / Emoji or Default Folder Icon */}
             {folderIcon ? (
-              (folderIcon.startsWith('data:') || folderIcon.startsWith('asset:') || folderIcon.startsWith('http') || folderIcon.includes('/') || folderIcon.includes('.')) ? (
+              (folderIcon.startsWith('data:') || folderIcon.startsWith('http')) ? (
                 <img
                   src={folderIcon}
                   alt={node.name}
                   className="w-4 h-4 rounded object-contain shrink-0"
+                  onError={() => setFolderIcon(null)}
                 />
-              ) : (
+              ) : !folderIcon.includes('.') && !folderIcon.includes('/') ? (
                 <span className="text-sm leading-none shrink-0">{folderIcon}</span>
-              )
-            ) : (
+              ) : null
+            ) : null}
+            {(!folderIcon || (folderIcon.includes('.') && !folderIcon.startsWith('data:') && !folderIcon.startsWith('http'))) && (
               <span className={isFolderActive ? 'text-forest-700 shrink-0' : 'text-forest-600 shrink-0'}>
                 {isExpanded ? (
                   <FolderOpen className="w-4 h-4" />

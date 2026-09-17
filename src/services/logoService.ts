@@ -1,4 +1,4 @@
-import { ipc, isTauriEnvironment } from '../store/ipc';
+import { ipc } from '../store/ipc';
 
 export interface LogoConfig {
   [folderRelativePath: string]: string;
@@ -50,6 +50,27 @@ export function getFolderRelativePath(vaultPath: string, folderPath: string): st
 }
 
 /**
+ * Validates that an icon string is immediately renderable (data URL, HTTP URL, or emoji).
+ * Rejects stale/broken asset:// protocols and raw disk filenames.
+ */
+export function isValidRenderableIcon(icon: string | null | undefined): boolean {
+  if (!icon || typeof icon !== 'string') return false;
+  const trimmed = icon.trim();
+  if (!trimmed) return false;
+  if (trimmed.startsWith('asset://') || trimmed.startsWith('http://asset.') || trimmed.startsWith('https://asset.')) {
+    return false;
+  }
+  if (trimmed.startsWith('data:') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return true;
+  }
+  // If it's an emoji (single or multiple emoji characters without file extension or paths)
+  if (!trimmed.includes('.') && !trimmed.includes('/') && !trimmed.includes('\\')) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Resolves the icon for a folder (from config, disk, or localStorage fallback).
  */
 export async function resolveFolderIcon(
@@ -61,7 +82,11 @@ export async function resolveFolderIcon(
   if (typeof localStorage !== 'undefined') {
     const cached = localStorage.getItem(`folder-icon-${folderPath}`);
     if (cached) {
-      return cached;
+      if (isValidRenderableIcon(cached)) {
+        return cached;
+      }
+      // Purge invalid/broken cached entries (e.g. stale asset:// URIs or raw filenames)
+      localStorage.removeItem(`folder-icon-${folderPath}`);
     }
   }
 
@@ -71,41 +96,32 @@ export async function resolveFolderIcon(
   if (mapped) {
     // If it's an emoji (single/double emoji character, no file extension)
     if (!mapped.includes('.') && !mapped.startsWith('data:')) {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(`folder-icon-${folderPath}`, mapped);
+      }
       return mapped;
     }
 
     // If it's already a data URL
     if (mapped.startsWith('data:')) {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(`folder-icon-${folderPath}`, mapped);
+      }
       return mapped;
     }
 
-    // If it's a file in .logos/
+    // If it's a file in .logos/, read directly via IPC to produce a robust data URL
     const filePath = `${vaultPath}/${LOGOS_DIR_NAME}/${mapped}`;
-    if (isTauriEnvironment()) {
-      try {
-        const { convertFileSrc } = await import('@tauri-apps/api/core');
-        const assetUrl = convertFileSrc(filePath);
-        if (assetUrl) {
-          if (typeof localStorage !== 'undefined') {
-            localStorage.setItem(`folder-icon-${folderPath}`, assetUrl);
-          }
-          return assetUrl;
-        }
-      } catch {
-        // Fallback to reading file content
-      }
-    }
-
     try {
       const fileContent = await ipc.readFile(filePath);
-      if (fileContent) {
-        let resultUrl = fileContent;
-        if (mapped.endsWith('.svg')) {
-          resultUrl = fileContent.startsWith('data:')
-            ? fileContent
-            : `data:image/svg+xml;utf8,${encodeURIComponent(fileContent)}`;
-        } else if (!fileContent.startsWith('data:')) {
-          resultUrl = `data:image/png;base64,${fileContent}`;
+      if (fileContent && fileContent.trim()) {
+        let resultUrl = fileContent.trim();
+        if (resultUrl.startsWith('<svg') || resultUrl.startsWith('<?xml')) {
+          resultUrl = `data:image/svg+xml;utf8,${encodeURIComponent(resultUrl)}`;
+        } else if (mapped.endsWith('.svg') && !resultUrl.startsWith('data:')) {
+          resultUrl = `data:image/svg+xml;utf8,${encodeURIComponent(resultUrl)}`;
+        } else if (!resultUrl.startsWith('data:') && !resultUrl.startsWith('http')) {
+          resultUrl = `data:image/png;base64,${resultUrl}`;
         }
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem(`folder-icon-${folderPath}`, resultUrl);

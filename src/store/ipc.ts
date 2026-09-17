@@ -149,6 +149,13 @@ category: Customers
 
         const folderNode = dirMap.get(folderPath)!;
         folderNode.children = folderNode.children || [];
+        folderNode.children.push({
+          name: parts.slice(1).join('/'),
+          path: filePath,
+          isDirectory: false,
+          children: [],
+          fileCount: 0,
+        });
         folderNode.fileCount = (folderNode.fileCount || 0) + 1;
         rootNode.fileCount = (rootNode.fileCount || 0) + 1;
       }
