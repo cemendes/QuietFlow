@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MarkdownEditor } from '../../src/components/editor/MarkdownEditor';
 
 describe('MarkdownEditor Component', () => {
@@ -171,13 +171,20 @@ code block
     expect(screen.getByTestId('tiptap-editor-content')).toBeDefined();
     expect(sourceBtn.getAttribute('title')).toBe('View Markdown Source (Cmd+/)');
 
-    // Toggle via Cmd+/ (metaKey)
+    const editorContainer = screen.getByTestId('markdown-editor-container');
+
+    // Global window keydown should NOT toggle (scoped to container)
     fireEvent.keyDown(window, { key: '/', metaKey: true });
+    expect(screen.queryByTestId('markdown-source-textarea')).toBeNull();
+    expect(screen.getByTestId('tiptap-editor-content')).toBeDefined();
+
+    // Toggle via Cmd+/ (metaKey) on the scoped editor container
+    fireEvent.keyDown(editorContainer, { key: '/', metaKey: true });
     expect(screen.getByTestId('markdown-source-textarea')).toBeDefined();
     expect(screen.queryByTestId('tiptap-editor-content')).toBeNull();
 
-    // Toggle back via Ctrl+/ (ctrlKey)
-    fireEvent.keyDown(window, { key: '/', ctrlKey: true });
+    // Toggle back via Ctrl+/ (ctrlKey) on the scoped editor container
+    fireEvent.keyDown(editorContainer, { key: '/', ctrlKey: true });
     expect(screen.queryByTestId('markdown-source-textarea')).toBeNull();
     expect(screen.getByTestId('tiptap-editor-content')).toBeDefined();
   });
@@ -236,4 +243,59 @@ code block
     expect(h1Btn.disabled).toBe(false);
     expect(boldBtn.className).not.toContain('opacity-40');
   });
+
+  it('scopes Cmd+/ to the targeted editor container without affecting sibling editors', () => {
+    const onChange1 = vi.fn();
+    const onChange2 = vi.fn();
+    render(
+      <div>
+        <div data-testid="wrapper-1">
+          <MarkdownEditor value="# Editor One" onChange={onChange1} />
+        </div>
+        <div data-testid="wrapper-2">
+          <MarkdownEditor value="# Editor Two" onChange={onChange2} />
+        </div>
+      </div>
+    );
+
+    const wrapper1 = screen.getByTestId('wrapper-1');
+    const wrapper2 = screen.getByTestId('wrapper-2');
+
+    const container1 = wrapper1.querySelector('[data-testid="markdown-editor-container"]')!;
+    const container2 = wrapper2.querySelector('[data-testid="markdown-editor-container"]')!;
+
+    // Trigger Cmd+/ only on container 1
+    fireEvent.keyDown(container1, { key: '/', metaKey: true });
+
+    // Assert container 1 switched to source mode
+    expect(wrapper1.querySelector('[data-testid="markdown-source-textarea"]')).not.toBeNull();
+    expect(wrapper1.querySelector('[data-testid="tiptap-editor-content"]')).toBeNull();
+
+    // Assert container 2 remains in WYSIWYG mode
+    expect(wrapper2.querySelector('[data-testid="markdown-source-textarea"]')).toBeNull();
+    expect(wrapper2.querySelector('[data-testid="tiptap-editor-content"]')).not.toBeNull();
+  });
+
+  it('does not reset editor content when value prop changes if editor is focused', async () => {
+    const onChange = vi.fn();
+    const { rerender } = render(<MarkdownEditor value="# Stable Content" onChange={onChange} />);
+
+    const editorEl = document.querySelector('.ProseMirror') as HTMLElement;
+    expect(editorEl).not.toBeNull();
+
+    // Focus editor element
+    await act(async () => {
+      editorEl.focus();
+    });
+
+    // Rerender with different value while focused
+    await act(async () => {
+      rerender(<MarkdownEditor value="# New Content From Parent" onChange={onChange} />);
+    });
+
+    // Content should remain the previous content because editor.isFocused prevents setContent
+    expect(editorEl.textContent).toContain('Stable Content');
+    expect(editorEl.textContent).not.toContain('New Content From Parent');
+  });
 });
+

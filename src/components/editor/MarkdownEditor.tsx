@@ -51,9 +51,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const editor = useEditor({
     shouldRerenderOnTransaction: true,
     extensions: [
-      StarterKit.configure({
-        link: false,
-      }),
+      StarterKit.configure(),
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
@@ -83,7 +81,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   useEffect(() => {
     if (!isSourceModeRef.current && editor && editor.storage?.markdown) {
       const currentMarkdown = editor.storage.markdown.getMarkdown();
-      if (value !== currentMarkdown) {
+      if (value !== currentMarkdown && !editor.isFocused) {
         editor.commands.setContent(value, { emitUpdate: false });
       }
     }
@@ -107,19 +105,15 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     }
   }, [editor]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
       if ((e.metaKey || e.ctrlKey) && (e.key === '/' || e.code === 'Slash')) {
         e.preventDefault();
         handleToggleSourceMode();
       }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [handleToggleSourceMode]);
+    },
+    [handleToggleSourceMode]
+  );
 
   const handleSourceChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
@@ -154,7 +148,12 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     }`;
 
   return (
-    <div className={`flex flex-col flex-1 min-h-0 ${className}`}>
+    <div
+      tabIndex={-1}
+      onKeyDown={handleKeyDown}
+      data-testid="markdown-editor-container"
+      className={`flex flex-col flex-1 min-h-0 focus:outline-none ${className}`}
+    >
       {/* Editor Header */}
       <div className="flex items-center justify-between mb-2 shrink-0">
         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Notes</span>

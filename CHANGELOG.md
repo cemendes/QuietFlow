@@ -58,6 +58,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated [MarkdownEditor.tsx](file:///Users/cemolive/code/quietflow/src/components/editor/MarkdownEditor.tsx) container and textarea with `flex-1 min-h-0 h-full` so the typing area stretches to the bottom of the viewport.
 
 ### Fixed
+- **Scoped Markdown Shortcut & Typing Cursor Guard (`MarkdownEditor.tsx`)**:
+  - Scoped `Cmd+/` and `Ctrl+/` shortcut event listener from the global `window` to the editor root container, preventing multiple mounted editor instances from toggling simultaneously.
+  - Guarded external content synchronization with `!editor.isFocused` in WYSIWYG mode to eliminate cursor jumping when parent components re-render during typing.
+  - Cleaned up redundant `link: false` from `StarterKit` configuration.
 - **Project Logos Rendering**:
   - Fixed broken `asset://` URI image loading in [logoService.ts](file:///Users/cemolive/code/quietflow/src/services/logoService.ts) by loading `.logos/` files via `ipc.readFile` as base64 data URIs.
   - Integrated project logos into the [LensDocumentCanvas.tsx](file:///Users/cemolive/code/quietflow/src/components/document/LensDocumentCanvas.tsx) note header breadcrumb bar with error fallbacks.
