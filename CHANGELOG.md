@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **View Source Raw Markdown Toggle & Shortcut (`MarkdownEditor.tsx`)**:
+  - Added a "View Source" toggle button (`toolbar-source-toggle-btn`) with dynamic tooltips `View Markdown Source (Cmd+/)` and `View Rich Text (Cmd+/)`.
+  - Added `Cmd+/` / `Ctrl+/` keyboard shortcut to seamlessly toggle between TipTap WYSIWYG rich text editing and raw markdown `<textarea>` editing.
+  - Full two-way content synchronization between WYSIWYG ProseMirror document model and raw markdown source view.
+  - Automatically disables formatting toolbar controls in raw markdown mode to prevent mismatched formatting operations.
+- **Markdown Action Toolbar & Extended Syntax Support (`MarkdownEditor.tsx`)**:
+  - Top formatting action toolbar equipped with quick-apply controls for Bold, Italic, Headings (H1, H2, H3), Bullet Lists, Numbered Lists, Task Checkboxes, Inline Code, Blockquotes, and Link Embeds.
+  - Extended markdown and HTML preview parsing supporting headings (`#` through `######`), HTML headings (`<h1>` through `<h6>`), blockquotes (`> `), fenced code blocks, bullet lists, numbered lists, task checkboxes, inline code, bold, italic, strikethrough, and auto-linked URLs.
+  - Smart link paste handler: automatically detects valid URLs on clipboard when text is selected in the note editor and wraps the selection into `[selectedText](url)`.
 - **Paradigm A: The Lens Document Canvas (`LensDocumentCanvas.tsx`)**:
   - Dual-Zone Document Canvas for customer and project notes (`Acme Corp.md`) hosting actionable task cards at the top and freeform markdown prose notes below.
   - 3-Way Lens view switcher pills (`[ ✨ Split View | ✅ Tasks Only | 📝 Notes Only ]`) with instant view switching.
@@ -18,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Non-destructive task serializer (`patchTaskInDocumentContent`) maintaining exact line bounds and surrounding prose byte-for-byte.
 - **Cognitive Re-entry State Engine**:
   - Per-document view memory retaining active lens mode, scroll position, and cursor across file switching.
+  - Session state persistence: preserves `quietflow-last-active-file` and `quietflow-last-active-folder` across app restarts, resuming the exact folder, note, and active scope where the user left off instead of resetting to top.
 - **Quick File Switcher (`QuickFileSwitcher.tsx`)**:
   - Spotlight modal triggered via `Cmd+O` for rapid fuzzy searching across customer folders and notes with arrow key navigation.
 - **Contextual Keyboard Shortcuts**:
@@ -38,12 +48,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Stripped out at compile time from production release builds (`debug_assertions = false`) to keep standard window lifecycle behavior intact.
 
 ### Changed
-- **Full-Width Fluid Document Canvas & Side-by-Side Split View**:
-  - Removed the rigid `max-w-[850px]` canvas container constraint in [LensDocumentCanvas.tsx](file:///Users/cemolive/code/quietflow/src/components/document/LensDocumentCanvas.tsx), allowing the document typing space to dynamically expand edge-to-edge with the window.
-  - Implemented a responsive side-by-side two-column split layout on desktop screens (`lg:flex-row`), dedicating the left column to Action Items and the right column to Documentation & Notes with independent scroll areas.
+- **Split View Reorder & Proportions (Notes 2/3 Left, Tasks 1/3 Right)**:
+  - Reordered the side-by-side split layout in [LensDocumentCanvas.tsx](file:///Users/cemolive/code/quietflow/src/components/document/LensDocumentCanvas.tsx) so that the active note editor occupies 2/3 of the screen on the left (`lg:w-2/3`) and task action items occupy 1/3 on the right (`lg:w-1/3`).
+  - Removed the rigid `max-w-[850px]` canvas container constraint in [LensDocumentCanvas.tsx](file:///Users/cemolive/code/quietflow/src/components/document/LensDocumentCanvas.tsx), allowing the document typing space to dynamically expand edge-to-edge with the window with independent scroll areas.
   - Updated [MarkdownEditor.tsx](file:///Users/cemolive/code/quietflow/src/components/editor/MarkdownEditor.tsx) container and textarea with `flex-1 min-h-0 h-full` so the typing area stretches to the bottom of the viewport.
 
 ### Fixed
+- **Project Logos Rendering**:
+  - Fixed broken `asset://` URI image loading in [logoService.ts](file:///Users/cemolive/code/quietflow/src/services/logoService.ts) by loading `.logos/` files via `ipc.readFile` as base64 data URIs.
+  - Integrated project logos into the [LensDocumentCanvas.tsx](file:///Users/cemolive/code/quietflow/src/components/document/LensDocumentCanvas.tsx) note header breadcrumb bar with error fallbacks.
+  - Fixed JSX syntax bug in [FolderItem.tsx](file:///Users/cemolive/code/quietflow/src/components/sidebar/FolderItem.tsx).
+- **React Rules of Hooks Invariant in Canvas**:
+  - Hoisted `folderIcon` hook declarations before conditional returns in [LensDocumentCanvas.tsx](file:///Users/cemolive/code/quietflow/src/components/document/LensDocumentCanvas.tsx), preventing hook count mismatch errors during empty-to-active canvas transitions.
 - **Note Name Input Character Overwrite**:
   - Fixed an issue in [FolderItem.tsx](file:///Users/cemolive/code/quietflow/src/components/sidebar/FolderItem.tsx) and [FolderContextMenu.tsx](file:///Users/cemolive/code/quietflow/src/components/sidebar/FolderContextMenu.tsx) where an inline callback ref invoked `input.select()` on every keystroke re-render, causing sequential characters to replace one another.
   - Replaced inline callback refs with mount-only `useEffect` selection hooks that select the prefilled name once on creation, allowing uninterrupted sequential typing.

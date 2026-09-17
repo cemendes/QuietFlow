@@ -146,4 +146,94 @@ code block
     expect(promptSpy).toHaveBeenCalled();
     promptSpy.mockRestore();
   });
+
+  it('toggles between WYSIWYG and Raw Markdown source view via button and Cmd+/', () => {
+    const onChange = vi.fn();
+    render(<MarkdownEditor value="## Title\n\nSome text" onChange={onChange} />);
+
+    const sourceBtn = screen.getByTestId('toolbar-source-toggle-btn');
+    expect(screen.getByTestId('tiptap-editor-content')).toBeDefined();
+    expect(screen.queryByTestId('markdown-source-textarea')).toBeNull();
+    expect(sourceBtn.getAttribute('title')).toBe('View Markdown Source (Cmd+/)');
+
+    // Click View Source
+    fireEvent.click(sourceBtn);
+    const textarea = screen.getByTestId('markdown-source-textarea') as HTMLTextAreaElement;
+    expect(textarea).toBeDefined();
+    expect(textarea.value).toContain('## Title');
+    expect(screen.queryByTestId('tiptap-editor-content')).toBeNull();
+    expect(sourceBtn.getAttribute('title')).toBe('View Rich Text (Cmd+/)');
+    expect(sourceBtn.className).toContain('bg-slate-200');
+
+    // Toggle back via button
+    fireEvent.click(sourceBtn);
+    expect(screen.queryByTestId('markdown-source-textarea')).toBeNull();
+    expect(screen.getByTestId('tiptap-editor-content')).toBeDefined();
+    expect(sourceBtn.getAttribute('title')).toBe('View Markdown Source (Cmd+/)');
+
+    // Toggle via Cmd+/ (metaKey)
+    fireEvent.keyDown(window, { key: '/', metaKey: true });
+    expect(screen.getByTestId('markdown-source-textarea')).toBeDefined();
+    expect(screen.queryByTestId('tiptap-editor-content')).toBeNull();
+
+    // Toggle back via Ctrl+/ (ctrlKey)
+    fireEvent.keyDown(window, { key: '/', ctrlKey: true });
+    expect(screen.queryByTestId('markdown-source-textarea')).toBeNull();
+    expect(screen.getByTestId('tiptap-editor-content')).toBeDefined();
+  });
+
+  it('allows typing in raw markdown source textarea and calls onChange', () => {
+    const onChange = vi.fn();
+    render(<MarkdownEditor value="Initial text" onChange={onChange} />);
+
+    const sourceBtn = screen.getByTestId('toolbar-source-toggle-btn');
+    fireEvent.click(sourceBtn);
+
+    const textarea = screen.getByTestId('markdown-source-textarea') as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: 'Updated markdown content' } });
+
+    expect(onChange).toHaveBeenCalledWith('Updated markdown content');
+    expect(textarea.value).toBe('Updated markdown content');
+  });
+
+  it('syncs updated source content back to WYSIWYG editor when toggled back', () => {
+    const onChange = vi.fn();
+    render(<MarkdownEditor value="# Initial Heading" onChange={onChange} />);
+
+    const sourceBtn = screen.getByTestId('toolbar-source-toggle-btn');
+    fireEvent.click(sourceBtn);
+
+    const textarea = screen.getByTestId('markdown-source-textarea');
+    fireEvent.change(textarea, { target: { value: '## Switched to H2' } });
+
+    // Toggle back to rich text
+    fireEvent.click(sourceBtn);
+    expect(screen.queryByTestId('markdown-source-textarea')).toBeNull();
+    expect(screen.getByTestId('tiptap-editor-content')).toBeDefined();
+
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toContain('Switched to H2');
+  });
+
+  it('disables formatting toolbar buttons when in source mode', () => {
+    render(<MarkdownEditor value="Some notes" onChange={vi.fn()} />);
+
+    const boldBtn = screen.getByTestId('toolbar-bold-btn') as HTMLButtonElement;
+    const h1Btn = screen.getByTestId('toolbar-h1-btn') as HTMLButtonElement;
+    const sourceBtn = screen.getByTestId('toolbar-source-toggle-btn');
+
+    expect(boldBtn.disabled).toBe(false);
+    expect(h1Btn.disabled).toBe(false);
+
+    // Enter source mode
+    fireEvent.click(sourceBtn);
+    expect(boldBtn.disabled).toBe(true);
+    expect(h1Btn.disabled).toBe(true);
+    expect(boldBtn.className).toContain('opacity-40');
+
+    // Exit source mode
+    fireEvent.click(sourceBtn);
+    expect(boldBtn.disabled).toBe(false);
+    expect(h1Btn.disabled).toBe(false);
+    expect(boldBtn.className).not.toContain('opacity-40');
+  });
 });
