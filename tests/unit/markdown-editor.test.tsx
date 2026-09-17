@@ -354,5 +354,130 @@ code block
     const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
     expect(lastArg).toContain('- [x] Item 1');
   });
+
+  it('inserts today date section at top of document when clicking toolbar-date-btn', () => {
+    const onChange = vi.fn();
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const expectedDate = `## ${yyyy}-${mm}-${dd}`;
+
+    render(<MarkdownEditor value="Existing note content" onChange={onChange} />);
+
+    const dateBtn = screen.getByTestId('toolbar-date-btn');
+    expect(dateBtn).not.toBeNull();
+    fireEvent.click(dateBtn);
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastArg).toContain(expectedDate);
+    // Ensure it is at the beginning
+    expect(lastArg.trim().startsWith(expectedDate)).toBe(true);
+    expect(lastArg).toContain('Existing note content');
+  });
+
+  it('inserts today date section in source mode at top or preserving frontmatter', () => {
+    const onChange = vi.fn();
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const expectedDate = `## ${yyyy}-${mm}-${dd}`;
+
+    const { getByTestId } = render(
+      <MarkdownEditor
+        value="Body text"
+        onChange={onChange}
+      />
+    );
+
+    // Toggle into source mode
+    const sourceToggle = getByTestId('toolbar-source-toggle-btn');
+    fireEvent.click(sourceToggle);
+
+    // In source mode, user has frontmatter
+    const textarea = screen.getByTestId('markdown-source-textarea');
+    fireEvent.change(textarea, {
+      target: { value: `---\ntitle: Doc\n---\n\nBody text` },
+    });
+
+    const dateBtn = getByTestId('toolbar-date-btn');
+    fireEvent.click(dateBtn);
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastArg).toContain('---\ntitle: Doc\n---');
+    expect(lastArg).toContain(expectedDate);
+    // Ensure date heading is placed immediately after frontmatter
+    const fmIndex = lastArg.indexOf('---');
+    const fmEndIndex = lastArg.indexOf('---', fmIndex + 3) + 3;
+    const dateIndex = lastArg.indexOf(expectedDate);
+    expect(dateIndex).toBeGreaterThan(fmEndIndex);
+    expect(dateIndex).toBeLessThan(lastArg.indexOf('Body text'));
+  });
+
+  it('renders nested bullet list inside task list item with hierarchical structure', () => {
+    const markdown = `- [ ] Parent task\n  - Nested bullet 1\n  - Nested bullet 2`;
+    const { container } = render(<MarkdownEditor value={markdown} onChange={vi.fn()} />);
+
+    const taskList = container.querySelector('ul[data-type="taskList"]');
+    expect(taskList).not.toBeNull();
+
+    const nestedBulletList = taskList!.querySelector('div > ul');
+    expect(nestedBulletList).not.toBeNull();
+
+    const nestedBullets = nestedBulletList!.querySelectorAll('li');
+    expect(nestedBullets.length).toBe(2);
+    expect(nestedBullets[0].textContent).toContain('Nested bullet 1');
+    expect(nestedBullets[1].textContent).toContain('Nested bullet 2');
+  });
+
+  it('renders nested task list inside bullet list item with hierarchical structure', () => {
+    const markdown = `- Parent bullet\n  - [ ] Nested task 1\n  - [x] Nested task 2`;
+    const { container } = render(<MarkdownEditor value={markdown} onChange={vi.fn()} />);
+
+    const rootBulletList = container.querySelector('ul:not([data-type="taskList"])');
+    expect(rootBulletList).not.toBeNull();
+
+    const nestedTaskList = rootBulletList!.querySelector('ul[data-type="taskList"]');
+    expect(nestedTaskList).not.toBeNull();
+
+    const nestedTasks = nestedTaskList!.querySelectorAll('li');
+    expect(nestedTasks.length).toBe(2);
+    expect(nestedTasks[0].getAttribute('data-checked')).toBe('false');
+    expect(nestedTasks[1].getAttribute('data-checked')).toBe('true');
+    expect(nestedTasks[0].textContent).toContain('Nested task 1');
+    expect(nestedTasks[1].textContent).toContain('Nested task 2');
+  });
+
+  it('converts bullet list to task list when toolbar task button is clicked', () => {
+    const onChange = vi.fn();
+    const markdown = `- Item 1\n- Item 2`;
+    render(<MarkdownEditor value={markdown} onChange={onChange} />);
+
+    const taskBtn = screen.getByTestId('toolbar-task-btn');
+    fireEvent.click(taskBtn);
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastArg).toContain('- [ ] Item 1');
+  });
+
+  it('converts task list to bullet list when toolbar bullet button is clicked', () => {
+    const onChange = vi.fn();
+    const markdown = `- [ ] Task 1\n- [ ] Task 2`;
+    render(<MarkdownEditor value={markdown} onChange={onChange} />);
+
+    const bulletBtn = screen.getByTestId('toolbar-bullet-btn');
+    fireEvent.click(bulletBtn);
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastArg).toContain('- Task 1');
+    expect(lastArg).not.toContain('- [ ] Task 1');
+  });
 });
+
+
 

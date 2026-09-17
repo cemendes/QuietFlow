@@ -123,10 +123,20 @@ body {
   margin-bottom: 0.75rem;
 }
 
-.tiptap ul:not([data-type="taskList"]) ul {
+/* Level 2 Unordered List (under bullet, ordered list, or task item) */
+.tiptap ul:not([data-type="taskList"]) ul:not([data-type="taskList"]),
+.tiptap ol ul:not([data-type="taskList"]),
+.tiptap ul[data-type="taskList"] ul:not([data-type="taskList"]) {
   list-style-type: circle;
   margin-top: 0.25rem;
   margin-bottom: 0.25rem;
+}
+
+/* Level 3+ Unordered List */
+.tiptap ul:not([data-type="taskList"]) ul:not([data-type="taskList"]) ul:not([data-type="taskList"]),
+.tiptap ul[data-type="taskList"] ul ul:not([data-type="taskList"]),
+.tiptap ol ul ul:not([data-type="taskList"]) {
+  list-style-type: square;
 }
 
 .tiptap ol {
@@ -193,6 +203,30 @@ ul[data-type="taskList"] li > label input[type="checkbox"] {
   accent-color: #059669;
 }
 
+/* Level 2: Nested task item checkboxes (scaled down to 14px) */
+.tiptap li ul[data-type="taskList"] li > label,
+li ul[data-type="taskList"] li > label {
+  margin-top: 0.25rem;
+}
+
+.tiptap li ul[data-type="taskList"] li > label input[type="checkbox"],
+li ul[data-type="taskList"] li > label input[type="checkbox"] {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* Level 3+: Deeply nested task item checkboxes (scaled down to 13px) */
+.tiptap li li ul[data-type="taskList"] li > label,
+li li ul[data-type="taskList"] li > label {
+  margin-top: 0.26rem;
+}
+
+.tiptap li li ul[data-type="taskList"] li > label input[type="checkbox"],
+li li ul[data-type="taskList"] li > label input[type="checkbox"] {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
 .tiptap ul[data-type="taskList"] li > div,
 ul[data-type="taskList"] li > div {
   flex: 1 1 auto;
@@ -211,11 +245,32 @@ ul[data-type="taskList"] li[data-checked="true"] > div {
   color: #94A3B8;
 }
 
+/* Nested task list under task item */
 .tiptap ul[data-type="taskList"] ul[data-type="taskList"],
 ul[data-type="taskList"] ul[data-type="taskList"] {
-  margin-left: 1.5rem;
+  margin-left: 0.5rem;
   margin-top: 0.25rem;
   margin-bottom: 0;
+}
+
+/* Nested bullet/ordered list inside task item */
+.tiptap ul[data-type="taskList"] li > div > ul,
+.tiptap ul[data-type="taskList"] li > div > ol,
+ul[data-type="taskList"] li > div > ul,
+ul[data-type="taskList"] li > div > ol {
+  padding-left: 1.25rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Nested task list inside bullet/ordered list item */
+.tiptap ul:not([data-type="taskList"]) li > ul[data-type="taskList"],
+.tiptap ol li > ul[data-type="taskList"],
+ul:not([data-type="taskList"]) li > ul[data-type="taskList"],
+ol li > ul[data-type="taskList"] {
+  margin-left: 0.5rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
 }
 
 /* Blockquotes */

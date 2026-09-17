@@ -17,6 +17,7 @@ import {
   Code,
   Code2,
   Quote,
+  CalendarPlus,
 } from 'lucide-react';
 
 declare module '@tiptap/core' {
@@ -143,6 +144,148 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   }, [editor, isSourceMode]);
 
+  const handleAddDateSection = useCallback(() => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const dateText = `${yyyy}-${mm}-${dd}`;
+    const dateHeading = `## ${dateText}`;
+
+    if (isSourceModeRef.current) {
+      const current = sourceTextRef.current || '';
+      const fmMatch = current.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n*/);
+      let updated = '';
+      if (fmMatch) {
+        const fmEnd = fmMatch[0].length;
+        updated = `${current.slice(0, fmEnd)}${dateHeading}\n\n${current.slice(fmEnd).trimStart()}`;
+      } else {
+        updated = `${dateHeading}\n\n${current.trimStart()}`;
+      }
+      setSourceText(updated);
+      sourceTextRef.current = updated;
+      onChange(updated);
+    } else if (editor) {
+      const currentMarkdown = editor.storage?.markdown?.getMarkdown() ?? '';
+      const fmMatch = currentMarkdown.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n*/);
+
+      if (fmMatch) {
+        const fmEnd = fmMatch[0].length;
+        const updatedMarkdown = `${currentMarkdown.slice(0, fmEnd)}${dateHeading}\n\n${currentMarkdown.slice(fmEnd).trimStart()}`;
+        editor.commands.setContent(updatedMarkdown);
+        onChange(updatedMarkdown);
+      } else {
+        editor
+          .chain()
+          .focus()
+          .insertContentAt(0, [
+            {
+              type: 'heading',
+              attrs: { level: 2 },
+              content: [{ type: 'text', text: dateText }],
+            },
+            {
+              type: 'paragraph',
+            },
+          ])
+          .run();
+
+        try {
+          const firstChild = editor.state.doc.child(0);
+          if (firstChild) {
+            editor.commands.setTextSelection(firstChild.nodeSize + 1);
+          }
+        } catch {
+          // ignore selection fallback
+        }
+
+        const newMarkdown = editor.storage?.markdown?.getMarkdown() ?? '';
+        onChange(newMarkdown);
+      }
+    }
+  }, [editor, onChange]);
+
+  const handleConvertOrToggleList = useCallback(
+    (targetType: 'bulletList' | 'orderedList' | 'taskList') => {
+      if (!editor || isSourceModeRef.current) return;
+
+      const { state } = editor.view;
+      const { selection } = state;
+      const { $from } = selection;
+
+      let itemDepth = -1;
+      let listDepth = -1;
+      for (let d = $from.depth; d > 0; d--) {
+        const name = $from.node(d).type.name;
+        if ((name === 'taskItem' || name === 'listItem') && itemDepth === -1) {
+          itemDepth = d;
+        }
+        if (
+          (name === 'taskList' || name === 'bulletList' || name === 'orderedList') &&
+          listDepth === -1 &&
+          itemDepth !== -1 &&
+          d < itemDepth
+        ) {
+          listDepth = d;
+          break;
+        }
+      }
+
+      // Not inside any list -> use default TipTap toggle command
+      if (listDepth === -1 || itemDepth === -1) {
+        if (targetType === 'bulletList') {
+          editor.chain().focus().toggleBulletList().run();
+        } else if (targetType === 'orderedList') {
+          editor.chain().focus().toggleOrderedList().run();
+        } else if (targetType === 'taskList') {
+          editor.chain().focus().toggleTaskList().run();
+        }
+        return;
+      }
+
+      const currentListNode = $from.node(listDepth);
+      const currentListType = currentListNode.type.name;
+
+      // If already in target list type, toggle it off (lift)
+      if (currentListType === targetType) {
+        if (targetType === 'bulletList') {
+          editor.chain().focus().toggleBulletList().run();
+        } else if (targetType === 'orderedList') {
+          editor.chain().focus().toggleOrderedList().run();
+        } else if (targetType === 'taskList') {
+          editor.chain().focus().toggleTaskList().run();
+        }
+        return;
+      }
+
+      // Inside a list of different type -> convert list node and its items
+      const listPos = $from.before(listDepth);
+      const targetListNodeType = state.schema.nodes[targetType];
+      const targetItemNodeType =
+        targetType === 'taskList' ? state.schema.nodes.taskItem : state.schema.nodes.listItem;
+
+      if (!targetListNodeType || !targetItemNodeType) return;
+
+      const newItems: any[] = [];
+      for (let i = 0; i < currentListNode.childCount; i++) {
+        const child = currentListNode.child(i);
+        const attrs = targetType === 'taskList' ? { checked: false } : null;
+        newItems.push(targetItemNodeType.create(attrs, child.content));
+      }
+      const newList = targetListNodeType.create(
+        targetType === 'bulletList' ? { tight: true } : currentListNode.attrs,
+        newItems
+      );
+
+      editor.commands.command(({ tr }) => {
+        tr.replaceWith(listPos, listPos + currentListNode.nodeSize, newList);
+        return true;
+      });
+      editor.commands.focus();
+    },
+    [editor]
+  );
+
   const getButtonClass = (isActive: boolean, disabled: boolean = false) =>
     `p-1.5 rounded transition-colors ${
       disabled
@@ -223,6 +366,16 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           <Heading3 className="w-3.5 h-3.5" />
         </button>
 
+        <button
+          type="button"
+          title="Add section for today's date (## YYYY-MM-DD)"
+          data-testid="toolbar-date-btn"
+          onClick={handleAddDateSection}
+          className={getButtonClass(false, false)}
+        >
+          <CalendarPlus className="w-3.5 h-3.5" />
+        </button>
+
         <div className="w-px h-4 bg-sand-200 mx-1" />
 
         <button
@@ -230,7 +383,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           title="Bullet list"
           disabled={isSourceMode}
           data-testid="toolbar-bullet-btn"
-          onClick={() => editor?.chain().focus().toggleBulletList().run()}
+          onClick={() => handleConvertOrToggleList('bulletList')}
           className={getButtonClass(editor?.isActive('bulletList') ?? false, isSourceMode)}
         >
           <List className="w-3.5 h-3.5" />
@@ -240,7 +393,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           title="Numbered list"
           disabled={isSourceMode}
           data-testid="toolbar-ordered-btn"
-          onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+          onClick={() => handleConvertOrToggleList('orderedList')}
           className={getButtonClass(editor?.isActive('orderedList') ?? false, isSourceMode)}
         >
           <ListOrdered className="w-3.5 h-3.5" />
@@ -250,7 +403,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           title="Task list"
           disabled={isSourceMode}
           data-testid="toolbar-task-btn"
-          onClick={() => editor?.chain().focus().toggleTaskList().run()}
+          onClick={() => handleConvertOrToggleList('taskList')}
           className={getButtonClass(editor?.isActive('taskList') ?? false, isSourceMode)}
         >
           <CheckSquare className="w-3.5 h-3.5" />

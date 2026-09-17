@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Insert Today's Date Section (`MarkdownEditor.tsx`)**:
+  - Added "Add section for today's date" toolbar action (`toolbar-date-btn`) with `CalendarPlus` icon.
+  - Automatically prepends `## YYYY-MM-DD` at the top of the note (or immediately below YAML frontmatter in source mode) and positions cursor in the section body.
+- **Hierarchical Mixed Lists & Sized Icon Progression (`MarkdownEditor.tsx`, `index.css`)**:
+  - Full support for child bullet/numbered lists under tasks, and child tasks under bullet/numbered lists.
+  - Hierarchical icon scaling: Level 1 checkboxes are 17px (`1.05rem`) with filled disc markers (`•`); Level 2 child checkboxes scale down to 14px (`0.875rem`) with aligned baseline, and child bullets transition to hollow circles (`◦`); Level 3+ uses compact 13px (`0.8rem`) checkboxes and square markers (`▪`).
+  - Smart list conversion command (`handleConvertOrToggleList`) enabling seamless conversions between task lists, bullet lists, and numbered lists at the active indentation depth without breaking nested parent-child hierarchies.
 - **Unified WYSIWYG Notes Editor (`MarkdownEditor.tsx`)**:
   - Unified Typora/Notion-style WYSIWYG notes editor with TipTap, markdown input shortcuts, and View Source toggle (`Cmd+/`).
 - **View Source Raw Markdown Toggle & Shortcut (`MarkdownEditor.tsx`)**:
