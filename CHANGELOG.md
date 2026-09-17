@@ -58,10 +58,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated [MarkdownEditor.tsx](file:///Users/cemolive/code/quietflow/src/components/editor/MarkdownEditor.tsx) container and textarea with `flex-1 min-h-0 h-full` so the typing area stretches to the bottom of the viewport.
 
 ### Fixed
+- **TipTap Task List Checkbox Alignment & In-line Layout (`index.css`, `MarkdownEditor.tsx`)**:
+  - Restored clean in-line horizontal layout for task checklist items (`- [ ]`, `- [x]`) using flex row styling with cap-height baseline alignment (`align-items: flex-start; gap: 0.5rem; margin-top: 0.22rem;`), preventing checkboxes from floating on their own line above task descriptions.
+  - Added custom-styled rounded emerald checkboxes with strikethrough styling for completed tasks.
+  - Configured `StarterKit` with native `link` attributes and eliminated duplicate extension registration warnings.
+- **TipTap Typography & HTML Markup Rendering (`index.css`, `MarkdownEditor.tsx`)**:
+  - Overrode Tailwind Preflight CSS resets for TipTap ProseMirror content, restoring explicit styling for Headings (`h1` 24px bold forest green with subtle bottom border, `h2` 20px, `h3` 17.6px), standard HTML markup (`<h1>`-`<h6>`, `<b>`, `<strong>`, `<a>`, `<blockquote>`, `<code>`, `<pre>`), and tables.
+  - Enabled raw HTML parsing and tight lists in `tiptap-markdown` configuration (`Markdown.configure({ html: true, tightLists: true, bulletListMarker: '-', linkify: true })`).
 - **Scoped Markdown Shortcut & Typing Cursor Guard (`MarkdownEditor.tsx`)**:
   - Scoped `Cmd+/` and `Ctrl+/` shortcut event listener from the global `window` to the editor root container, preventing multiple mounted editor instances from toggling simultaneously.
   - Guarded external content synchronization with `!editor.isFocused` in WYSIWYG mode to eliminate cursor jumping when parent components re-render during typing.
-  - Cleaned up redundant `link: false` from `StarterKit` configuration.
 - **Project Logos Rendering**:
   - Fixed broken `asset://` URI image loading in [logoService.ts](file:///Users/cemolive/code/quietflow/src/services/logoService.ts) by loading `.logos/` files via `ipc.readFile` as base64 data URIs.
   - Integrated project logos into the [LensDocumentCanvas.tsx](file:///Users/cemolive/code/quietflow/src/components/document/LensDocumentCanvas.tsx) note header breadcrumb bar with error fallbacks.

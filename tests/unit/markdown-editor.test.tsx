@@ -297,5 +297,62 @@ code block
     expect(editorEl.textContent).toContain('Stable Content');
     expect(editorEl.textContent).not.toContain('New Content From Parent');
   });
+
+  it('renders task list items with interactive checkboxes and in-line content structure', () => {
+    const markdown = `# Tasks\n\n- [ ] Check with Cloudhero team\n- [x] Completed task`;
+    const { container } = render(<MarkdownEditor value={markdown} onChange={vi.fn()} />);
+
+    const taskList = container.querySelector('ul[data-type="taskList"]');
+    expect(taskList).not.toBeNull();
+
+    const taskItems = taskList!.querySelectorAll('li');
+    expect(taskItems.length).toBe(2);
+
+    // Unchecked task
+    const firstTask = taskItems[0];
+    expect(firstTask.getAttribute('data-checked')).toBe('false');
+    const firstCheckbox = firstTask.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(firstCheckbox).not.toBeNull();
+    expect(firstCheckbox.checked).toBe(false);
+    expect(firstTask.querySelector('div')?.textContent).toContain('Check with Cloudhero team');
+
+    // Checked task
+    const secondTask = taskItems[1];
+    expect(secondTask.getAttribute('data-checked')).toBe('true');
+    const secondCheckbox = secondTask.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(secondCheckbox).not.toBeNull();
+    expect(secondCheckbox.checked).toBe(true);
+    expect(secondTask.querySelector('div')?.textContent).toContain('Completed task');
+  });
+
+  it('renders markdown headings and standard HTML markup in WYSIWYG mode', () => {
+    const mixedContent = `# 09/17\n\nRegistered for this [workshop](https://example.com)\n\n<b>Raw HTML Bold</b>\n\n<h3>HTML Heading 3</h3>`;
+    render(<MarkdownEditor value={mixedContent} onChange={vi.fn()} />);
+
+    const h1 = screen.getByRole('heading', { level: 1 });
+    expect(h1.textContent).toBe('09/17');
+
+    const link = screen.getByRole('link', { name: 'workshop' });
+    expect(link.getAttribute('href')).toBe('https://example.com');
+
+    expect(screen.getByText('Raw HTML Bold')).toBeDefined();
+
+    const h3 = screen.getByRole('heading', { level: 3 });
+    expect(h3.textContent).toBe('HTML Heading 3');
+  });
+
+  it('toggles task item checkbox and emits updated markdown with checked status', () => {
+    const onChange = vi.fn();
+    const markdown = `- [ ] Item 1\n- [ ] Item 2`;
+    const { container } = render(<MarkdownEditor value={markdown} onChange={onChange} />);
+
+    const firstCheckbox = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(firstCheckbox).not.toBeNull();
+    fireEvent.click(firstCheckbox);
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastArg).toContain('- [x] Item 1');
+  });
 });
 

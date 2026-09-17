@@ -1,7 +1,6 @@
 import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import { Markdown } from 'tiptap-markdown';
@@ -51,24 +50,30 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const editor = useEditor({
     shouldRerenderOnTransaction: true,
     extensions: [
-      StarterKit.configure(),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: 'text-forest-700 underline font-medium hover:text-forest-900 cursor-pointer',
+      StarterKit.configure({
+        link: {
+          openOnClick: false,
+          HTMLAttributes: {
+            class: 'text-forest-700 underline font-medium hover:text-forest-900 cursor-pointer',
+          },
         },
       }),
       TaskList,
       TaskItem.configure({
         nested: true,
       }),
-      Markdown,
+      Markdown.configure({
+        html: true,
+        tightLists: true,
+        bulletListMarker: '-',
+        linkify: true,
+      }),
     ],
     content: value,
     editorProps: {
       attributes: {
         class:
-          'prose prose-slate max-w-none focus:outline-none min-h-[300px] p-4 text-slate-800 text-sm leading-relaxed',
+          'tiptap prose prose-slate max-w-none focus:outline-none min-h-[300px] p-4 text-slate-800 text-sm leading-relaxed',
         'data-placeholder': placeholder,
       },
     },
