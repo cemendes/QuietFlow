@@ -47,3 +47,14 @@ body {
   overflow: hidden;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
+
+/* Ensure interactive controls inside draggable regions remain clickable and do not trigger window drag */
+[data-tauri-drag-region] button,
+[data-tauri-drag-region] input,
+[data-tauri-drag-region] textarea,
+[data-tauri-drag-region] select,
+[data-tauri-drag-region] a,
+[data-tauri-drag-region] [role="button"],
+.no-drag {
+  -webkit-app-region: no-drag;
+}

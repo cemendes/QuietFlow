@@ -225,7 +225,11 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
       className={`flex flex-col h-full w-full bg-sand-50/60 overflow-hidden select-text ${className}`}
     >
       {/* 1. Top Navigation & Action Header */}
-      <header className="flex items-center justify-between px-6 py-3 border-b border-sand-200/80 bg-white/70 backdrop-blur-md shrink-0">
+      <header
+        data-tauri-drag-region
+        data-testid="task-detail-header"
+        className="flex items-center justify-between px-6 py-3 border-b border-sand-200/80 bg-white/70 backdrop-blur-md shrink-0 select-none"
+      >
         {/* Left: Back Button & Breadcrumbs */}
         <div className="flex items-center gap-3 min-w-0">
           <button

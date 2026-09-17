@@ -107,6 +107,13 @@ export default function App() {
 
       {/* 2. Main Content Canvas: Task Detail / Document Lens / Kanban / List */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
+        {/* Universal Top Window Drag Region */}
+        <div
+          data-tauri-drag-region
+          data-testid="window-drag-region"
+          className="absolute top-0 left-0 right-0 h-9 z-10 select-none pointer-events-auto"
+          aria-hidden="true"
+        />
         <CorruptionWarningBanner />
         <ErrorBoundary fallbackTitle="Unable to display this view">
           {activeTaskId ? (

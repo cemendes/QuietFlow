@@ -12,6 +12,18 @@ export function isTauriEnvironment(): boolean {
   return typeof window !== 'undefined' && (!!window.__TAURI_INTERNALS__ || !!window.__TAURI__);
 }
 
+export async function startDraggingWindow(e?: { button?: number; defaultPrevented?: boolean }): Promise<void> {
+  if (e && e.button !== undefined && e.button !== 0) return;
+  if (isTauriEnvironment()) {
+    try {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      await getCurrentWindow().startDragging();
+    } catch (err) {
+      console.warn('startDraggingWindow error:', err);
+    }
+  }
+}
+
 export interface IpcInterface {
   initVault: (path: string) => Promise<VaultTree>;
   readFile: (path: string) => Promise<string>;
