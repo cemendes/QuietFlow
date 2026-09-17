@@ -30,7 +30,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `.github/workflows/openwiki-update.yml` for automated documentation updates on merge and scheduled cron.
   - Added `AGENTS.md` evidence index for coding agent navigation.
 
+- **Build Date & Time in Settings**:
+  - Added formatted build timestamp (`Build Date & Time`) to the Preferences "About & Status" panel.
+  - Injected `__APP_VERSION__` global definition in `vite.config.ts` directly from `package.json` to keep frontend version metadata unified.
+- **Development All-Desktops Window Visibility**:
+  - Automatically enables `set_visible_on_all_workspaces(true)` in Rust debug builds on macOS (`npm run tauri dev`), allowing the development window to seamlessly follow across all Mission Control Desktops/Spaces without requiring an installed `.app` bundle.
+  - Stripped out at compile time from production release builds (`debug_assertions = false`) to keep standard window lifecycle behavior intact.
+
+### Changed
+- **Full-Width Fluid Document Canvas & Side-by-Side Split View**:
+  - Removed the rigid `max-w-[850px]` canvas container constraint in [LensDocumentCanvas.tsx](file:///Users/cemolive/code/quietflow/src/components/document/LensDocumentCanvas.tsx), allowing the document typing space to dynamically expand edge-to-edge with the window.
+  - Implemented a responsive side-by-side two-column split layout on desktop screens (`lg:flex-row`), dedicating the left column to Action Items and the right column to Documentation & Notes with independent scroll areas.
+  - Updated [MarkdownEditor.tsx](file:///Users/cemolive/code/quietflow/src/components/editor/MarkdownEditor.tsx) container and textarea with `flex-1 min-h-0 h-full` so the typing area stretches to the bottom of the viewport.
+
 ### Fixed
+- **Note Name Input Character Overwrite**:
+  - Fixed an issue in [FolderItem.tsx](file:///Users/cemolive/code/quietflow/src/components/sidebar/FolderItem.tsx) and [FolderContextMenu.tsx](file:///Users/cemolive/code/quietflow/src/components/sidebar/FolderContextMenu.tsx) where an inline callback ref invoked `input.select()` on every keystroke re-render, causing sequential characters to replace one another.
+  - Replaced inline callback refs with mount-only `useEffect` selection hooks that select the prefilled name once on creation, allowing uninterrupted sequential typing.
+- **Preferences Header Version Synchronization**:
+  - Fixed a version discrepancy where the Preferences modal header pill displayed a hardcoded `QuietFlow v0.1.0-alpha.3` while the About panel reported `v0.1.0-alpha.5`.
+  - Replaced hardcoded strings across `SettingsModal`, `UpdateToast`, and updater mocks with the reactive, centralized `appVersion` state.
+- **Window Dragging Inconsistency Across Views**:
+  - Implemented a universal top window drag region (`data-tauri-drag-region`) in [App.tsx](file:///Users/cemolive/code/quietflow/src/App.tsx) across the main canvas.
+  - Added `data-tauri-drag-region` to the header and empty state of [LensDocumentCanvas.tsx](file:///Users/cemolive/code/quietflow/src/components/document/LensDocumentCanvas.tsx) and navigation header in [TaskDetailPage.tsx](file:///Users/cemolive/code/quietflow/src/components/editor/TaskDetailPage.tsx).
+  - Configured `-webkit-app-region: no-drag` in [index.css](file:///Users/cemolive/code/quietflow/src/index.css) for all interactive controls (buttons, inputs, links, textareas) inside draggable regions to prevent click event blocking on macOS.
+  - Added comprehensive automated test suite `tests/e2e/window-drag-region.test.tsx` verifying draggable headers across all views.
 - **Note Selection Freeze & Watcher Loop**:
   - Fixed infinite disk write loop in `saveDocumentProse` that duplicated task blocks upon save/blur.
   - Resolved `App.tsx` auto-initialization loop by stabilizing `useEffect` mount dependencies.

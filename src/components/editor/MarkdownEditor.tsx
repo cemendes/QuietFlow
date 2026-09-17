@@ -133,9 +133,9 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   };
 
   return (
-    <div className={`flex flex-col flex-1 ${className}`}>
+    <div className={`flex flex-col flex-1 min-h-0 ${className}`}>
       {/* Editor / Preview Toolbar Tabs */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2 shrink-0">
         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Notes</span>
         <div className="flex items-center bg-sand-100 p-0.5 rounded-lg border border-sand-200">
           <button
@@ -172,12 +172,12 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full flex-1 min-h-[140px] p-3 text-sm text-slate-800 bg-white border border-sand-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-forest-500/20 focus:border-forest-500 transition-all font-mono leading-relaxed"
+          className="w-full flex-1 min-h-[140px] h-full p-3.5 text-sm text-slate-800 bg-white border border-sand-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-forest-500/20 focus:border-forest-500 transition-all font-mono leading-relaxed overflow-y-auto"
         />
       ) : (
         <div
           data-testid="markdown-preview"
-          className="w-full flex-1 min-h-[140px] p-3 text-sm bg-white border border-sand-200 rounded-xl overflow-y-auto"
+          className="w-full flex-1 min-h-[140px] h-full p-3.5 text-sm bg-white border border-sand-200 rounded-xl overflow-y-auto"
         >
           {renderSimpleMarkdown(value)}
         </div>

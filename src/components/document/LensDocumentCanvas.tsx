@@ -84,7 +84,11 @@ export const LensDocumentCanvas: React.FC = () => {
 
   if (!activeDocument || !activeFile) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-slate-400 bg-sand-50/50">
+      <div
+        data-tauri-drag-region
+        data-testid="document-empty-canvas"
+        className="flex-1 flex flex-col items-center justify-center p-12 text-center text-slate-400 bg-sand-50/50 select-none"
+      >
         {isLoading ? (
           <>
             <div className="w-8 h-8 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin mb-3" />
@@ -127,9 +131,13 @@ export const LensDocumentCanvas: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-sand-50/30 overflow-y-auto">
+    <div className="flex-1 flex flex-col h-full bg-sand-50/30 overflow-hidden min-h-0">
       {/* Top Document Header Bar */}
-      <div className="sticky top-0 z-20 backdrop-blur-md bg-white/90 border-b border-slate-200 px-6 py-3.5 flex items-center justify-between gap-4">
+      <div
+        data-tauri-drag-region
+        data-testid="document-header"
+        className="sticky top-0 z-20 backdrop-blur-md bg-white/90 border-b border-slate-200 px-6 py-3.5 flex items-center justify-between gap-4 select-none shrink-0"
+      >
         {/* Breadcrumb & Metadata */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
@@ -206,12 +214,115 @@ export const LensDocumentCanvas: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Canvas Scroll Area (Centered Max 850px) */}
-      <div className="max-w-[850px] w-full mx-auto p-6 md:p-8 space-y-6 flex-1 flex flex-col">
-        {/* TOP ZONE: Action Items & Deliverables */}
-        {(currentLensMode === 'split' || currentLensMode === 'tasks') && (
-          <section data-testid="top-tasks-zone" className="space-y-4">
-            <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
+      {/* Main Fluid Canvas Area */}
+      <div className="w-full flex-1 flex flex-col p-4 md:p-6 lg:p-8 min-h-0">
+        {/* SPLIT VIEW MODE: Responsive Side-by-Side on Desktop */}
+        {currentLensMode === 'split' && (
+          <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 h-full">
+            {/* Left Column: Action Items */}
+            <section
+              data-testid="top-tasks-zone"
+              className="w-full lg:w-1/2 flex flex-col min-h-0 space-y-3"
+            >
+              <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-200/80 shrink-0">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <h2 className="text-sm font-bold tracking-tight text-slate-800 uppercase">
+                    Action Items
+                  </h2>
+                  <span className="text-xs text-slate-500 font-medium">
+                    ({pendingTasks.length} remaining, {completedTasks.length} done)
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsTasksCollapsed(!isTasksCollapsed)}
+                  className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1 px-2 py-1 rounded-md hover:bg-slate-100"
+                >
+                  {isTasksCollapsed ? (
+                    <>
+                      <span>Expand</span>
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </>
+                  ) : (
+                    <>
+                      <span>Collapse</span>
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {!isTasksCollapsed && (
+                <div className="flex-1 flex flex-col min-h-0 space-y-2.5">
+                  <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+                    {tasks.length === 0 ? (
+                      <div className="p-4 rounded-xl border border-dashed border-slate-200 text-center text-xs text-slate-400">
+                        No action items in this note. Add one below or type <code className="bg-slate-100 px-1 py-0.5 rounded">- [ ]</code> in the notes.
+                      </div>
+                    ) : (
+                      tasks.map((task) => (
+                        <DocumentTaskCard
+                          key={task.id}
+                          task={task}
+                          onToggle={toggleTask}
+                          onSelect={setActiveTaskId}
+                        />
+                      ))
+                    )}
+                  </div>
+
+                  {/* Quick Task Input */}
+                  <form onSubmit={handleQuickAddTask} className="pt-2 shrink-0">
+                    <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200 px-3 py-2 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all shadow-2xs">
+                      <Plus className="w-4 h-4 text-emerald-600" />
+                      <input
+                        type="text"
+                        value={newTaskTitle}
+                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                        placeholder="Add an action item for this document... (Press Enter)"
+                        className="w-full text-xs text-slate-800 placeholder-slate-400 bg-transparent border-none outline-none focus:outline-none"
+                      />
+                    </div>
+                  </form>
+                </div>
+              )}
+            </section>
+
+            {/* Right Column: Documentation & Notes */}
+            <section
+              data-testid="bottom-notes-zone"
+              className="w-full lg:w-1/2 flex-1 flex flex-col min-h-0 h-full space-y-3"
+            >
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200 shrink-0">
+                <h2 className="text-sm font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-emerald-600" />
+                  Documentation & Notes
+                </h2>
+                <div className="text-xs text-slate-400 flex items-center gap-3">
+                  <span>{activeDocument.wordCount || 0} words</span>
+                  <span>•</span>
+                  <span>{activeDocument.readingTimeMinutes || 1} min read</span>
+                </div>
+              </div>
+
+              <div onBlur={handleProseBlur} className="flex-1 flex flex-col min-h-0 h-full">
+                <MarkdownEditor
+                  value={localProse}
+                  onChange={handleProseChange}
+                  placeholder="Write meeting notes, architecture decisions, or press Cmd+Enter to hoist a task..."
+                  className="flex-1 min-h-[350px] h-full bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs focus-within:border-emerald-400"
+                />
+              </div>
+            </section>
+          </div>
+        )}
+
+        {/* TASKS ONLY MODE: Full Fluid Width & Height */}
+        {currentLensMode === 'tasks' && (
+          <section data-testid="top-tasks-zone" className="flex-1 flex flex-col min-h-0 space-y-4">
+            <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-200/80 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 <h2 className="text-sm font-bold tracking-tight text-slate-800 uppercase">
@@ -221,31 +332,13 @@ export const LensDocumentCanvas: React.FC = () => {
                   ({pendingTasks.length} remaining, {completedTasks.length} done)
                 </span>
               </div>
-
-              <button
-                type="button"
-                onClick={() => setIsTasksCollapsed(!isTasksCollapsed)}
-                className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1 px-2 py-1 rounded-md hover:bg-slate-100"
-              >
-                {isTasksCollapsed ? (
-                  <>
-                    <span>Expand</span>
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </>
-                ) : (
-                  <>
-                    <span>Collapse</span>
-                    <ChevronUp className="w-3.5 h-3.5" />
-                  </>
-                )}
-              </button>
             </div>
 
-            {!isTasksCollapsed && (
-              <div className="space-y-2.5">
+            <div className="flex-1 flex flex-col min-h-0 space-y-2.5">
+              <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
                 {tasks.length === 0 ? (
-                  <div className="p-4 rounded-xl border border-dashed border-slate-200 text-center text-xs text-slate-400">
-                    No action items in this note. Add one below or type <code className="bg-slate-100 px-1 py-0.5 rounded">- [ ]</code> in the notes.
+                  <div className="p-8 rounded-xl border border-dashed border-slate-200 text-center text-xs text-slate-400">
+                    No action items in this note. Add one below or switch to Notes view to write tasks.
                   </div>
                 ) : (
                   tasks.map((task) => (
@@ -257,58 +350,46 @@ export const LensDocumentCanvas: React.FC = () => {
                     />
                   ))
                 )}
-
-                {/* Quick Task Input */}
-                <form onSubmit={handleQuickAddTask} className="pt-2">
-                  <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200 px-3 py-2 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all shadow-2xs">
-                    <Plus className="w-4 h-4 text-emerald-600" />
-                    <input
-                      type="text"
-                      value={newTaskTitle}
-                      onChange={(e) => setNewTaskTitle(e.target.value)}
-                      placeholder="Add an action item for this document... (Press Enter)"
-                      className="w-full text-xs text-slate-800 placeholder-slate-400 bg-transparent border-none outline-none focus:outline-none"
-                    />
-                  </div>
-                </form>
               </div>
-            )}
+
+              {/* Quick Task Input */}
+              <form onSubmit={handleQuickAddTask} className="pt-2 shrink-0">
+                <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200 px-3 py-2 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all shadow-2xs">
+                  <Plus className="w-4 h-4 text-emerald-600" />
+                  <input
+                    type="text"
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    placeholder="Add an action item for this document... (Press Enter)"
+                    className="w-full text-xs text-slate-800 placeholder-slate-400 bg-transparent border-none outline-none focus:outline-none"
+                  />
+                </div>
+              </form>
+            </div>
           </section>
         )}
 
-        {/* TONAL DIVIDER (Visible in Split View) */}
-        {currentLensMode === 'split' && (
-          <div className="relative py-2 flex items-center justify-center">
-            <div className="w-full border-t border-dashed border-slate-200" />
-            <span className="absolute bg-sand-50/80 backdrop-blur-xs px-3 text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-              Meeting Notes & Context
-            </span>
-          </div>
-        )}
-
-        {/* BOTTOM ZONE: Meeting Notes & Freeform Prose */}
-        {(currentLensMode === 'split' || currentLensMode === 'notes') && (
-          <section data-testid="bottom-notes-zone" className="flex-1 flex flex-col space-y-3">
-            {currentLensMode === 'notes' && (
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                <h2 className="text-sm font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-emerald-600" />
-                  Documentation & Notes
-                </h2>
-                <div className="text-xs text-slate-400 flex items-center gap-3">
-                  <span>{activeDocument.wordCount || 0} words</span>
-                  <span>•</span>
-                  <span>{activeDocument.readingTimeMinutes || 1} min read</span>
-                </div>
+        {/* NOTES ONLY MODE: Viewport-Filling Canvas */}
+        {currentLensMode === 'notes' && (
+          <section data-testid="bottom-notes-zone" className="flex-1 flex flex-col min-h-0 h-full space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200 shrink-0">
+              <h2 className="text-sm font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-emerald-600" />
+                Documentation & Notes
+              </h2>
+              <div className="text-xs text-slate-400 flex items-center gap-3">
+                <span>{activeDocument.wordCount || 0} words</span>
+                <span>•</span>
+                <span>{activeDocument.readingTimeMinutes || 1} min read</span>
               </div>
-            )}
+            </div>
 
-            <div onBlur={handleProseBlur} className="flex-1">
+            <div onBlur={handleProseBlur} className="flex-1 flex flex-col min-h-0 h-full">
               <MarkdownEditor
                 value={localProse}
                 onChange={handleProseChange}
                 placeholder="Write meeting notes, architecture decisions, or press Cmd+Enter to hoist a task..."
-                className="min-h-[350px] bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs focus-within:border-emerald-400"
+                className="flex-1 min-h-[350px] h-full bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs focus-within:border-emerald-400"
               />
             </div>
           </section>
