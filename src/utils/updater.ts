@@ -28,7 +28,7 @@ class MockUpdater {
     if (!this.mockUpdateAvailable) return null;
     return {
       version: this.mockRemoteVersion,
-      currentVersion: '0.1.0-alpha.4',
+      currentVersion: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.1.0-alpha.5',
       body: this.mockReleaseNotes,
       date: new Date().toISOString(),
     };

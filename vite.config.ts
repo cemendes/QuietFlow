@@ -2,7 +2,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import { execSync } from 'child_process';
+import fs from 'fs';
+
+const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, './package.json'), 'utf-8'));
 
 const commitHash = (() => {
   try {
@@ -16,6 +18,7 @@ const commitHash = (() => {
 export default defineConfig({
   plugins: [react()],
   define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
     __COMMIT_HASH__: JSON.stringify(commitHash),
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },

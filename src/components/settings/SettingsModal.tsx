@@ -29,6 +29,27 @@ export interface SettingsModalProps {
 
 type TabType = 'vault' | 'ai' | 'snapshots' | 'theme' | 'shortcuts' | 'about';
 
+const formattedBuildTime = (() => {
+  try {
+    if (typeof __BUILD_TIME__ !== 'undefined' && __BUILD_TIME__) {
+      const d = new Date(__BUILD_TIME__);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleString(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
+      }
+    }
+  } catch {
+    // fallback
+  }
+  return null;
+})();
+
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const vaultPath = useVaultStore((state) => state.vaultPath);
   const loadVault = useVaultStore((state) => state.loadVault);
@@ -48,7 +69,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const [shortcutKey] = useState('Option+Shift+Space');
   const [isApplying, setIsApplying] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
-  const [appVersion, setAppVersion] = useState('0.1.0-alpha.4');
+  const [appVersion, setAppVersion] = useState(
+    typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.1.0-alpha.5'
+  );
   const [showChangelogDraft, setShowChangelogDraft] = useState(false);
 
   useEffect(() => {
@@ -190,8 +213,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         <div className="flex items-center justify-between px-6 py-4 border-b border-sand-200 bg-sand-50/70">
           <div className="flex items-center gap-2.5">
             <h2 className="text-lg font-bold text-slate-800 tracking-tight">Preferences</h2>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-forest-100 text-forest-700 font-medium">
-              QuietFlow v0.1.0-alpha.3
+            <span
+              data-testid="preferences-header-version"
+              className="text-xs px-2 py-0.5 rounded-full bg-forest-100 text-forest-700 font-medium"
+            >
+              QuietFlow v{appVersion}
             </span>
           </div>
           <button
@@ -615,6 +641,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                       )}
                     </div>
                   </div>
+                  {formattedBuildTime && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Build Date & Time</span>
+                      <span className="font-mono text-slate-700 font-medium text-[11px]" data-testid="app-build-time">
+                        {formattedBuildTime}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center">
                     <span className="text-slate-500">Architecture</span>
                     <span className="text-slate-700">Tauri v2 + React 18 + Rust Core</span>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Sparkles, RefreshCw, CheckCircle2, ExternalLink, X } from 'lucide-react';
 import {
   checkForAppUpdate,
@@ -7,7 +7,7 @@ import {
   UpdateInfo,
 } from '../../utils/updater';
 
-const CURRENT_VERSION = '0.1.0-alpha.4';
+const CURRENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.1.0-alpha.5';
 const CHANGELOG_URL = 'https://github.com/cemendes/QuietFlow/blob/main/CHANGELOG.md';
 
 export const UpdateToast: React.FC = () => {
@@ -18,8 +18,11 @@ export const UpdateToast: React.FC = () => {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showChangelogPill, setShowChangelogPill] = useState(false);
+  const isMountedRef = useRef(true);
+  const relaunchTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    isMountedRef.current = true;
     // Check if the app was just updated to show the "What's new" changelog pill
     if (typeof localStorage !== 'undefined') {
       const lastSeenVersion = localStorage.getItem('quietflow-last-seen-version');
@@ -33,7 +36,7 @@ export const UpdateToast: React.FC = () => {
     const timer = setTimeout(async () => {
       try {
         const update = await checkForAppUpdate();
-        if (update) {
+        if (update && isMountedRef.current) {
           setUpdateInfo(update);
         }
       } catch (err) {
@@ -41,7 +44,13 @@ export const UpdateToast: React.FC = () => {
       }
     }, 3000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      isMountedRef.current = false;
+      clearTimeout(timer);
+      if (relaunchTimerRef.current) {
+        clearTimeout(relaunchTimerRef.current);
+      }
+    };
   }, []);
 
   const handleStartUpdate = async (e: React.MouseEvent) => {
@@ -57,17 +66,25 @@ export const UpdateToast: React.FC = () => {
     setError(null);
     try {
       await downloadAndInstallUpdate((_dl, _tot, percent) => {
-        setProgress(percent);
+        if (isMountedRef.current) {
+          setProgress(percent);
+        }
       });
-      setIsDownloading(false);
-      setIsReady(true);
+      if (isMountedRef.current) {
+        setIsDownloading(false);
+        setIsReady(true);
+      }
       // Auto relaunch after 1 second of completion
-      setTimeout(async () => {
-        await safeRelaunchApp();
+      relaunchTimerRef.current = setTimeout(async () => {
+        if (isMountedRef.current) {
+          await safeRelaunchApp();
+        }
       }, 1000);
     } catch (err: any) {
-      setIsDownloading(false);
-      setError(err?.message || 'Update failed');
+      if (isMountedRef.current) {
+        setIsDownloading(false);
+        setError(err?.message || 'Update failed');
+      }
     }
   };
 
