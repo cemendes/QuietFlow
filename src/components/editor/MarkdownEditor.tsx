@@ -1,5 +1,31 @@
-import React, { useState } from 'react';
-import { Eye, Edit3 } from 'lucide-react';
+import React, { useEffect, useCallback } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import { Markdown } from 'tiptap-markdown';
+import {
+  Bold,
+  Italic,
+  Heading1,
+  Heading2,
+  Heading3,
+  List,
+  ListOrdered,
+  CheckSquare,
+  Link2,
+  Code,
+  Quote,
+} from 'lucide-react';
+
+declare module '@tiptap/core' {
+  interface Storage {
+    markdown?: {
+      getMarkdown(): string;
+    };
+  }
+}
 
 export interface MarkdownEditorProps {
   value?: string;
@@ -14,174 +40,199 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   placeholder = 'Add notes, checklist items, or details...',
   className = '',
 }) => {
-  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        link: false,
+      }),
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: 'text-forest-700 underline font-medium hover:text-forest-900 cursor-pointer',
+        },
+      }),
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
+      Markdown,
+    ],
+    content: value,
+    editorProps: {
+      attributes: {
+        class:
+          'prose prose-slate max-w-none focus:outline-none min-h-[300px] p-4 text-slate-800 text-sm leading-relaxed',
+        'data-placeholder': placeholder,
+      },
+    },
+    onUpdate: ({ editor }) => {
+      const markdown = editor.storage.markdown?.getMarkdown() ?? '';
+      onChange(markdown);
+    },
+  });
 
-  const renderFormattedText = (str: string) => {
-    // Match markdown links [text](url) or plain URLs
-    const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
-    const elements: (string | React.ReactNode)[] = [];
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
-
-    while ((match = linkRegex.exec(str)) !== null) {
-      if (match.index > lastIndex) {
-        elements.push(str.substring(lastIndex, match.index));
+  useEffect(() => {
+    if (editor && editor.storage?.markdown) {
+      const currentMarkdown = editor.storage.markdown.getMarkdown();
+      if (value !== currentMarkdown) {
+        editor.commands.setContent(value);
       }
-
-      if (match[1] && match[2]) {
-        // [text](url)
-        elements.push(
-          <a
-            key={match.index}
-            href={match[2]}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-            className="text-forest-700 hover:text-forest-900 underline font-medium hover:bg-forest-50 px-1 py-0.5 rounded transition-colors"
-          >
-            {match[1]}
-          </a>
-        );
-      } else if (match[3]) {
-        // Raw URL
-        elements.push(
-          <a
-            key={match.index}
-            href={match[3]}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-            className="text-forest-700 hover:text-forest-900 underline font-medium hover:bg-forest-50 px-1 py-0.5 rounded transition-colors"
-          >
-            {match[3]}
-          </a>
-        );
-      }
-      lastIndex = linkRegex.lastIndex;
     }
+  }, [value, editor]);
 
-    if (lastIndex < str.length) {
-      elements.push(str.substring(lastIndex));
+  const handleToggleLink = useCallback(() => {
+    if (!editor) return;
+    if (editor.isActive('link')) {
+      editor.chain().focus().unsetLink().run();
+      return;
     }
-
-    return elements.length > 0 ? elements : str;
-  };
-
-  const renderSimpleMarkdown = (text: string) => {
-    if (!text.trim()) {
-      return <p className="text-slate-400 italic text-sm">No notes entered.</p>;
+    const previousUrl = (editor.getAttributes('link').href as string) || '';
+    const url = window.prompt('URL', previousUrl);
+    if (url === null) return;
+    if (url === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
     }
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  }, [editor]);
 
-    const lines = text.split('\n');
-    return (
-      <div className="space-y-1.5 text-sm text-slate-700 leading-relaxed font-normal">
-        {lines.map((line, index) => {
-          // Headers
-          if (line.startsWith('### ')) {
-            return (
-              <h3 key={index} className="text-base font-semibold text-forest-800 pt-2 pb-0.5">
-                {renderFormattedText(line.replace(/^###\s+/, ''))}
-              </h3>
-            );
-          }
-          if (line.startsWith('## ')) {
-            return (
-              <h2 key={index} className="text-lg font-bold text-forest-800 pt-2 pb-0.5 border-b border-sand-200">
-                {renderFormattedText(line.replace(/^##\s+/, ''))}
-              </h2>
-            );
-          }
-          if (line.startsWith('# ')) {
-            return (
-              <h1 key={index} className="text-xl font-bold text-forest-800 pt-2 pb-1 border-b border-sand-200">
-                {renderFormattedText(line.replace(/^#\s+/, ''))}
-              </h1>
-            );
-          }
-
-          // Bullet list items
-          if (/^-\s+/.test(line)) {
-            return (
-              <li key={index} className="list-disc list-inside ml-2">
-                {renderFormattedText(line.replace(/^-\s+/, ''))}
-              </li>
-            );
-          }
-
-          // Numbered list items
-          if (/^\d+\.\s+/.test(line)) {
-            return (
-              <li key={index} className="list-decimal list-inside ml-2">
-                {renderFormattedText(line.replace(/^\d+\.\s+/, ''))}
-              </li>
-            );
-          }
-
-          // Empty line
-          if (line.trim() === '') {
-            return <div key={index} className="h-2" />;
-          }
-
-          return <p key={index}>{renderFormattedText(line)}</p>;
-        })}
-      </div>
-    );
-  };
+  const getButtonClass = (isActive: boolean) =>
+    `p-1.5 rounded transition-colors ${
+      isActive
+        ? 'bg-slate-200 text-slate-900 font-semibold'
+        : 'text-slate-600 hover:bg-sand-200/70 hover:text-slate-900'
+    }`;
 
   return (
     <div className={`flex flex-col flex-1 min-h-0 ${className}`}>
-      {/* Editor / Preview Toolbar Tabs */}
+      {/* Editor Header */}
       <div className="flex items-center justify-between mb-2 shrink-0">
         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Notes</span>
-        <div className="flex items-center bg-sand-100 p-0.5 rounded-lg border border-sand-200">
-          <button
-            type="button"
-            onClick={() => setMode('edit')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
-              mode === 'edit'
-                ? 'bg-white text-forest-800 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Edit3 className="w-3 h-3" />
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode('preview')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
-              mode === 'preview'
-                ? 'bg-white text-forest-800 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Eye className="w-3 h-3" />
-            Preview
-          </button>
-        </div>
       </div>
 
-      {/* Editor / Preview Content Area */}
-      {mode === 'edit' ? (
-        <textarea
-          data-testid="markdown-editor-textarea"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="w-full flex-1 min-h-[140px] h-full p-3.5 text-sm text-slate-800 bg-white border border-sand-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-forest-500/20 focus:border-forest-500 transition-all font-mono leading-relaxed overflow-y-auto"
-        />
-      ) : (
-        <div
-          data-testid="markdown-preview"
-          className="w-full flex-1 min-h-[140px] h-full p-3.5 text-sm bg-white border border-sand-200 rounded-xl overflow-y-auto"
+      {/* Formatting Action Toolbar */}
+      <div
+        data-testid="markdown-action-toolbar"
+        className="flex items-center gap-0.5 p-1 mb-1.5 bg-sand-50 border border-sand-200/80 rounded-lg text-slate-600 flex-wrap shrink-0"
+      >
+        <button
+          type="button"
+          title="Bold (Cmd+B)"
+          data-testid="toolbar-bold-btn"
+          onClick={() => editor?.chain().focus().toggleBold().run()}
+          className={getButtonClass(editor?.isActive('bold') ?? false)}
         >
-          {renderSimpleMarkdown(value)}
-        </div>
-      )}
+          <Bold className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          title="Italic (Cmd+I)"
+          data-testid="toolbar-italic-btn"
+          onClick={() => editor?.chain().focus().toggleItalic().run()}
+          className={getButtonClass(editor?.isActive('italic') ?? false)}
+        >
+          <Italic className="w-3.5 h-3.5" />
+        </button>
+
+        <div className="w-px h-4 bg-sand-200 mx-1" />
+
+        <button
+          type="button"
+          title="Heading 1"
+          data-testid="toolbar-h1-btn"
+          onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
+          className={getButtonClass(editor?.isActive('heading', { level: 1 }) ?? false)}
+        >
+          <Heading1 className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          title="Heading 2"
+          data-testid="toolbar-h2-btn"
+          onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+          className={getButtonClass(editor?.isActive('heading', { level: 2 }) ?? false)}
+        >
+          <Heading2 className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          title="Heading 3"
+          data-testid="toolbar-h3-btn"
+          onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
+          className={getButtonClass(editor?.isActive('heading', { level: 3 }) ?? false)}
+        >
+          <Heading3 className="w-3.5 h-3.5" />
+        </button>
+
+        <div className="w-px h-4 bg-sand-200 mx-1" />
+
+        <button
+          type="button"
+          title="Bullet list"
+          data-testid="toolbar-bullet-btn"
+          onClick={() => editor?.chain().focus().toggleBulletList().run()}
+          className={getButtonClass(editor?.isActive('bulletList') ?? false)}
+        >
+          <List className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          title="Numbered list"
+          data-testid="toolbar-ordered-btn"
+          onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+          className={getButtonClass(editor?.isActive('orderedList') ?? false)}
+        >
+          <ListOrdered className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          title="Task list"
+          data-testid="toolbar-task-btn"
+          onClick={() => editor?.chain().focus().toggleTaskList().run()}
+          className={getButtonClass(editor?.isActive('taskList') ?? false)}
+        >
+          <CheckSquare className="w-3.5 h-3.5" />
+        </button>
+
+        <div className="w-px h-4 bg-sand-200 mx-1" />
+
+        <button
+          type="button"
+          title="Insert link"
+          data-testid="toolbar-link-btn"
+          onClick={handleToggleLink}
+          className={getButtonClass(editor?.isActive('link') ?? false)}
+        >
+          <Link2 className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          title="Inline code"
+          data-testid="toolbar-code-btn"
+          onClick={() => editor?.chain().focus().toggleCode().run()}
+          className={getButtonClass(editor?.isActive('code') ?? false)}
+        >
+          <Code className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          title="Quote"
+          data-testid="toolbar-quote-btn"
+          onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+          className={getButtonClass(editor?.isActive('blockquote') ?? false)}
+        >
+          <Quote className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Editor Content Area */}
+      <div className="flex-1 min-h-[140px] h-full bg-white border border-sand-200 rounded-xl overflow-y-auto">
+        <EditorContent
+          editor={editor}
+          data-testid="tiptap-editor-content"
+          className="prose prose-slate max-w-none focus:outline-none min-h-[300px] p-4 text-slate-800 text-sm leading-relaxed"
+        />
+      </div>
     </div>
   );
 };
