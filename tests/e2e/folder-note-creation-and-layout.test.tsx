@@ -143,10 +143,9 @@ Full width notes content here.
       expect(notesZone.className).toContain('flex-1');
       expect(notesZone.className).toContain('h-full');
 
-      // Ensure textarea has h-full and flex-1
-      const textarea = screen.getByTestId('markdown-editor-textarea');
-      expect(textarea.className).toContain('flex-1');
-      expect(textarea.className).toContain('h-full');
+      // Ensure WYSIWYG editor content is rendered
+      const editorContent = screen.getByTestId('tiptap-editor-content');
+      expect(editorContent).toBeInTheDocument();
     });
   });
 });

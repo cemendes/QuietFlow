@@ -69,7 +69,7 @@ describe('TaskDetailPanel Component', () => {
     expect(screen.getByText('Export PDF summaries')).toBeInTheDocument();
 
     // Note content in editor
-    expect(screen.getByDisplayValue(/Initial meeting notes with CFO/i)).toBeInTheDocument();
+    expect(screen.getByText(/Initial meeting notes with CFO/i)).toBeInTheDocument();
   });
 
   it('updates task title on change', async () => {
@@ -153,39 +153,22 @@ describe('TaskDetailPanel Component', () => {
     expect(active?.subtasks?.some((s) => s.id === 'sub-1')).toBe(false);
   });
 
-  it('edits notes markdown and switches between edit and preview mode', async () => {
+  it('renders notes markdown in WYSIWYG editor and updates on change', async () => {
     render(<TaskDetailPanel />);
 
-    // Markdown textarea
-    const noteArea = screen.getByTestId('markdown-editor-textarea');
-    expect(noteArea).toHaveValue('Initial meeting notes with CFO regarding revenue projections.');
+    // TipTap WYSIWYG editor content
+    const editorContent = screen.getByTestId('tiptap-editor-content');
+    expect(editorContent).toBeInTheDocument();
+    expect(screen.getByText('Initial meeting notes with CFO regarding revenue projections.')).toBeInTheDocument();
 
+    // Toolbar formatting action
+    const h1Btn = screen.getByTestId('toolbar-h1-btn');
     await act(async () => {
-      fireEvent.change(noteArea, {
-        target: { value: '## Notes\n- Action items discussed\n- Next sync on Friday' },
-      });
+      fireEvent.click(h1Btn);
     });
 
     const active = useVaultStore.getState().tasks.find((t) => t.id === 'task-1');
-    expect(active?.notes).toBe('## Notes\n- Action items discussed\n- Next sync on Friday');
-
-    // Switch to preview mode
-    const previewTab = screen.getByRole('button', { name: /preview/i });
-    await act(async () => {
-      fireEvent.click(previewTab);
-    });
-
-    // In preview mode, textarea is replaced by markdown preview element
-    expect(screen.queryByTestId('markdown-editor-textarea')).not.toBeInTheDocument();
-    expect(screen.getByTestId('markdown-preview')).toBeInTheDocument();
-    expect(screen.getByText('Action items discussed')).toBeInTheDocument();
-
-    // Switch back to edit mode
-    const editTab = screen.getByRole('button', { name: /edit/i });
-    await act(async () => {
-      fireEvent.click(editTab);
-    });
-    expect(screen.getByTestId('markdown-editor-textarea')).toBeInTheDocument();
+    expect(active?.notes).toContain('# Initial meeting notes with CFO regarding revenue projections.');
   });
 
   it('renders with slide-over backdrop and closes on backdrop click', async () => {

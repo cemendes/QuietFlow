@@ -41,6 +41,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   className = '',
 }) => {
   const editor = useEditor({
+    shouldRerenderOnTransaction: true,
     extensions: [
       StarterKit.configure({
         link: false,
@@ -75,7 +76,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     if (editor && editor.storage?.markdown) {
       const currentMarkdown = editor.storage.markdown.getMarkdown();
       if (value !== currentMarkdown) {
-        editor.commands.setContent(value);
+        editor.commands.setContent(value, { emitUpdate: false });
       }
     }
   }, [value, editor]);
@@ -230,7 +231,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         <EditorContent
           editor={editor}
           data-testid="tiptap-editor-content"
-          className="prose prose-slate max-w-none focus:outline-none min-h-[300px] p-4 text-slate-800 text-sm leading-relaxed"
+          className="min-h-full"
         />
       </div>
     </div>

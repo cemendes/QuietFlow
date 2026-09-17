@@ -40,10 +40,19 @@ describe('MarkdownEditor Component', () => {
     const onChange = vi.fn();
     render(<MarkdownEditor value="Hello world" onChange={onChange} />);
 
-    const boldBtn = screen.getByTestId('toolbar-bold-btn');
-    fireEvent.click(boldBtn);
+    const h1Btn = screen.getByTestId('toolbar-h1-btn');
+    fireEvent.click(h1Btn);
 
-    expect(screen.getByTestId('toolbar-bold-btn')).toBeDefined();
+    expect(onChange).toHaveBeenCalled();
+    const lastCallArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastCallArg).toContain('# Hello world');
+  });
+
+  it('updates toolbar active state when cursor or content is on active node', () => {
+    render(<MarkdownEditor value="# Heading text" onChange={vi.fn()} />);
+
+    const h1Btn = screen.getByTestId('toolbar-h1-btn');
+    expect(h1Btn.className).toContain('bg-slate-200');
   });
 
   it('handles clicking different formatting toolbar buttons without error', () => {
