@@ -65,6 +65,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated [MarkdownEditor.tsx](file:///Users/cemolive/code/quietflow/src/components/editor/MarkdownEditor.tsx) container and textarea with `flex-1 min-h-0 h-full` so the typing area stretches to the bottom of the viewport.
 
 ### Fixed
+- **Note Rendering on Document Switch & Error Surface (`LensDocumentCanvas.tsx`, `MarkdownEditor.tsx`, `TaskDetailPage.tsx`, `TaskDetailPanel.tsx`)**:
+  - Fixed an issue where switching between customer notes in the sidebar could cause notes to fail to render or freeze due to TipTap instance reuse across file switches and focus state locks (`editor.isFocused`).
+  - Added dynamic document `key={activeFile}` to `<MarkdownEditor>` in both split-lens and notes-only views (and `key={activeTaskId}` in task detail panels), ensuring a clean ProseMirror instance mount per document with zero state leakage.
+  - Improved external markdown content synchronization to verify actual DOM focus (`document.activeElement`) rather than relying on stale internal ProseMirror focus flags.
+  - Surfaced IPC and file reading errors with visual alert badges on the canvas rather than falling back to an empty "No document selected" screen.
 - **Preserve Collapsed Projects on Project Creation & Tree Updates (`FolderTree.tsx`)**:
   - Fixed an issue where creating a new project or updating vault files caused all other collapsed projects and folders to unexpectedly expand.
   - Replaced indiscriminate directory expansion on tree updates with persistent user-collapsed path tracking (`collapsedPaths`) and automatic pruning of deleted paths, ensuring newly created projects start expanded while user-collapsed folders remain reliably collapsed.

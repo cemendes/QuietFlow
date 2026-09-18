@@ -266,7 +266,11 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   useEffect(() => {
     if (!isSourceModeRef.current && editor && editor.storage?.markdown) {
       const currentMarkdown = editor.storage.markdown.getMarkdown();
-      if (value !== currentMarkdown && !editor.isFocused) {
+      const isDomFocused =
+        typeof document !== 'undefined' &&
+        editor.view?.dom &&
+        (editor.view.dom === document.activeElement || editor.view.dom.contains(document.activeElement));
+      if (value !== currentMarkdown && !isDomFocused) {
         editor.commands.setContent(value, { emitUpdate: false });
       }
     }

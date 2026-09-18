@@ -8,6 +8,7 @@ import {
   ChevronUp,
   Tag,
   BookOpen,
+  AlertTriangle,
 } from 'lucide-react';
 import { useVaultStore } from '../../store/vaultStore';
 import { LensViewMode, TaskItem } from '../../store/types';
@@ -37,7 +38,7 @@ export const LensDocumentCanvas: React.FC = () => {
 
   // Sync active document body into local edit state only on file transition
   useEffect(() => {
-    if (activeDocument && activeFile && lastLoadedFileRef.current !== activeFile) {
+    if (activeDocument && activeFile && activeDocument.filePath === activeFile && lastLoadedFileRef.current !== activeFile) {
       lastLoadedFileRef.current = activeFile;
       setLocalProse(activeDocument.body || '');
     }
@@ -85,6 +86,7 @@ export const LensDocumentCanvas: React.FC = () => {
   }, []);
 
   const isLoading = useVaultStore((state) => state.isLoading);
+  const error = useVaultStore((state) => state.error);
 
   const folderPath = typeof activeFile === 'string' && activeFile.includes('/')
     ? activeFile.slice(0, activeFile.lastIndexOf('/'))
@@ -125,6 +127,14 @@ export const LensDocumentCanvas: React.FC = () => {
           <>
             <div className="w-8 h-8 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin mb-3" />
             <h3 className="text-sm font-medium text-slate-600">Loading document...</h3>
+          </>
+        ) : error ? (
+          <>
+            <AlertTriangle className="w-12 h-12 stroke-[1.5] mb-3 text-amber-500" />
+            <h3 className="text-base font-semibold text-slate-800">Unable to load document</h3>
+            <p className="text-xs mt-1 text-rose-600 max-w-md font-mono bg-rose-50 p-2 rounded-lg border border-rose-200">
+              {error}
+            </p>
           </>
         ) : (
           <>
@@ -285,6 +295,7 @@ export const LensDocumentCanvas: React.FC = () => {
 
               <div onBlur={handleProseBlur} className="flex-1 flex flex-col min-h-0 h-full">
                 <MarkdownEditor
+                  key={activeFile}
                   value={localProse}
                   onChange={handleProseChange}
                   placeholder="Write meeting notes, architecture decisions, or press Cmd+Enter to hoist a task..."
@@ -433,6 +444,7 @@ export const LensDocumentCanvas: React.FC = () => {
 
             <div onBlur={handleProseBlur} className="flex-1 flex flex-col min-h-0 h-full">
               <MarkdownEditor
+                key={activeFile}
                 value={localProse}
                 onChange={handleProseChange}
                 placeholder="Write meeting notes, architecture decisions, or press Cmd+Enter to hoist a task..."

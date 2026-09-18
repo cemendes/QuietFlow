@@ -86,4 +86,40 @@ Discussed $120k budget approval.
       expect(useVaultStore.getState().tasks.find((t) => t.id === 'task-deliver-sow')?.status).toBe('done');
     });
   });
+
+  it('displays error notice when reading a document fails', () => {
+    useVaultStore.setState({
+      activeFile: 'Corrupted.md',
+      activeDocument: null,
+      error: 'Failed to read file: Corrupted.md',
+    });
+
+    render(<LensDocumentCanvas />);
+
+    expect(screen.getByText('Unable to load document')).toBeDefined();
+    expect(screen.getByText('Failed to read file: Corrupted.md')).toBeDefined();
+  });
+
+  it('switches notes cleanly when activeFile changes', async () => {
+    const { rerender } = render(<LensDocumentCanvas />);
+    expect(screen.getByText('Acme Corp Migration')).toBeDefined();
+
+    const note2Markdown = `---
+title: WellSky Workshop
+---
+
+### Architecture
+DevDay presentation details.`;
+    const doc2 = parseMarkdownDocument(note2Markdown, 'Google/Wellsky/DevDay.md');
+
+    useVaultStore.setState({
+      activeFile: 'Google/Wellsky/DevDay.md',
+      activeDocument: doc2,
+      tasks: doc2.tasks,
+    });
+
+    rerender(<LensDocumentCanvas />);
+
+    expect(screen.getByText('WellSky Workshop')).toBeDefined();
+  });
 });

@@ -689,4 +689,31 @@ code block
     expect(serialized).toContain('- Item 1');
     expect(serialized).toContain('- [ ] Item 2');
   });
+
+  it('renders every real note in the vault without throwing or failing', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const vault = '/Users/cemolive/Library/CloudStorage/GoogleDrive-cemolive@google.com/.shortcut-targets-by-id/1ZaRAoLJcKwHFX7IDYyKE34fwrI5Ft49W/QuietFlowVault';
+    if (!fs.existsSync(vault)) return;
+
+    function listMd(dir: string): string[] {
+      let res: string[] = [];
+      for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, f.name);
+        if (f.isDirectory() && f.name !== '.quietflow') res = res.concat(listMd(full));
+        else if (f.isFile() && f.name.endsWith('.md')) res.push(full);
+      }
+      return res;
+    }
+
+    const files = listMd(vault);
+    for (const file of files) {
+      const content = fs.readFileSync(file, 'utf8');
+      expect(() => {
+        const { unmount } = render(<MarkdownEditor value={content} onChange={vi.fn()} />);
+        unmount();
+      }).not.toThrow();
+    }
+  });
 });
+

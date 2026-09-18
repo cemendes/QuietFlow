@@ -310,6 +310,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
         {/* Markdown Notes Editor */}
         <div className="pt-2 flex flex-col flex-1 pb-4">
           <MarkdownEditor
+            key={activeTask.id}
             value={activeTask.notes || ''}
             onChange={handleNotesChange}
             placeholder="Add unstructured notes, meeting minutes, or references..."

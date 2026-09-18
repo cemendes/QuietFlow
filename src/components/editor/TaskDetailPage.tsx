@@ -326,6 +326,7 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
 
             <div className="bg-white border border-sand-200/80 rounded-xl p-4 shadow-xs">
               <MarkdownEditor
+                key={activeTaskId || 'no-task'}
                 value={notes}
                 onChange={handleNotesChange}
                 placeholder="Add structured notes, execution details, bullet points, or code snippets..."
