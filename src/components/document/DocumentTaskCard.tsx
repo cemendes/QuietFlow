@@ -4,8 +4,43 @@ import { TaskItem, TaskPriority } from '../../store/types';
 
 interface DocumentTaskCardProps {
   task: TaskItem;
-  onToggle: (taskId: string) => void;
+  onToggle?: (taskId: string) => void;
   onSelect?: (taskId: string) => void;
+}
+
+export function renderTaskTitleWithLinks(title: string): React.ReactNode {
+  if (!title) return '';
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const elements: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = linkRegex.exec(title)) !== null) {
+    if (match.index > lastIndex) {
+      elements.push(title.substring(lastIndex, match.index));
+    }
+    const label = match[1];
+    const url = match[2];
+    elements.push(
+      <a
+        key={`${match.index}-${url}`}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-forest-700 dark:text-emerald-400 underline font-medium hover:text-forest-900 transition-colors cursor-pointer"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {label}
+      </a>
+    );
+    lastIndex = linkRegex.lastIndex;
+  }
+
+  if (lastIndex < title.length) {
+    elements.push(title.substring(lastIndex));
+  }
+
+  return elements.length > 0 ? elements : title;
 }
 
 export const DocumentTaskCard: React.FC<DocumentTaskCardProps> = ({
@@ -60,7 +95,7 @@ export const DocumentTaskCard: React.FC<DocumentTaskCardProps> = ({
           data-testid={`task-checkbox-${task.id}`}
           onClick={(e) => {
             e.stopPropagation();
-            onToggle(task.id);
+            onToggle?.(task.id);
           }}
           className={`mt-0.5 w-5 h-5 rounded-md flex items-center justify-center border transition-all duration-150 ${
             isDone
@@ -83,7 +118,7 @@ export const DocumentTaskCard: React.FC<DocumentTaskCardProps> = ({
                 isDone ? 'line-through text-slate-400' : 'text-slate-900'
               }`}
             >
-              {task.title}
+              {renderTaskTitleWithLinks(task.title)}
             </span>
             {getPriorityBadge(task.priority)}
             {task.dueDate && (

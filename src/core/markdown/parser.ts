@@ -92,6 +92,11 @@ function parseTaskLine(
     .replace(/(?:^|\s)#[a-zA-Z_][a-zA-Z0-9_-]*/g, '')
     .trim();
 
+  // Tasks without a title (e.g. newly typed "- [ ] " or "- [x] ") should not be created as tasks
+  if (!title) {
+    return null;
+  }
+
   const baseSlug = slugify(title) || 'item';
   let id: string;
   if (slugCounts) {

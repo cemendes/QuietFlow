@@ -477,7 +477,216 @@ code block
     expect(lastArg).toContain('- Task 1');
     expect(lastArg).not.toContain('- [ ] Task 1');
   });
+  it('converts child task indented under parent task to a bullet list item when clicking toolbar bullet button', () => {
+    const onChange = vi.fn();
+    // Two tasks where second task is indented under first (child task)
+    const markdown = `- [ ] Parent Task\n  - [ ] Child Task`;
+    render(<MarkdownEditor value={markdown} onChange={onChange} />);
+
+    // In TipTap, the initial cursor is at the end of the document (inside Child Task)
+    const bulletBtn = screen.getByTestId('toolbar-bullet-btn');
+
+    // Check onMouseDown has preventDefault
+    const mouseDownEvt = new MouseEvent('mousedown', { cancelable: true, bubbles: true });
+    bulletBtn.dispatchEvent(mouseDownEvt);
+    expect(mouseDownEvt.defaultPrevented).toBe(true);
+
+    fireEvent.click(bulletBtn);
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    // Parent task should remain a task
+    expect(lastArg).toContain('- [ ] Parent Task');
+    // Child task should be converted to a bullet point indented under parent task
+    expect(lastArg).toMatch(/- \[ \] Parent Task\s+- Child Task/);
+  });
+
+  it('converts child bullet item indented under parent to a task item when clicking toolbar task button', () => {
+    const onChange = vi.fn();
+    const markdown = `- [ ] Parent Task\n  - Child Bullet`;
+    render(<MarkdownEditor value={markdown} onChange={onChange} />);
+
+    const taskBtn = screen.getByTestId('toolbar-task-btn');
+    fireEvent.click(taskBtn);
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastArg).toContain('- [ ] Parent Task');
+    expect(lastArg).toMatch(/- \[ \] Parent Task\s+- \[ \] Child Bullet/);
+  });
+
+  it('moves cursor to the line immediately below the date heading when clicking toolbar-date-btn', () => {
+    const onChange = vi.fn();
+    const { container } = render(<MarkdownEditor value="Initial note body" onChange={onChange} />);
+
+    const dateBtn = screen.getByTestId('toolbar-date-btn');
+
+    // Check onMouseDown has preventDefault to avoid losing focus
+    const mouseDownEvt = new MouseEvent('mousedown', { cancelable: true, bubbles: true });
+    dateBtn.dispatchEvent(mouseDownEvt);
+    expect(mouseDownEvt.defaultPrevented).toBe(true);
+
+    fireEvent.click(dateBtn);
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    const today = new Date();
+    const expectedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    expect(lastArg).toContain(`## ${expectedDate}`);
+
+    // Verify DOM structure: heading followed by empty paragraph
+    const editorEl = container.querySelector('.tiptap');
+    expect(editorEl).not.toBeNull();
+    const heading = editorEl!.querySelector('h2');
+    expect(heading).not.toBeNull();
+    expect(heading!.textContent).toBe(expectedDate);
+    const nextEl = heading!.nextElementSibling;
+    expect(nextEl).not.toBeNull();
+    expect(nextEl!.tagName.toLowerCase()).toBe('p');
+  });
+
+  it('converts child task to bullet point using keyboard shortcut Mod-Shift-8', () => {
+    const onChange = vi.fn();
+    const markdown = `- [ ] Parent Task\n  - [ ] Child Task`;
+    const { container } = render(<MarkdownEditor value={markdown} onChange={onChange} />);
+
+    const editorEl = container.querySelector('.tiptap')!;
+    fireEvent.keyDown(editorEl, {
+      key: '8',
+      code: 'Digit8',
+      metaKey: true,
+      shiftKey: true,
+    });
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastArg).toContain('- [ ] Parent Task');
+    expect(lastArg).toMatch(/- \[ \] Parent Task\s+- Child Task/);
+  });
+
+  it('converts child task to bullet point when typing - followed by space at start of item', () => {
+    const onChange = vi.fn();
+    const markdown = `- [ ] Parent Task\n  - [ ] -`;
+    const { container } = render(<MarkdownEditor value={markdown} onChange={onChange} />);
+
+    const editorEl = container.querySelector('.tiptap')!;
+    fireEvent.keyDown(editorEl, {
+      key: ' ',
+      code: 'Space',
+    });
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastArg).toContain('- [ ] Parent Task');
+    expect(lastArg).toMatch(/- \[ \] Parent Task\s+- /);
+  });
+
+  it('does NOT convert parent task when child task is selected and converted', () => {
+    const onChange = vi.fn();
+    const markdown = `- [ ] Parent Task\n  - [ ] Child Task\n- [ ] Root Task 2`;
+    const { container } = render(<MarkdownEditor value={markdown} onChange={onChange} />);
+
+    const editor = (container.querySelector('[data-testid="markdown-editor-container"]') as any).__tiptap_editor;
+    let childPos = -1;
+    editor.state.doc.descendants((node: any, pos: number) => {
+      if (node.isText && node.text?.includes('Child Task')) {
+        childPos = pos + 1;
+      }
+    });
+    expect(childPos).toBeGreaterThan(0);
+    editor.commands.setTextSelection(childPos);
+
+    const bulletBtn = screen.getByTestId('toolbar-bullet-btn');
+    fireEvent.click(bulletBtn);
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastArg).toContain('- [ ] Parent Task');
+    expect(lastArg).toContain('- [ ] Root Task 2');
+    expect(lastArg).not.toContain('- Parent Task');
+    expect(lastArg).toMatch(/- \[ \] Parent Task\s+- Child Task/);
+  });
+
+  it('indents second task with Tab and converts to bullet point', () => {
+    const onChange = vi.fn();
+    const markdown = `- [ ] Task 1\n- [ ] Task 2`;
+    const { container } = render(<MarkdownEditor value={markdown} onChange={onChange} />);
+
+    const editorEl = container.querySelector('.tiptap')!;
+    fireEvent.keyDown(editorEl, {
+      key: 'Tab',
+      code: 'Tab',
+    });
+
+    const bulletBtn = screen.getByTestId('toolbar-bullet-btn');
+    fireEvent.click(bulletBtn);
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastArg).toContain('- [ ] Task 1');
+    expect(lastArg).toMatch(/- \[ \] Task 1\s+- Task 2/);
+  });
+
+  it('does NOT convert parent task when child task has NodeSelection', () => {
+    const onChange = vi.fn();
+    const markdown = `- [ ] Parent Task\n  - [ ] Child Task\n- [ ] Root Task 2`;
+    const { container } = render(<MarkdownEditor value={markdown} onChange={onChange} />);
+
+    const editor = (container.querySelector('[data-testid="markdown-editor-container"]') as any).__tiptap_editor;
+    let childItemPos = -1;
+    editor.state.doc.descendants((node: any, pos: number) => {
+      if (node.type.name === 'taskItem' && node.textContent.includes('Child Task')) {
+        childItemPos = pos;
+      }
+    });
+    expect(childItemPos).toBeGreaterThan(0);
+    editor.commands.setNodeSelection(childItemPos);
+
+    const bulletBtn = screen.getByTestId('toolbar-bullet-btn');
+    fireEvent.click(bulletBtn);
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastArg).toContain('- [ ] Parent Task');
+    expect(lastArg).toContain('- [ ] Root Task 2');
+    expect(lastArg).not.toContain('- Parent Task');
+    expect(lastArg).toMatch(/- \[ \] Parent Task\s+- Child Task/);
+  });
+
+  it('correctly handles child task conversion with blank lines and links', () => {
+    const onChange = vi.fn();
+    const markdown = `- [x] Buy [tickets and hotel](https://example.com) for Kansas City.\n\n  - [ ] October 27-29\n\n  - [ ] Block my family and work calendar`;
+    const { container } = render(<MarkdownEditor value={markdown} onChange={onChange} />);
+
+    const editor = (container.querySelector('[data-testid="markdown-editor-container"]') as any).__tiptap_editor;
+
+    let childPos = -1;
+    editor.state.doc.descendants((node: any, pos: number) => {
+      if (node.isText && node.text?.includes('October 27-29')) {
+        childPos = pos + 1;
+      }
+    });
+    expect(childPos).toBeGreaterThan(0);
+    editor.commands.setTextSelection(childPos);
+
+    const bulletBtn = screen.getByTestId('toolbar-bullet-btn');
+    fireEvent.click(bulletBtn);
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastArg).toContain('- [x] Buy [tickets and hotel](https://example.com) for Kansas City.');
+    expect(lastArg).toMatch(/-\s+October 27-29/);
+  });
+
+  it('tests mixed task and bullet list parsing in TipTap', () => {
+    const onChange = vi.fn();
+    const markdown = `- [ ] Item 0\n- Item 1\n- [ ] Item 2`;
+    const { container } = render(<MarkdownEditor value={markdown} onChange={onChange} />);
+
+    const editor = (container.querySelector('[data-testid="markdown-editor-container"]') as any).__tiptap_editor;
+    const serialized = editor.storage.markdown.getMarkdown();
+    expect(serialized).toContain('- [ ] Item 0');
+    expect(serialized).toContain('- Item 1');
+    expect(serialized).toContain('- [ ] Item 2');
+  });
 });
-
-
-

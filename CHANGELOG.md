@@ -65,6 +65,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated [MarkdownEditor.tsx](file:///Users/cemolive/code/quietflow/src/components/editor/MarkdownEditor.tsx) container and textarea with `flex-1 min-h-0 h-full` so the typing area stretches to the bottom of the viewport.
 
 ### Fixed
+- **Child Task Selection & Conversion Isolation (`MarkdownEditor.tsx`)**:
+  - Fixed an issue where clicking on an indented child task or checkbox gutter created a ProseMirror `NodeSelection` that caused `convertOrToggleList` to climb past the nested list and convert the parent task into a bullet point.
+  - Correctly targets the child list node at the current nesting level for both `NodeSelection` and `TextSelection`, keeping the parent task and sibling items intact.
+  - Added smart keyboard shortcuts (`Cmd+Shift+8`/`Ctrl+Shift+8` for bullet list, `Cmd+Shift+7`/`Ctrl+Shift+7` for numbered list, `Cmd+Shift+9`/`Ctrl+Shift+9` for task list) and inline markdown typing (`- `, `* `, `1. `, `[ ] `) for immediate list conversion at current indentation level.
+- **Action Item Markdown Link Formatting (`DocumentTaskCard.tsx`)**:
+  - Parsed markdown links in task titles so raw URLs (`https://...`) are hidden from view and displayed cleanly as clickable label anchors with isolated click events.
+- **Empty Task Filtering on Action Items Canvas (`parser.ts`, `LensDocumentCanvas.tsx`)**:
+  - Suppressed empty task checkboxes (`- [ ] ` with no text) from populating on the right-hand action items list until text is actively typed.
+- **Date Section Automatic Cursor Focus (`MarkdownEditor.tsx`)**:
+  - Automatically moves the cursor and keyboard focus to the newly created empty line immediately below the date heading (`## YYYY-MM-DD`) in both WYSIWYG and Raw Markdown source modes, enabling immediate typing without manual clicking.
 - **TipTap Task List Checkbox Alignment & In-line Layout (`index.css`, `MarkdownEditor.tsx`)**:
   - Restored clean in-line horizontal layout for task checklist items (`- [ ]`, `- [x]`) using flex row styling with cap-height baseline alignment (`align-items: flex-start; gap: 0.5rem; margin-top: 0.22rem;`), preventing checkboxes from floating on their own line above task descriptions.
   - Added custom-styled rounded emerald checkboxes with strikethrough styling for completed tasks.

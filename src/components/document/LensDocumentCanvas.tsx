@@ -139,7 +139,9 @@ export const LensDocumentCanvas: React.FC = () => {
     );
   }
 
-  const tasks: TaskItem[] = Array.isArray(activeDocument.tasks) ? activeDocument.tasks : [];
+  const tasks: TaskItem[] = (Array.isArray(activeDocument.tasks) ? activeDocument.tasks : []).filter(
+    (t) => t && typeof t.title === 'string' && t.title.trim().length > 0
+  );
   const completedTasks = tasks.filter((t) => t && t.status === 'done');
   const pendingTasks = tasks.filter((t) => t && t.status !== 'done');
   const fileName = typeof activeFile === 'string' && activeFile.includes('/') ? activeFile.split('/').pop() || activeFile : String(activeFile);

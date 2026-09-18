@@ -4,6 +4,7 @@ import StarterKit from '@tiptap/starter-kit';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import { Markdown } from 'tiptap-markdown';
+import { Selection } from '@tiptap/pm/state';
 import {
   Bold,
   Italic,
@@ -28,6 +29,109 @@ declare module '@tiptap/core' {
   }
 }
 
+export function convertOrToggleList(
+  editor: any,
+  targetType: 'bulletList' | 'orderedList' | 'taskList'
+): boolean {
+  if (!editor) return false;
+
+  const { state } = editor.view;
+  const { selection } = state;
+  const { $from } = selection;
+
+  let itemDepth = -1;
+  let listDepth = -1;
+
+  const selectedNode = (selection as any).node;
+  if (
+    selectedNode &&
+    (selectedNode.type.name === 'taskItem' || selectedNode.type.name === 'listItem')
+  ) {
+    const parentName = $from.node($from.depth).type.name;
+    if (
+      parentName === 'taskList' ||
+      parentName === 'bulletList' ||
+      parentName === 'orderedList'
+    ) {
+      listDepth = $from.depth;
+    }
+  } else {
+    for (let d = $from.depth; d > 0; d--) {
+      const name = $from.node(d).type.name;
+      if ((name === 'taskItem' || name === 'listItem') && itemDepth === -1) {
+        itemDepth = d;
+      }
+      if (
+        (name === 'taskList' || name === 'bulletList' || name === 'orderedList') &&
+        listDepth === -1 &&
+        itemDepth !== -1 &&
+        d < itemDepth
+      ) {
+        listDepth = d;
+        break;
+      }
+    }
+  }
+
+  // Not inside any list -> use default TipTap toggle command
+  if (listDepth === -1) {
+    if (targetType === 'bulletList') {
+      return editor.chain().focus().toggleBulletList().run();
+    } else if (targetType === 'orderedList') {
+      return editor.chain().focus().toggleOrderedList().run();
+    } else if (targetType === 'taskList') {
+      return editor.chain().focus().toggleTaskList().run();
+    }
+    return false;
+  }
+
+  const currentListNode = $from.node(listDepth);
+  const currentListType = currentListNode.type.name;
+
+  // If already in target list type, toggle it off (lift)
+  if (currentListType === targetType) {
+    if (targetType === 'bulletList') {
+      return editor.chain().focus().toggleBulletList().run();
+    } else if (targetType === 'orderedList') {
+      return editor.chain().focus().toggleOrderedList().run();
+    } else if (targetType === 'taskList') {
+      return editor.chain().focus().toggleTaskList().run();
+    }
+    return false;
+  }
+
+  // Inside a list of different type -> convert list node and its items
+  const listPos = $from.before(listDepth);
+  const targetListNodeType = state.schema.nodes[targetType];
+  const targetItemNodeType =
+    targetType === 'taskList' ? state.schema.nodes.taskItem : state.schema.nodes.listItem;
+
+  if (!targetListNodeType || !targetItemNodeType) return false;
+
+  const newItems: any[] = [];
+  for (let i = 0; i < currentListNode.childCount; i++) {
+    const child = currentListNode.child(i);
+    const attrs = targetType === 'taskList' ? { checked: false } : null;
+    newItems.push(targetItemNodeType.create(attrs, child.content));
+  }
+  const newList = targetListNodeType.create(
+    targetType === 'bulletList' ? { tight: true } : currentListNode.attrs,
+    newItems
+  );
+
+  editor.commands.command(({ tr }: { tr: any }) => {
+    tr.replaceWith(listPos, listPos + currentListNode.nodeSize, newList);
+
+    // Compute cursor position inside the list
+    const insidePos = listPos + 2;
+    tr.setSelection(Selection.near(tr.doc.resolve(Math.min(insidePos, tr.doc.content.size))));
+    return true;
+  });
+
+  editor.commands.focus();
+  return true;
+}
+
 export interface MarkdownEditorProps {
   value?: string;
   onChange: (value: string) => void;
@@ -47,6 +151,8 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   isSourceModeRef.current = isSourceMode;
   const sourceTextRef = useRef(sourceText);
   sourceTextRef.current = sourceText;
+  const sourceTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<any>(null);
 
   const editor = useEditor({
     shouldRerenderOnTransaction: true,
@@ -77,12 +183,85 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           'tiptap prose prose-slate max-w-none focus:outline-none min-h-[300px] p-4 text-slate-800 text-sm leading-relaxed',
         'data-placeholder': placeholder,
       },
+      handleKeyDown: (view, event) => {
+        // Keyboard shortcuts for list conversion
+        if ((event.metaKey || event.ctrlKey) && event.shiftKey) {
+          if (event.key === '8' || event.code === 'Digit8') {
+            event.preventDefault();
+            if (editorRef.current) convertOrToggleList(editorRef.current, 'bulletList');
+            return true;
+          }
+          if (event.key === '7' || event.code === 'Digit7') {
+            event.preventDefault();
+            if (editorRef.current) convertOrToggleList(editorRef.current, 'orderedList');
+            return true;
+          }
+          if (event.key === '9' || event.code === 'Digit9') {
+            event.preventDefault();
+            if (editorRef.current) convertOrToggleList(editorRef.current, 'taskList');
+            return true;
+          }
+        }
+
+        // Inline typing list conversion on Space
+        if (event.key === ' ') {
+          const { state } = view;
+          const { selection } = state;
+          const { $from } = selection;
+          const parentText = $from.parent.textContent;
+          const offset = $from.parentOffset;
+          const textBefore = parentText.slice(0, offset);
+
+          let itemDepth = -1;
+          for (let d = $from.depth; d > 0; d--) {
+            const name = $from.node(d).type.name;
+            if (name === 'taskItem' || name === 'listItem') {
+              itemDepth = d;
+              break;
+            }
+          }
+
+          if (itemDepth !== -1 && editorRef.current) {
+            const itemType = $from.node(itemDepth).type.name;
+
+            // Typing "- " or "* " inside a taskItem -> convert to bulletList
+            if (itemType === 'taskItem' && (textBefore === '-' || textBefore === '*')) {
+              event.preventDefault();
+              const deleteStart = $from.pos - textBefore.length;
+              view.dispatch(state.tr.delete(deleteStart, $from.pos));
+              convertOrToggleList(editorRef.current, 'bulletList');
+              return true;
+            }
+
+            // Typing "1. " inside a taskItem -> convert to orderedList
+            if (itemType === 'taskItem' && textBefore === '1.') {
+              event.preventDefault();
+              const deleteStart = $from.pos - textBefore.length;
+              view.dispatch(state.tr.delete(deleteStart, $from.pos));
+              convertOrToggleList(editorRef.current, 'orderedList');
+              return true;
+            }
+
+            // Typing "[ ] " inside a listItem -> convert to taskList
+            if (itemType === 'listItem' && textBefore === '[ ]') {
+              event.preventDefault();
+              const deleteStart = $from.pos - textBefore.length;
+              view.dispatch(state.tr.delete(deleteStart, $from.pos));
+              convertOrToggleList(editorRef.current, 'taskList');
+              return true;
+            }
+          }
+        }
+
+        return false;
+      },
     },
     onUpdate: ({ editor }) => {
       const markdown = editor.storage.markdown?.getMarkdown() ?? '';
       onChange(markdown);
     },
   });
+  editorRef.current = editor;
 
   useEffect(() => {
     if (!isSourceModeRef.current && editor && editor.storage?.markdown) {
@@ -156,24 +335,44 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       const current = sourceTextRef.current || '';
       const fmMatch = current.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n*/);
       let updated = '';
+      let targetCursor = 0;
       if (fmMatch) {
         const fmEnd = fmMatch[0].length;
-        updated = `${current.slice(0, fmEnd)}${dateHeading}\n\n${current.slice(fmEnd).trimStart()}`;
+        updated = `${current.slice(0, fmEnd)}${dateHeading}\n\n\n${current.slice(fmEnd).trimStart()}`;
+        targetCursor = fmEnd + dateHeading.length + 2;
       } else {
-        updated = `${dateHeading}\n\n${current.trimStart()}`;
+        updated = `${dateHeading}\n\n\n${current.trimStart()}`;
+        targetCursor = dateHeading.length + 2;
       }
       setSourceText(updated);
       sourceTextRef.current = updated;
       onChange(updated);
+      setTimeout(() => {
+        if (sourceTextareaRef.current) {
+          sourceTextareaRef.current.focus();
+          sourceTextareaRef.current.setSelectionRange(targetCursor, targetCursor);
+        }
+      }, 0);
     } else if (editor) {
       const currentMarkdown = editor.storage?.markdown?.getMarkdown() ?? '';
       const fmMatch = currentMarkdown.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n*/);
 
       if (fmMatch) {
         const fmEnd = fmMatch[0].length;
-        const updatedMarkdown = `${currentMarkdown.slice(0, fmEnd)}${dateHeading}\n\n${currentMarkdown.slice(fmEnd).trimStart()}`;
+        const updatedMarkdown = `${currentMarkdown.slice(0, fmEnd)}${dateHeading}\n\n\n${currentMarkdown.slice(fmEnd).trimStart()}`;
         editor.commands.setContent(updatedMarkdown);
         onChange(updatedMarkdown);
+
+        let headingEndPos = -1;
+        editor.state.doc.descendants((node, pos) => {
+          if (node.type.name === 'heading' && node.textContent === dateText && headingEndPos === -1) {
+            headingEndPos = pos + node.nodeSize;
+          }
+        });
+        if (headingEndPos !== -1) {
+          const targetPos = Math.min(headingEndPos + 1, editor.state.doc.content.size);
+          editor.chain().focus().setTextSelection(targetPos).run();
+        }
       } else {
         editor
           .chain()
@@ -190,13 +389,16 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           ])
           .run();
 
-        try {
-          const firstChild = editor.state.doc.child(0);
-          if (firstChild) {
-            editor.commands.setTextSelection(firstChild.nodeSize + 1);
+        let headingEndPos = -1;
+        editor.state.doc.descendants((node, pos) => {
+          if (node.type.name === 'heading' && node.textContent === dateText && headingEndPos === -1) {
+            headingEndPos = pos + node.nodeSize;
           }
-        } catch {
-          // ignore selection fallback
+        });
+
+        if (headingEndPos !== -1) {
+          const targetPos = Math.min(headingEndPos + 1, editor.state.doc.content.size);
+          editor.chain().focus().setTextSelection(targetPos).run();
         }
 
         const newMarkdown = editor.storage?.markdown?.getMarkdown() ?? '';
@@ -208,80 +410,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const handleConvertOrToggleList = useCallback(
     (targetType: 'bulletList' | 'orderedList' | 'taskList') => {
       if (!editor || isSourceModeRef.current) return;
-
-      const { state } = editor.view;
-      const { selection } = state;
-      const { $from } = selection;
-
-      let itemDepth = -1;
-      let listDepth = -1;
-      for (let d = $from.depth; d > 0; d--) {
-        const name = $from.node(d).type.name;
-        if ((name === 'taskItem' || name === 'listItem') && itemDepth === -1) {
-          itemDepth = d;
-        }
-        if (
-          (name === 'taskList' || name === 'bulletList' || name === 'orderedList') &&
-          listDepth === -1 &&
-          itemDepth !== -1 &&
-          d < itemDepth
-        ) {
-          listDepth = d;
-          break;
-        }
-      }
-
-      // Not inside any list -> use default TipTap toggle command
-      if (listDepth === -1 || itemDepth === -1) {
-        if (targetType === 'bulletList') {
-          editor.chain().focus().toggleBulletList().run();
-        } else if (targetType === 'orderedList') {
-          editor.chain().focus().toggleOrderedList().run();
-        } else if (targetType === 'taskList') {
-          editor.chain().focus().toggleTaskList().run();
-        }
-        return;
-      }
-
-      const currentListNode = $from.node(listDepth);
-      const currentListType = currentListNode.type.name;
-
-      // If already in target list type, toggle it off (lift)
-      if (currentListType === targetType) {
-        if (targetType === 'bulletList') {
-          editor.chain().focus().toggleBulletList().run();
-        } else if (targetType === 'orderedList') {
-          editor.chain().focus().toggleOrderedList().run();
-        } else if (targetType === 'taskList') {
-          editor.chain().focus().toggleTaskList().run();
-        }
-        return;
-      }
-
-      // Inside a list of different type -> convert list node and its items
-      const listPos = $from.before(listDepth);
-      const targetListNodeType = state.schema.nodes[targetType];
-      const targetItemNodeType =
-        targetType === 'taskList' ? state.schema.nodes.taskItem : state.schema.nodes.listItem;
-
-      if (!targetListNodeType || !targetItemNodeType) return;
-
-      const newItems: any[] = [];
-      for (let i = 0; i < currentListNode.childCount; i++) {
-        const child = currentListNode.child(i);
-        const attrs = targetType === 'taskList' ? { checked: false } : null;
-        newItems.push(targetItemNodeType.create(attrs, child.content));
-      }
-      const newList = targetListNodeType.create(
-        targetType === 'bulletList' ? { tight: true } : currentListNode.attrs,
-        newItems
-      );
-
-      editor.commands.command(({ tr }) => {
-        tr.replaceWith(listPos, listPos + currentListNode.nodeSize, newList);
-        return true;
-      });
-      editor.commands.focus();
+      convertOrToggleList(editor, targetType);
     },
     [editor]
   );
@@ -297,6 +426,9 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
   return (
     <div
+      ref={(el) => {
+        if (el) (el as any).__tiptap_editor = editor;
+      }}
       tabIndex={-1}
       onKeyDown={handleKeyDown}
       data-testid="markdown-editor-container"
@@ -317,6 +449,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           title="Bold (Cmd+B)"
           disabled={isSourceMode}
           data-testid="toolbar-bold-btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => editor?.chain().focus().toggleBold().run()}
           className={getButtonClass(editor?.isActive('bold') ?? false, isSourceMode)}
         >
@@ -327,6 +460,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           title="Italic (Cmd+I)"
           disabled={isSourceMode}
           data-testid="toolbar-italic-btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => editor?.chain().focus().toggleItalic().run()}
           className={getButtonClass(editor?.isActive('italic') ?? false, isSourceMode)}
         >
@@ -340,6 +474,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           title="Heading 1"
           disabled={isSourceMode}
           data-testid="toolbar-h1-btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
           className={getButtonClass(editor?.isActive('heading', { level: 1 }) ?? false, isSourceMode)}
         >
@@ -350,6 +485,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           title="Heading 2"
           disabled={isSourceMode}
           data-testid="toolbar-h2-btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
           className={getButtonClass(editor?.isActive('heading', { level: 2 }) ?? false, isSourceMode)}
         >
@@ -360,6 +496,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           title="Heading 3"
           disabled={isSourceMode}
           data-testid="toolbar-h3-btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
           className={getButtonClass(editor?.isActive('heading', { level: 3 }) ?? false, isSourceMode)}
         >
@@ -370,6 +507,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           type="button"
           title="Add section for today's date (## YYYY-MM-DD)"
           data-testid="toolbar-date-btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={handleAddDateSection}
           className={getButtonClass(false, false)}
         >
@@ -383,6 +521,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           title="Bullet list"
           disabled={isSourceMode}
           data-testid="toolbar-bullet-btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => handleConvertOrToggleList('bulletList')}
           className={getButtonClass(editor?.isActive('bulletList') ?? false, isSourceMode)}
         >
@@ -393,6 +532,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           title="Numbered list"
           disabled={isSourceMode}
           data-testid="toolbar-ordered-btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => handleConvertOrToggleList('orderedList')}
           className={getButtonClass(editor?.isActive('orderedList') ?? false, isSourceMode)}
         >
@@ -403,6 +543,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           title="Task list"
           disabled={isSourceMode}
           data-testid="toolbar-task-btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => handleConvertOrToggleList('taskList')}
           className={getButtonClass(editor?.isActive('taskList') ?? false, isSourceMode)}
         >
@@ -416,6 +557,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           title="Insert link"
           disabled={isSourceMode}
           data-testid="toolbar-link-btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={handleToggleLink}
           className={getButtonClass(editor?.isActive('link') ?? false, isSourceMode)}
         >
@@ -426,6 +568,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           title="Inline code"
           disabled={isSourceMode}
           data-testid="toolbar-code-btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => editor?.chain().focus().toggleCode().run()}
           className={getButtonClass(editor?.isActive('code') ?? false, isSourceMode)}
         >
@@ -436,6 +579,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           title="Quote"
           disabled={isSourceMode}
           data-testid="toolbar-quote-btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => editor?.chain().focus().toggleBlockquote().run()}
           className={getButtonClass(editor?.isActive('blockquote') ?? false, isSourceMode)}
         >
@@ -449,6 +593,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             type="button"
             title={isSourceMode ? 'View Rich Text (Cmd+/)' : 'View Markdown Source (Cmd+/)'}
             data-testid="toolbar-source-toggle-btn"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleToggleSourceMode}
             className={getButtonClass(isSourceMode, false)}
           >
@@ -461,6 +606,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       <div className="flex-1 min-h-[140px] h-full bg-white border border-sand-200 rounded-xl overflow-y-auto flex flex-col">
         {isSourceMode ? (
           <textarea
+            ref={sourceTextareaRef}
             data-testid="markdown-source-textarea"
             value={sourceText}
             onChange={handleSourceChange}

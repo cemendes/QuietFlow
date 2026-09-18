@@ -99,6 +99,13 @@ describe('Markdown Parser & Non-destructive Serializer', () => {
       expect(parsed2.tasks[1].id).toBe(alphaId);
       expect(parsed2.tasks[2].id).toBe(betaId);
     });
+
+    it('ignores empty task lines like "- [ ] " without non-whitespace text', () => {
+      const doc = `# Tasks\n- [ ] \n- [ ] Actual task\n- [ ]    \n- [x] `;
+      const parsed = parseMarkdownDocument(doc);
+      expect(parsed.tasks).toHaveLength(1);
+      expect(parsed.tasks[0].title).toBe('Actual task');
+    });
   });
 
   describe('updateTaskInDocument', () => {
