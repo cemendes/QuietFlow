@@ -65,6 +65,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated [MarkdownEditor.tsx](file:///Users/cemolive/code/quietflow/src/components/editor/MarkdownEditor.tsx) container and textarea with `flex-1 min-h-0 h-full` so the typing area stretches to the bottom of the viewport.
 
 ### Fixed
+- **Preserve Collapsed Projects on Project Creation & Tree Updates (`FolderTree.tsx`)**:
+  - Fixed an issue where creating a new project or updating vault files caused all other collapsed projects and folders to unexpectedly expand.
+  - Replaced indiscriminate directory expansion on tree updates with persistent user-collapsed path tracking (`collapsedPaths`) and automatic pruning of deleted paths, ensuring newly created projects start expanded while user-collapsed folders remain reliably collapsed.
 - **Child Task Selection & Conversion Isolation (`MarkdownEditor.tsx`)**:
   - Fixed an issue where clicking on an indented child task or checkbox gutter created a ProseMirror `NodeSelection` that caused `convertOrToggleList` to climb past the nested list and convert the parent task into a bullet point.
   - Correctly targets the child list node at the current nesting level for both `NodeSelection` and `TextSelection`, keeping the parent task and sibling items intact.

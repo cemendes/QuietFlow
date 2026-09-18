@@ -59,6 +59,9 @@ const mockVaultTree: VaultNode = {
 
 describe('Sidebar Component', () => {
   beforeEach(() => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.clear();
+    }
     useVaultStore.setState({
       vaultTree: mockVaultTree,
       activeFile: '/path/to/vault/Customers/Acme Corp.md',
@@ -154,5 +157,56 @@ describe('Sidebar Component', () => {
     const expandBtn = screen.getByTestId('sidebar-toggle-btn');
     fireEvent.click(expandBtn);
     expect(aside).toHaveStyle({ width: '240px' });
+  });
+
+  it('preserves collapsed state of other projects when a new project is created or tree updates', async () => {
+    render(<Sidebar />);
+
+    // Customers and Internal are initially expanded
+    expect(screen.getByText('Acme Corp')).toBeInTheDocument();
+    expect(screen.getByText('Operations')).toBeInTheDocument();
+
+    // Collapse Customers folder
+    const customersFolder = screen.getByText('Customers');
+    fireEvent.click(customersFolder);
+    expect(screen.queryByText('Acme Corp')).not.toBeInTheDocument();
+
+    // Now simulate creating a new project / folder updating the vaultTree in vaultStore
+    const updatedVaultTree: VaultNode = {
+      ...mockVaultTree,
+      children: [
+        ...mockVaultTree.children!,
+        {
+          name: 'NewProject',
+          path: '/path/to/vault/NewProject',
+          isDirectory: true,
+          fileCount: 1,
+          children: [
+            {
+              name: '2026-09-18.md',
+              path: '/path/to/vault/NewProject/2026-09-18.md',
+              isDirectory: false,
+              fileCount: 0,
+              children: [],
+            },
+          ],
+        },
+      ],
+    };
+
+    const { act } = await import('@testing-library/react');
+    act(() => {
+      useVaultStore.setState({ vaultTree: updatedVaultTree });
+    });
+
+    // The new project should be visible and expanded
+    expect(await screen.findByText('NewProject')).toBeInTheDocument();
+    expect(screen.getByText('2026-09-18')).toBeInTheDocument();
+
+    // CRITICAL: Customers MUST REMAIN COLLAPSED (Acme Corp must NOT re-expand)
+    expect(screen.queryByText('Acme Corp')).not.toBeInTheDocument();
+
+    // Internal should remain expanded
+    expect(screen.getByText('Operations')).toBeInTheDocument();
   });
 });
