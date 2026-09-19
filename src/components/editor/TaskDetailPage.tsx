@@ -28,9 +28,11 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
   const activeTaskId = useVaultStore((state) => state.activeTaskId);
   const tasks = useVaultStore((state) => state.tasks);
   const activeView = useVaultStore((state) => state.activeView);
+  const activeFile = useVaultStore((state) => state.activeFile);
   const updateTask = useVaultStore((state) => state.updateTask);
   const deleteTask = useVaultStore((state) => state.deleteTask);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
+  const setActiveView = useVaultStore((state) => state.setActiveView);
 
   const activeTask = tasks.find((t) => t.id === activeTaskId);
 
@@ -52,10 +54,16 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
 
   // Handle back navigation
   const handleBack = () => {
+    setActiveTaskId(null);
+    if (activeView === 'kanban') {
+      setActiveView('kanban');
+    } else if (activeView === 'document' && activeFile) {
+      setActiveView('document');
+    } else {
+      setActiveView('list');
+    }
     if (onBack) {
       onBack();
-    } else {
-      setActiveTaskId(null);
     }
   };
 
@@ -236,12 +244,34 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
             type="button"
             data-testid="back-to-list-btn"
             onClick={handleBack}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:text-stone-900 bg-sand-100 hover:bg-sand-200/80 rounded-lg transition-all"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:text-stone-900 bg-sand-100 hover:bg-sand-200/80 rounded-lg transition-all cursor-pointer"
             title="Return to previous view (Esc)"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>{activeView === 'kanban' ? 'Back to Kanban' : 'Back to List'}</span>
+            <span>
+              {activeView === 'kanban'
+                ? 'Back to Kanban'
+                : activeView === 'document' && activeFile
+                ? 'Back to Note'
+                : 'Back to List'}
+            </span>
           </button>
+
+          {activeView === 'document' && activeFile && (
+            <button
+              type="button"
+              data-testid="all-tasks-nav-btn"
+              onClick={() => {
+                setActiveTaskId(null);
+                setActiveView('list');
+                if (onBack) onBack();
+              }}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-stone-500 hover:text-stone-900 bg-sand-50 hover:bg-sand-200/60 rounded-lg transition-all cursor-pointer"
+              title="Go to all tasks in vault"
+            >
+              <span>Back to List</span>
+            </button>
+          )}
 
           {breadcrumbInfo && (
             <div className="flex items-center gap-1.5 text-xs text-stone-500 truncate">

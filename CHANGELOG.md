@@ -65,6 +65,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated [MarkdownEditor.tsx](file:///Users/cemolive/code/quietflow/src/components/editor/MarkdownEditor.tsx) container and textarea with `flex-1 min-h-0 h-full` so the typing area stretches to the bottom of the viewport.
 
 ### Fixed
+- **Task Navigation & Vault Task List Accessibility (`TaskDetailPage.tsx`, `Sidebar.tsx`, `App.tsx`, `LensDocumentCanvas.tsx`)**:
+  - Fixed an issue where clicking "Back to List" from a task detail page or clicking "My Vault" in the sidebar left the user trapped in a blank "No document selected" screen.
+  - Clicking "My Vault" in the sidebar now immediately displays all vault tasks in the Task List view.
+  - Clicking any project folder in the sidebar now displays that folder's tasks in the Task List view.
+  - The task detail header now dynamically offers contextual return actions ("Back to Note", "Back to Kanban", or "Back to List") with a dedicated one-click "Back to List" shortcut.
+  - Added `ViewSwitcher` directly to the `LensDocumentCanvas` header so users can switch between Document, List, and Kanban views from inside any note.
+  - Guaranteed `App.tsx` fallback to `TaskList` whenever no document is selected in document view.
+- **Note Header Frontmatter Date Timestamp (`parser.ts`, `LensDocumentCanvas.tsx`)**:
+  - Fixed an issue where notes with unquoted ISO date titles in frontmatter (e.g. `title: 2026-09-18`) rendered as raw JavaScript Date objects with extensive timezone strings (`Thu Sep 17 2026 19:00:00 GMT-0500...`).
+  - Normalized YAML frontmatter dates in `extractFrontmatter` and `LensDocumentCanvas` to clean `YYYY-MM-DD` strings.
 - **Note Rendering on Document Switch & Error Surface (`LensDocumentCanvas.tsx`, `MarkdownEditor.tsx`, `TaskDetailPage.tsx`, `TaskDetailPanel.tsx`)**:
   - Fixed an issue where switching between customer notes in the sidebar could cause notes to fail to render or freeze due to TipTap instance reuse across file switches and focus state locks (`editor.isFocused`).
   - Added dynamic document `key={activeFile}` to `<MarkdownEditor>` in both split-lens and notes-only views (and `key={activeTaskId}` in task detail panels), ensuring a clean ProseMirror instance mount per document with zero state leakage.

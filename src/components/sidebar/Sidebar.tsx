@@ -44,6 +44,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const activeFolder = useVaultStore((state) => state.activeFolder);
   const selectFile = useVaultStore((state) => state.selectFile);
   const selectFolder = useVaultStore((state) => state.selectFolder);
+  const setActiveView = useVaultStore((state) => state.setActiveView);
+  const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
   const tasks = useVaultStore((state) => state.tasks);
   const refreshVault = useVaultStore((state) => state.refreshVault);
   const getFolderIcon = useVaultStore((state) => state.getFolderIcon);
@@ -130,6 +132,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setActiveScope('vault');
     if (!vaultPath) return;
     await selectFolder(vaultPath);
+    setActiveTaskId(null);
+    setActiveView('list');
   };
 
   const handleInboxClick = async () => {
@@ -374,7 +378,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               activeFile={activeFile}
               activeFolder={activeFolder}
               onSelectFile={handleFileSelect}
-              onSelectFolder={selectFolder}
+              onSelectFolder={async (path) => {
+                setActiveScope(null);
+                await selectFolder(path);
+                setActiveTaskId(null);
+                setActiveView('list');
+              }}
             />
           </>
         ) : (

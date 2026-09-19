@@ -105,6 +105,19 @@ describe('TaskDetailPage Component', () => {
     expect(handleBackMock).toHaveBeenCalledTimes(2);
   });
 
+  it('displays "Back to Note" and direct "Back to List" when activeView is document with an activeFile', () => {
+    useVaultStore.setState({ activeView: 'document', activeFile: '/mock/vault/projects/infra.md' });
+    render(<TaskDetailPage />);
+
+    expect(screen.getByTestId('back-to-list-btn')).toHaveTextContent('Back to Note');
+    const allTasksBtn = screen.getByTestId('all-tasks-nav-btn');
+    expect(allTasksBtn).toHaveTextContent('Back to List');
+
+    fireEvent.click(allTasksBtn);
+    expect(useVaultStore.getState().activeTaskId).toBeNull();
+    expect(useVaultStore.getState().activeView).toBe('list');
+  });
+
   it('toggles subtask status when clicking subtask checkbox', async () => {
     render(<TaskDetailPage />);
 

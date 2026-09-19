@@ -118,7 +118,7 @@ export default function App() {
         <ErrorBoundary fallbackTitle="Unable to display this view">
           {activeTaskId ? (
             <TaskDetailPage onBack={() => setActiveTaskId(null)} />
-          ) : activeView === 'document' ? (
+          ) : activeView === 'document' && activeFile ? (
             <LensDocumentCanvas />
           ) : activeView === 'kanban' ? (
             <KanbanBoard />

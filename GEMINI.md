@@ -43,4 +43,8 @@
   2. Vitest unit, component, fuzzing, and corruption simulation tests (`npm run test`)
   3. Playwright autonomous menu and state crawler (`npm run test:autonomous`)
 
+## 9. Local Development Server Lifecycle
+- **Always Restart After Changes**: Whenever frontend or backend code changes are made (especially state stores, IPC, or UI components), cleanly restart the local development server (`npm run tauri dev`). Never leave a stale Vite server running across code edits, which causes HMR desynchronization and data loading failures (such as tasks failing to load from the vault).
+
+
 

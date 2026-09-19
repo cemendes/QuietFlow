@@ -58,6 +58,20 @@ describe('Markdown Parser & Non-destructive Serializer', () => {
       expect(parsed.tasks[0].tags).toEqual([]);
     });
 
+    it('normalizes unquoted ISO dates in title and date frontmatter to strings', () => {
+      const doc = `---
+title: 2026-09-18
+date: 2026-09-18
+---
+
+# Tasks
+- [ ] Task 1
+`;
+      const parsed = parseMarkdownDocument(doc);
+      expect(parsed.frontmatter.title).toBe('2026-09-18');
+      expect(parsed.frontmatter.date).toBe('2026-09-18');
+    });
+
     it('ignores checkboxes inside code blocks', () => {
       const doc = `# Guide
 \`\`\`markdown

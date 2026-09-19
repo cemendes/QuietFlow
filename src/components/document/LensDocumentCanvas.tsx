@@ -15,6 +15,7 @@ import { LensViewMode, TaskItem } from '../../store/types';
 import { resolveFolderIcon } from '../../services/logoService';
 import { DocumentTaskCard } from './DocumentTaskCard';
 import { MarkdownEditor } from '../editor/MarkdownEditor';
+import ViewSwitcher from '../tasks/ViewSwitcher';
 
 export const LensDocumentCanvas: React.FC = () => {
   const activeFile = useVaultStore((state) => state.activeFile);
@@ -28,6 +29,7 @@ export const LensDocumentCanvas: React.FC = () => {
   const vaultPath = useVaultStore((state) => state.vaultPath);
   const logoConfig = useVaultStore((state) => state.logoConfig);
   const getStoreFolderIcon = useVaultStore((state) => state.getFolderIcon);
+  const setActiveView = useVaultStore((state) => state.setActiveView);
 
   const documentViewState = useVaultStore((state) => state.documentViewState);
   const [localProse, setLocalProse] = useState<string>('');
@@ -143,6 +145,14 @@ export const LensDocumentCanvas: React.FC = () => {
             <p className="text-sm mt-1 text-slate-500">
               Select a customer note from the sidebar or press <kbd className="px-1.5 py-0.5 rounded bg-slate-200 text-xs font-semibold">Cmd+O</kbd> to search.
             </p>
+            <button
+              type="button"
+              data-testid="view-tasks-fallback-btn"
+              onClick={() => setActiveView('list')}
+              className="mt-4 px-4 py-2 rounded-lg bg-sand-200 hover:bg-sand-300 text-stone-700 text-xs font-semibold transition-all cursor-pointer"
+            >
+              View Task List
+            </button>
           </>
         )}
       </div>
@@ -157,7 +167,12 @@ export const LensDocumentCanvas: React.FC = () => {
   const fileName = typeof activeFile === 'string' && activeFile.includes('/') ? activeFile.split('/').pop() || activeFile : String(activeFile);
   const folderName = folderPath.includes('/') ? folderPath.split('/').pop() || folderPath : folderPath;
 
-  const frontmatterTitle = String(activeDocument.frontmatter?.title || fileName.replace(/\.md$/, ''));
+  const rawTitle = activeDocument.frontmatter?.title;
+  const frontmatterTitle = rawTitle instanceof Date
+    ? rawTitle.toISOString().slice(0, 10)
+    : (typeof rawTitle === 'string' && rawTitle.trim().length > 0)
+    ? rawTitle.trim()
+    : fileName.replace(/\.md$/, '');
   const rawTags = activeDocument.frontmatter?.tags;
   const tags: string[] = Array.isArray(rawTags)
     ? rawTags.map(String)
@@ -220,54 +235,59 @@ export const LensDocumentCanvas: React.FC = () => {
           </div>
         </div>
 
-        {/* 3-Way Lens Toggle Pills */}
-        <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 shadow-2xs">
-          <button
-            type="button"
-            data-testid="lens-split-btn"
-            onClick={() => setLensViewMode('split', activeFile)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              currentLensMode === 'split'
-                ? 'bg-white text-emerald-800 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-            }`}
-          >
-            <Columns className="w-3.5 h-3.5" />
-            <span>Split View</span>
-          </button>
+        {/* Right Header Controls: Lens Mode Pills & ViewSwitcher */}
+        <div className="flex items-center gap-2">
+          {/* 3-Way Lens Toggle Pills */}
+          <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 shadow-2xs">
+            <button
+              type="button"
+              data-testid="lens-split-btn"
+              onClick={() => setLensViewMode('split', activeFile)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                currentLensMode === 'split'
+                  ? 'bg-white text-emerald-800 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <Columns className="w-3.5 h-3.5" />
+              <span>Split View</span>
+            </button>
 
-          <button
-            type="button"
-            data-testid="lens-tasks-only-btn"
-            onClick={() => setLensViewMode('tasks', activeFile)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              currentLensMode === 'tasks'
-                ? 'bg-white text-emerald-800 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-            }`}
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Tasks Only</span>
-            {pendingTasks.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 text-[10px]">
-                {pendingTasks.length}
-              </span>
-            )}
-          </button>
+            <button
+              type="button"
+              data-testid="lens-tasks-only-btn"
+              onClick={() => setLensViewMode('tasks', activeFile)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                currentLensMode === 'tasks'
+                  ? 'bg-white text-emerald-800 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Tasks Only</span>
+              {pendingTasks.length > 0 && (
+                <span className="ml-1 px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 text-[10px]">
+                  {pendingTasks.length}
+                </span>
+              )}
+            </button>
 
-          <button
-            type="button"
-            data-testid="lens-notes-only-btn"
-            onClick={() => setLensViewMode('notes', activeFile)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              currentLensMode === 'notes'
-                ? 'bg-white text-emerald-800 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Notes Only</span>
-          </button>
+            <button
+              type="button"
+              data-testid="lens-notes-only-btn"
+              onClick={() => setLensViewMode('notes', activeFile)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                currentLensMode === 'notes'
+                  ? 'bg-white text-emerald-800 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Notes Only</span>
+            </button>
+          </div>
+
+          <ViewSwitcher />
         </div>
       </div>
 
