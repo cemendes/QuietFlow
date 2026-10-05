@@ -33,6 +33,8 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
   const deleteTask = useVaultStore((state) => state.deleteTask);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
   const setActiveView = useVaultStore((state) => state.setActiveView);
+  const vaultPath = useVaultStore((state) => state.vaultPath);
+  const selectFolder = useVaultStore((state) => state.selectFolder);
 
   const activeTask = tasks.find((t) => t.id === activeTaskId);
 
@@ -53,14 +55,18 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
   }, [activeTask?.id]);
 
   // Handle back navigation
-  const handleBack = () => {
+  const handleBack = async () => {
     setActiveTaskId(null);
     if (activeView === 'kanban') {
       setActiveView('kanban');
     } else if (activeView === 'document' && activeFile) {
       setActiveView('document');
     } else {
-      setActiveView('list');
+      if (vaultPath) {
+        await selectFolder(vaultPath);
+      } else {
+        setActiveView('list');
+      }
     }
     if (onBack) {
       onBack();
@@ -236,15 +242,16 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
       <header
         data-tauri-drag-region
         data-testid="task-detail-header"
-        className="flex items-center justify-between px-6 py-3 border-b border-sand-200/80 bg-white/70 backdrop-blur-md shrink-0 select-none"
+        className="relative z-20 flex items-center justify-between px-6 py-3 border-b border-sand-200/80 bg-white/70 backdrop-blur-md shrink-0 select-none"
       >
         {/* Left: Back Button & Breadcrumbs */}
         <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
+            data-tauri-drag-region="false"
             data-testid="back-to-list-btn"
             onClick={handleBack}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:text-stone-900 bg-sand-100 hover:bg-sand-200/80 rounded-lg transition-all cursor-pointer"
+            className="no-drag pointer-events-auto relative z-30 flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:text-stone-900 bg-sand-100 hover:bg-sand-200/80 rounded-lg transition-all cursor-pointer"
             title="Return to previous view (Esc)"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -260,13 +267,18 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
           {activeView === 'document' && activeFile && (
             <button
               type="button"
+              data-tauri-drag-region="false"
               data-testid="all-tasks-nav-btn"
-              onClick={() => {
+              onClick={async () => {
                 setActiveTaskId(null);
-                setActiveView('list');
+                if (vaultPath) {
+                  await selectFolder(vaultPath);
+                } else {
+                  setActiveView('list');
+                }
                 if (onBack) onBack();
               }}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-stone-500 hover:text-stone-900 bg-sand-50 hover:bg-sand-200/60 rounded-lg transition-all cursor-pointer"
+              className="no-drag pointer-events-auto relative z-30 flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-stone-500 hover:text-stone-900 bg-sand-50 hover:bg-sand-200/60 rounded-lg transition-all cursor-pointer"
               title="Go to all tasks in vault"
             >
               <span>Back to List</span>
@@ -293,9 +305,10 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
           {/* Status badge toggle */}
           <button
             type="button"
+            data-tauri-drag-region="false"
             data-testid="toggle-done-btn"
             onClick={handleToggleDone}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`no-drag pointer-events-auto relative z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               isDone
                 ? 'bg-forest-100 text-forest-800 border border-forest-300 shadow-xs'
                 : 'bg-white border border-sand-200 text-stone-700 hover:border-sand-300 hover:bg-sand-50'
@@ -317,10 +330,11 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
           {/* Delete Task */}
           <button
             type="button"
+            data-tauri-drag-region="false"
             data-testid="delete-task-btn"
             onClick={handleDeleteTask}
             title="Delete task"
-            className="p-1.5 text-stone-400 hover:text-terracotta-600 hover:bg-terracotta-50 rounded-lg transition-colors"
+            className="no-drag pointer-events-auto relative z-30 p-1.5 text-stone-400 hover:text-terracotta-600 hover:bg-terracotta-50 rounded-lg transition-colors cursor-pointer"
           >
             <Trash2 className="w-4 h-4" />
           </button>

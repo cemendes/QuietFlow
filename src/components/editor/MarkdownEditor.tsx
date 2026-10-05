@@ -100,31 +100,72 @@ export function convertOrToggleList(
     return false;
   }
 
-  // Inside a list of different type -> convert list node and its items
+  // Inside a list of different type -> convert only the active item or list node
   const listPos = $from.before(listDepth);
   const targetListNodeType = state.schema.nodes[targetType];
   const targetItemNodeType =
     targetType === 'taskList' ? state.schema.nodes.taskItem : state.schema.nodes.listItem;
 
-  if (!targetListNodeType || !targetItemNodeType) return false;
-
-  const newItems: any[] = [];
-  for (let i = 0; i < currentListNode.childCount; i++) {
-    const child = currentListNode.child(i);
-    const attrs = targetType === 'taskList' ? { checked: false } : null;
-    newItems.push(targetItemNodeType.create(attrs, child.content));
+  let hasAncestorTaskItem = false;
+  for (let d = listDepth - 1; d > 0; d--) {
+    if ($from.node(d).type.name === 'taskItem') {
+      hasAncestorTaskItem = true;
+      break;
+    }
   }
-  const newList = targetListNodeType.create(
-    targetType === 'bulletList' ? { tight: true } : currentListNode.attrs,
-    newItems
-  );
+
+  const itemIndex = itemDepth !== -1 ? $from.index(listDepth) : 0;
+  const currentItemNode = itemDepth !== -1 ? $from.node(itemDepth) : currentListNode.child(0);
+
+  const convertedItemAttrs = targetType === 'taskList' ? { checked: false } : null;
 
   editor.commands.command(({ tr }: { tr: any }) => {
-    tr.replaceWith(listPos, listPos + currentListNode.nodeSize, newList);
+    if (hasAncestorTaskItem) {
+      // Child task conversion: never touch parent task
+      const convertedItem = targetItemNodeType.create(convertedItemAttrs, currentItemNode.content);
+      const convertedList = targetListNodeType.create(
+        targetType === 'bulletList' ? { tight: true } : {},
+        [convertedItem]
+      );
 
-    // Compute cursor position inside the list
-    const insidePos = listPos + 2;
-    tr.setSelection(Selection.near(tr.doc.resolve(Math.min(insidePos, tr.doc.content.size))));
+      if (currentListNode.childCount <= 1) {
+        tr.replaceWith(listPos, listPos + currentListNode.nodeSize, convertedList);
+      } else {
+        const slices: any[] = [];
+        if (itemIndex > 0) {
+          const beforeItems: any[] = [];
+          for (let i = 0; i < itemIndex; i++) {
+            beforeItems.push(currentListNode.child(i));
+          }
+          slices.push(currentListNode.type.create(currentListNode.attrs, beforeItems));
+        }
+        slices.push(convertedList);
+        if (itemIndex < currentListNode.childCount - 1) {
+          const afterItems: any[] = [];
+          for (let i = itemIndex + 1; i < currentListNode.childCount; i++) {
+            afterItems.push(currentListNode.child(i));
+          }
+          slices.push(currentListNode.type.create(currentListNode.attrs, afterItems));
+        }
+        tr.replaceWith(listPos, listPos + currentListNode.nodeSize, slices);
+      }
+    } else {
+      // Top-level list conversion: convert all items in the list
+      const newItems: any[] = [];
+      for (let i = 0; i < currentListNode.childCount; i++) {
+        const child = currentListNode.child(i);
+        newItems.push(targetItemNodeType.create(convertedItemAttrs, child.content));
+      }
+      const newList = targetListNodeType.create(
+        targetType === 'bulletList' ? { tight: true } : currentListNode.attrs,
+        newItems
+      );
+      tr.replaceWith(listPos, listPos + currentListNode.nodeSize, newList);
+    }
+
+    // Restore cursor position inside the converted item
+    const insidePos = Math.min($from.pos, tr.doc.content.size - 1);
+    tr.setSelection(Selection.near(tr.doc.resolve(Math.max(1, insidePos))));
     return true;
   });
 
@@ -184,6 +225,29 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         'data-placeholder': placeholder,
       },
       handleKeyDown: (view, event) => {
+        // Tab / Shift-Tab indentation for list items
+        if (event.key === 'Tab') {
+          if (editorRef.current) {
+            if (event.shiftKey) {
+              const lifted =
+                editorRef.current.commands.liftListItem('taskItem') ||
+                editorRef.current.commands.liftListItem('listItem');
+              if (lifted) {
+                event.preventDefault();
+                return true;
+              }
+            } else {
+              const sunk =
+                editorRef.current.commands.sinkListItem('taskItem') ||
+                editorRef.current.commands.sinkListItem('listItem');
+              if (sunk) {
+                event.preventDefault();
+                return true;
+              }
+            }
+          }
+        }
+
         // Keyboard shortcuts for list conversion
         if ((event.metaKey || event.ctrlKey) && event.shiftKey) {
           if (event.key === '8' || event.code === 'Digit8') {

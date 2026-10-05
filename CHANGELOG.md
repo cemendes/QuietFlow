@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Vault Overview Tabs & Notes Grid (`TaskList.tsx`)**:
+  - Added dual overview tabs when viewing "My Vault" in the middle panel: `All Tasks ({count})` and `All Notes ({count})`.
+  - Added a responsive 2-column card grid in the "All Notes" tab showing all markdown notes in the vault, displaying parent folder breadcrumb and note title, with one-click navigation directly into the document canvas.
 - **Insert Today's Date Section (`MarkdownEditor.tsx`)**:
   - Added "Add section for today's date" toolbar action (`toolbar-date-btn`) with `CalendarPlus` icon.
   - Automatically prepends `## YYYY-MM-DD` at the top of the note (or immediately below YAML frontmatter in source mode) and positions cursor in the section body.
@@ -65,11 +68,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated [MarkdownEditor.tsx](file:///Users/cemolive/code/quietflow/src/components/editor/MarkdownEditor.tsx) container and textarea with `flex-1 min-h-0 h-full` so the typing area stretches to the bottom of the viewport.
 
 ### Fixed
-- **Task Navigation & Vault Task List Accessibility (`TaskDetailPage.tsx`, `Sidebar.tsx`, `App.tsx`, `LensDocumentCanvas.tsx`)**:
-  - Fixed an issue where clicking "Back to List" from a task detail page or clicking "My Vault" in the sidebar left the user trapped in a blank "No document selected" screen.
-  - Clicking "My Vault" in the sidebar now immediately displays all vault tasks in the Task List view.
-  - Clicking any project folder in the sidebar now displays that folder's tasks in the Task List view.
-  - The task detail header now dynamically offers contextual return actions ("Back to Note", "Back to Kanban", or "Back to List") with a dedicated one-click "Back to List" shortcut.
+- **Task Navigation & Vault Task List Accessibility (`TaskDetailPage.tsx`, `Sidebar.tsx`, `App.tsx`, `vaultStore.ts`, `LensDocumentCanvas.tsx`)**:
+  - Fixed a critical UI bug where clicking "Back to List", "Mark as Done", or "Delete" in the full-page task detail view did not respond because an invisible top window drag overlay (`window-drag-region`) in `App.tsx` had `pointer-events-auto` and `z-10`, physically intercepting mouse clicks in the top 36px of the canvas and swallowing them as window drag gestures.
+  - Made `window-drag-region` in `App.tsx` explicitly `pointer-events-none -z-10` and gave `TaskDetailPage`'s header and buttons explicit `relative z-20`, `z-30`, and `no-drag` attributes so click events always reach the button handlers.
+  - Fixed an issue where clicking "My Vault" or a folder in the sidebar felt unresponsive or hung while sequentially reading files from Google Drive cloud storage: `selectFolder` now immediately and synchronously resets `activeTaskId: null` and switches `activeView: 'list'` on the first tick, and parallelizes note reads using `Promise.all`.
+  - The task detail header dynamically offers contextual return actions ("Back to Note", "Back to Kanban", or "Back to List") with a dedicated one-click "Back to List" shortcut.
   - Added `ViewSwitcher` directly to the `LensDocumentCanvas` header so users can switch between Document, List, and Kanban views from inside any note.
   - Guaranteed `App.tsx` fallback to `TaskList` whenever no document is selected in document view.
 - **Note Header Frontmatter Date Timestamp (`parser.ts`, `LensDocumentCanvas.tsx`)**:

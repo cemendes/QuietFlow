@@ -87,7 +87,7 @@ export default function App() {
     const now = new Date();
     const fileName = `Note-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.md`;
     const newFilePath = `${vaultPath}/${fileName}`;
-    const initialContent = `---\ntitle: New Note\ndate: ${now.toISOString().split('T')[0]}\n---\n\n# Tasks\n\n- [ ] `;
+    const initialContent = `---\ntitle: New Note\ndate: ${now.toISOString().split('T')[0]}\n---\n\n`;
     await createFile(newFilePath, initialContent);
     setActiveView('document');
   };
@@ -111,7 +111,7 @@ export default function App() {
         <div
           data-tauri-drag-region
           data-testid="window-drag-region"
-          className="absolute top-0 left-0 right-0 h-9 z-10 select-none pointer-events-auto"
+          className="absolute top-0 left-0 right-0 h-9 pointer-events-none -z-10 select-none"
           aria-hidden="true"
         />
         <CorruptionWarningBanner />

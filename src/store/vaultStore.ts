@@ -232,9 +232,13 @@ function collectMarkdownFiles(node: VaultNode | null): string[] {
   return files;
 }
 
+function normalizePath(p: string): string {
+  return p ? p.trim().replace(/\/+$/, '') : '';
+}
+
 function findNodeByPath(root: VaultNode | null, targetPath: string): VaultNode | null {
   if (!root) return null;
-  if (root.path === targetPath) return root;
+  if (normalizePath(root.path) === normalizePath(targetPath)) return root;
   if (root.children) {
     for (const child of root.children) {
       const found = findNodeByPath(child, targetPath);
@@ -249,32 +253,54 @@ async function selectFolder(folderPath: string): Promise<void> {
     localStorage.setItem('quietflow-last-active-folder', folderPath);
     localStorage.removeItem('quietflow-last-active-file');
   }
-  set({ isLoading: true, error: null, activeFolder: folderPath, activeFile: null });
+  set({
+    isLoading: true,
+    error: null,
+    activeFolder: folderPath,
+    activeFile: null,
+    activeDocument: null,
+    activeTaskId: null,
+    activeView: 'list',
+  });
   try {
     const root = getState().vaultTree;
-    const folderNode = findNodeByPath(root, folderPath);
-    const mdFiles = folderNode ? collectMarkdownFiles(folderNode) : [];
+    const currentVault = getState().vaultPath;
+    const isRoot =
+      !folderPath ||
+      folderPath === currentVault ||
+      normalizePath(folderPath) === normalizePath(currentVault || '');
 
-    const allTasks: TaskItem[] = [];
-    for (const file of mdFiles) {
-      try {
-        const content = await ipc.readFile(file);
-        const doc = parseMarkdownDocument(content);
-        const tasksWithFile = doc.tasks.map((t) => ({
-          ...t,
-          filePath: file,
-        }));
-        allTasks.push(...tasksWithFile);
-      } catch (e) {
-        console.warn(`Failed to read markdown file in folder ${file}:`, e);
-      }
-    }
+    const folderNode = isRoot ? root : findNodeByPath(root, folderPath);
+    const mdFiles = folderNode
+      ? collectMarkdownFiles(folderNode)
+      : isRoot && root
+      ? collectMarkdownFiles(root)
+      : [];
+
+    const fileResults = await Promise.all(
+      mdFiles.map(async (file) => {
+        try {
+          const content = await ipc.readFile(file);
+          const doc = parseMarkdownDocument(content);
+          return doc.tasks.map((t) => ({
+            ...t,
+            filePath: file,
+          }));
+        } catch (e) {
+          console.warn(`Failed to read markdown file in folder ${file}:`, e);
+          return [];
+        }
+      })
+    );
+    const allTasks: TaskItem[] = fileResults.flat();
 
     set((prev) => ({
       ...prev,
       activeFolder: folderPath,
       activeFile: null,
       activeDocument: null,
+      activeTaskId: null,
+      activeView: 'list',
       tasks: allTasks,
       isLoading: false,
     }));

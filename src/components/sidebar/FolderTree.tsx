@@ -25,6 +25,10 @@ function collectDirectoryPaths(node: VaultNode | null): string[] {
   return paths;
 }
 
+function normalizePath(p: string): string {
+  return p ? p.trim().replace(/\/+$/, '') : '';
+}
+
 const COLLAPSED_FOLDERS_STORAGE_KEY = 'quietflow-collapsed-folders';
 
 export const FolderTree: React.FC<FolderTreeProps> = ({
@@ -42,7 +46,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed)) {
-            return new Set(parsed);
+            return new Set(parsed.map(normalizePath));
           }
         }
       } catch {
@@ -55,13 +59,14 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   // Prune any collapsed paths that no longer exist in the vault tree
   useEffect(() => {
     if (!tree) return;
-    const allDirs = new Set(collectDirectoryPaths(tree));
+    const allDirs = new Set(collectDirectoryPaths(tree).map(normalizePath));
     setCollapsedPaths((prev) => {
       let changed = false;
       const next = new Set<string>();
       for (const p of prev) {
-        if (allDirs.has(p)) {
-          next.add(p);
+        const normP = normalizePath(p);
+        if (allDirs.has(normP)) {
+          next.add(normP);
         } else {
           changed = true;
         }
@@ -78,12 +83,13 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   }, [tree]);
 
   const handleToggleFolder = (path: string) => {
+    const norm = normalizePath(path);
     setCollapsedPaths((prev) => {
       const next = new Set(prev);
-      if (next.has(path)) {
-        next.delete(path);
+      if (next.has(norm)) {
+        next.delete(norm);
       } else {
-        next.add(path);
+        next.add(norm);
       }
       if (typeof localStorage !== 'undefined') {
         try {
@@ -99,7 +105,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   // Directories are expanded unless explicitly collapsed by the user
   const expandedPaths = React.useMemo(() => {
     const allDirs = collectDirectoryPaths(tree);
-    return new Set(allDirs.filter((p) => !collapsedPaths.has(p)));
+    return new Set(allDirs.filter((p) => !collapsedPaths.has(normalizePath(p))));
   }, [tree, collapsedPaths]);
 
   if (!tree) {

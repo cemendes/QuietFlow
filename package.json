@@ -12,6 +12,7 @@
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
     "test:e2e": "playwright test",
     "test:autonomous": "playwright test tests/e2e/autonomous-menu-crawler.spec.ts",
+    "test:audit": "playwright test tests/e2e/comprehensive-ui-audit.spec.ts",
     "test:chaos": "playwright test tests/e2e/autonomous-chaos-monkey.spec.ts",
     "preversion": "npm run test:rust && npm run build && npm run test && npm run test:autonomous",
     "version": "node scripts/sync-tauri-version.mjs && git add src-tauri/tauri.conf.json src-tauri/Cargo.toml",

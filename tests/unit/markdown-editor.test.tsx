@@ -690,6 +690,54 @@ code block
     expect(serialized).toContain('- [ ] Item 2');
   });
 
+  it('converts only the targeted child task when multiple child tasks exist', () => {
+    const onChange = vi.fn();
+    const markdown = `- [ ] Parent Task\n  - [ ] Child Task 1\n  - [ ] Child Task 2`;
+    const { container } = render(<MarkdownEditor value={markdown} onChange={onChange} />);
+
+    const editor = (container.querySelector('[data-testid="markdown-editor-container"]') as any).__tiptap_editor;
+    let child1Pos = -1;
+    editor.state.doc.descendants((node: any, pos: number) => {
+      if (node.isText && node.text?.includes('Child Task 1')) {
+        child1Pos = pos + 1;
+      }
+    });
+    expect(child1Pos).toBeGreaterThan(0);
+    editor.commands.setTextSelection(child1Pos);
+
+    const bulletBtn = screen.getByTestId('toolbar-bullet-btn');
+    fireEvent.click(bulletBtn);
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastArg).toContain('- [ ] Parent Task');
+    expect(lastArg).toContain('- Child Task 1');
+    expect(lastArg).toContain('- [ ] Child Task 2');
+  });
+
+  it('indents task item on Tab key press', () => {
+    const onChange = vi.fn();
+    const markdown = `- [ ] Task 1\n- [ ] Task 2`;
+    const { container } = render(<MarkdownEditor value={markdown} onChange={onChange} />);
+
+    const editor = (container.querySelector('[data-testid="markdown-editor-container"]') as any).__tiptap_editor;
+    let task2Pos = -1;
+    editor.state.doc.descendants((node: any, pos: number) => {
+      if (node.isText && node.text?.includes('Task 2')) {
+        task2Pos = pos + 1;
+      }
+    });
+    expect(task2Pos).toBeGreaterThan(0);
+    editor.commands.setTextSelection(task2Pos);
+
+    const editorEl = container.querySelector('.tiptap')!;
+    fireEvent.keyDown(editorEl, { key: 'Tab', code: 'Tab' });
+
+    expect(onChange).toHaveBeenCalled();
+    const lastArg = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastArg).toMatch(/- \[ \] Task 1\s+- \[ \] Task 2/);
+  });
+
   it('renders every real note in the vault without throwing or failing', () => {
     const fs = require('fs');
     const path = require('path');

@@ -130,14 +130,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleVaultClick = async () => {
     setActiveScope('vault');
-    if (!vaultPath) return;
-    await selectFolder(vaultPath);
     setActiveTaskId(null);
     setActiveView('list');
+    if (!vaultPath) return;
+    await selectFolder(vaultPath);
   };
 
   const handleInboxClick = async () => {
     setActiveScope('inbox');
+    setActiveTaskId(null);
+    setActiveView('list');
     if (!vaultPath) return;
 
     let inboxNode = vaultTree?.children?.find(
@@ -380,9 +382,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onSelectFile={handleFileSelect}
               onSelectFolder={async (path) => {
                 setActiveScope(null);
-                await selectFolder(path);
                 setActiveTaskId(null);
                 setActiveView('list');
+                await selectFolder(path);
               }}
             />
           </>

@@ -132,11 +132,11 @@ function extractFrontmatter(content: string): { frontmatter: Frontmatter; body: 
     const data = (parsed.data as Frontmatter) || {};
 
     // Normalize date objects for title and date to clean strings (e.g. YYYY-MM-DD)
-    if (data.title instanceof Date) {
-      data.title = data.title.toISOString().slice(0, 10);
+    if ((data.title as unknown) instanceof Date) {
+      data.title = (data.title as unknown as Date).toISOString().slice(0, 10);
     }
-    if (data.date instanceof Date) {
-      data.date = data.date.toISOString().slice(0, 10);
+    if ((data.date as unknown) instanceof Date) {
+      data.date = (data.date as unknown as Date).toISOString().slice(0, 10);
     }
 
     // Normalize tags to string[]

@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { CheckSquare, FileText, Folder } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { NewTaskInput, TaskItem } from '../../store/types';
 import TaskRow from './TaskRow';
@@ -36,10 +37,36 @@ export const TaskList: React.FC<TaskListProps> = ({
 
   const activeFolder = useVaultStore((state) => state.activeFolder);
   const vaultPath = useVaultStore((state) => state.vaultPath);
+  const vaultTree = useVaultStore((state) => state.vaultTree);
+  const selectFile = useVaultStore((state) => state.selectFile);
+  const setActiveView = useVaultStore((state) => state.setActiveView);
   const logoConfig = useVaultStore((state) => state.logoConfig);
   const getFolderIcon = useVaultStore((state) => state.getFolderIcon);
 
-  const [headerIcon, setHeaderIcon] = React.useState<string | null>(null);
+  const [headerIcon, setHeaderIcon] = useState<string | null>(null);
+  const [vaultTab, setVaultTab] = useState<'tasks' | 'notes'>('tasks');
+
+  // Extract all notes across the vault
+  const allVaultNotes = useMemo(() => {
+    if (!vaultTree) return [];
+    const list: { name: string; path: string; folder: string }[] = [];
+    const traverse = (node: any, currentFolder = '') => {
+      if (!node.isDirectory && (node.name.endsWith('.md') || !node.name.includes('.'))) {
+        list.push({
+          name: node.name.replace(/\.md$/, ''),
+          path: node.path,
+          folder: currentFolder || 'Vault Root',
+        });
+      }
+      if (node.children) {
+        for (const child of node.children) {
+          traverse(child, node.isDirectory && node.path !== vaultPath ? node.name : currentFolder);
+        }
+      }
+    };
+    traverse(vaultTree);
+    return list;
+  }, [vaultTree, vaultPath]);
 
   // Compute target folder path for the current view
   const currentFolderPath = useMemo(() => {
@@ -93,6 +120,9 @@ export const TaskList: React.FC<TaskListProps> = ({
   // Determine display title
   const computedTitle = useMemo(() => {
     if (title) return title;
+    if (vaultPath && activeFolder === vaultPath) {
+      return 'My Vault';
+    }
     if (activeFile) {
       const fileName = activeFile.split('/').pop()?.replace(/\.md$/, '') || 'Tasks';
       if (fileName.toLowerCase() === 'inbox') {
@@ -105,14 +135,11 @@ export const TaskList: React.FC<TaskListProps> = ({
       return fileName.charAt(0).toUpperCase() + fileName.slice(1);
     }
     if (activeFolder) {
-      if (activeFolder === vaultPath) {
-        return 'My Vault';
-      }
       const folderName = activeFolder.split('/').pop() || 'Folder';
       return folderName.charAt(0).toUpperCase() + folderName.slice(1);
     }
     return "Today's Focus";
-  }, [title, activeFile, activeFolder]);
+  }, [title, activeFile, activeFolder, vaultPath]);
 
   const [activeFocusBucket, setActiveFocusBucket] = React.useState<'all' | 'now' | 'not-now'>('all');
 
@@ -253,11 +280,76 @@ export const TaskList: React.FC<TaskListProps> = ({
         <div className="pt-1">
           <QuickAddBar defaultSection={defaultSection} onAddTask={onAddTask} />
         </div>
+
+        {/* Vault Overview Tabs: Tasks vs Notes */}
+        {computedTitle === 'My Vault' && (
+          <div className="flex items-center gap-1.5 pt-2">
+            <button
+              type="button"
+              data-testid="vault-tab-tasks"
+              onClick={() => setVaultTab('tasks')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                vaultTab === 'tasks'
+                  ? 'bg-forest-800 text-white shadow-xs'
+                  : 'bg-sand-100 text-stone-600 hover:text-stone-900 hover:bg-sand-200/80'
+              }`}
+            >
+              <CheckSquare className="w-3.5 h-3.5" />
+              <span>All Tasks ({tasks.length})</span>
+            </button>
+            <button
+              type="button"
+              data-testid="vault-tab-notes"
+              onClick={() => setVaultTab('notes')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                vaultTab === 'notes'
+                  ? 'bg-forest-800 text-white shadow-xs'
+                  : 'bg-sand-100 text-stone-600 hover:text-stone-900 hover:bg-sand-200/80'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>All Notes ({allVaultNotes.length})</span>
+            </button>
+          </div>
+        )}
       </header>
 
-      {/* Task List Body */}
+      {/* Task / Notes List Body */}
       <main className="flex-1 overflow-y-auto p-6 space-y-2">
-        {filteredTasks.length === 0 ? (
+        {computedTitle === 'My Vault' && vaultTab === 'notes' ? (
+          allVaultNotes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-48 text-center p-6 border-2 border-dashed border-sand-200 rounded-2xl bg-white/40">
+              <FileText className="w-10 h-10 text-slate-300 mb-2" />
+              <p className="text-sm font-medium text-slate-600">No notes found in vault</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3" data-testid="vault-notes-grid">
+              {allVaultNotes.map((note) => (
+                <button
+                  key={note.path}
+                  type="button"
+                  data-testid="vault-note-card"
+                  onClick={async () => {
+                    await selectFile(note.path);
+                    setActiveView('document');
+                  }}
+                  className="flex flex-col text-left p-3.5 bg-white border border-sand-200 hover:border-forest-500 hover:shadow-xs rounded-xl transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between gap-2 w-full mb-1">
+                    <span className="font-semibold text-stone-800 group-hover:text-forest-700 text-sm truncate">
+                      {note.name}
+                    </span>
+                    <FileText className="w-4 h-4 text-stone-400 group-hover:text-forest-600 shrink-0" />
+                  </div>
+                  <div className="flex items-center gap-1 text-[11px] text-stone-400 truncate">
+                    <Folder className="w-3 h-3 text-stone-400 shrink-0" />
+                    <span>{note.folder}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )
+        ) : filteredTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-center p-6 border-2 border-dashed border-sand-200 rounded-2xl bg-white/40">
             <svg
               className="w-10 h-10 text-slate-300 mb-2"

@@ -48,11 +48,14 @@ export const LensDocumentCanvas: React.FC = () => {
 
   // Compute active lens mode reactively (with auto-adaptation for 0-task / 0-prose files)
   const explicitMode = activeFile ? documentViewState[activeFile]?.lensMode : null;
-  const taskCount = activeDocument?.tasks?.length || 0;
+  const validTasks = (Array.isArray(activeDocument?.tasks) ? activeDocument.tasks : []).filter(
+    (t) => t && typeof t.title === 'string' && t.title.trim().length > 0
+  );
+  const taskCount = validTasks.length;
   const hasProse = (activeDocument?.body || '').trim().length > 0;
 
   const currentLensMode: LensViewMode = explicitMode || (
-    taskCount === 0 && hasProse ? 'notes' : taskCount > 0 && !hasProse ? 'tasks' : lensViewMode || 'split'
+    taskCount === 0 ? 'notes' : taskCount > 0 && !hasProse ? 'tasks' : lensViewMode || 'split'
   );
 
   // Debounced auto-save for prose
@@ -165,14 +168,21 @@ export const LensDocumentCanvas: React.FC = () => {
   const completedTasks = tasks.filter((t) => t && t.status === 'done');
   const pendingTasks = tasks.filter((t) => t && t.status !== 'done');
   const fileName = typeof activeFile === 'string' && activeFile.includes('/') ? activeFile.split('/').pop() || activeFile : String(activeFile);
+  const cleanFileName = fileName.replace(/\.md$/, '');
   const folderName = folderPath.includes('/') ? folderPath.split('/').pop() || folderPath : folderPath;
 
   const rawTitle = activeDocument.frontmatter?.title;
-  const frontmatterTitle = rawTitle instanceof Date
-    ? rawTitle.toISOString().slice(0, 10)
-    : (typeof rawTitle === 'string' && rawTitle.trim().length > 0)
-    ? rawTitle.trim()
-    : fileName.replace(/\.md$/, '');
+  const isDateOrTimestamp =
+    (rawTitle as unknown) instanceof Date ||
+    (typeof rawTitle === 'string' && /^\d{4}-\d{2}-\d{2}/.test(rawTitle.trim()));
+
+  const headingMatch = typeof activeDocument.rawContent === 'string' ? activeDocument.rawContent.match(/^#\s+(.+)$/m) : null;
+  const firstHeading = headingMatch ? headingMatch[1].trim() : null;
+
+  const frontmatterTitle =
+    (!isDateOrTimestamp && typeof rawTitle === 'string' && rawTitle.trim().length > 0)
+      ? rawTitle.trim()
+      : firstHeading || cleanFileName;
   const rawTags = activeDocument.frontmatter?.tags;
   const tags: string[] = Array.isArray(rawTags)
     ? rawTags.map(String)
@@ -219,7 +229,7 @@ export const LensDocumentCanvas: React.FC = () => {
                 <span>/</span>
               </>
             )}
-            <span className="text-slate-800 font-semibold truncate">{fileName}</span>
+            <span className="text-slate-800 font-semibold truncate">{cleanFileName}</span>
           </div>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <h1 className="text-base font-bold text-slate-900 truncate">{frontmatterTitle}</h1>
