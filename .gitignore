@@ -64,3 +64,6 @@ src-tauri/target/
 cypress/screenshots/
 cypress/videos/
 cypress/downloads/
+
+# Claude Code local files
+.claude/
