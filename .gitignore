@@ -59,3 +59,8 @@ dist-ssr/
 # Rust & Tauri Builds
 target/
 src-tauri/target/
+
+# Cypress artifacts
+cypress/screenshots/
+cypress/videos/
+cypress/downloads/
