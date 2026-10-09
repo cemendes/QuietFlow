@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Edit3, FilePlus, FolderPlus, Trash2, Image, Smile } from 'lucide-react';
+import { useTranslation } from '../../i18n';
 
 export interface FolderContextMenuProps {
   folderName: string;
@@ -30,6 +31,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
   const [isRenaming, setIsRenaming] = useState(false);
   const [renamedValue, setRenamedValue] = useState(folderName);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const { t } = useTranslation();
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -37,7 +39,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
 
     // Check size threshold (warn if > 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      alert('Image file is large. Recommended size is under 500 KB for optimal speed.');
+      alert(t('folderMenu.largeImageWarning'));
     }
 
     const reader = new FileReader();
@@ -104,7 +106,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
             }}
             className="px-2 py-1 text-[10px] font-semibold text-white bg-forest-700 hover:bg-forest-800 rounded"
           >
-            Save
+            {t('common.save')}
           </button>
         </div>
       ) : (
@@ -115,7 +117,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
             className="flex w-full items-center gap-2 px-3 py-1.5 hover:bg-sand-100 transition-colors text-left"
           >
             <Edit3 className="w-3.5 h-3.5 text-stone-500" />
-            <span>Rename</span>
+            <span>{t('folderMenu.rename')}</span>
           </button>
 
           {isDirectory && onAddNote && (
@@ -128,7 +130,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
               className="flex w-full items-center gap-2 px-3 py-1.5 hover:bg-sand-100 transition-colors text-left"
             >
               <FilePlus className="w-3.5 h-3.5 text-stone-500" />
-              <span>Add Note ({folderName} - Date)</span>
+              <span>{t('folderMenu.addNote', { name: folderName })}</span>
             </button>
           )}
 
@@ -142,7 +144,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
               className="flex w-full items-center gap-2 px-3 py-1.5 hover:bg-sand-100 transition-colors text-left"
             >
               <FolderPlus className="w-3.5 h-3.5 text-stone-500" />
-              <span>New Subfolder</span>
+              <span>{t('folderMenu.newSubfolder')}</span>
             </button>
           )}
 
@@ -157,7 +159,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
               >
                 <div className="flex items-center gap-2">
                   <Smile className="w-3.5 h-3.5 text-stone-500" />
-                  <span>Choose Folder Icon</span>
+                  <span>{t('folderMenu.chooseIcon')}</span>
                 </div>
               </button>
 
@@ -182,10 +184,10 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
               <label className="flex flex-col gap-0.5 px-3 py-1.5 hover:bg-sand-100 transition-colors text-left cursor-pointer group">
                 <div className="flex items-center gap-2">
                   <Image className="w-3.5 h-3.5 text-stone-500" />
-                  <span className="font-medium text-slate-800">Upload Company Logo</span>
+                  <span className="font-medium text-slate-800">{t('folderMenu.uploadLogo')}</span>
                 </div>
                 <span className="text-[10px] text-slate-400 pl-5 leading-tight">
-                  Square PNG/SVG, transparent, &lt;500KB
+                  {t('folderMenu.logoHint')}
                 </span>
                 <input
                   type="file"
@@ -208,7 +210,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
             className="flex w-full items-center gap-2 px-3 py-1.5 hover:bg-rose-50 text-rose-600 transition-colors text-left"
           >
             <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-            <span>Delete</span>
+            <span>{t('common.delete')}</span>
           </button>
         </>
       )}

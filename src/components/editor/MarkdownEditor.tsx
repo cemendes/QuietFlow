@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, Edit3 } from 'lucide-react';
+import { useTranslation } from '../../i18n';
 
 export interface MarkdownEditorProps {
   value?: string;
@@ -11,9 +12,10 @@ export interface MarkdownEditorProps {
 export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   value = '',
   onChange,
-  placeholder = 'Add notes, checklist items, or details...',
+  placeholder,
   className = '',
 }) => {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
 
   const renderFormattedText = (str: string) => {
@@ -73,7 +75,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
   const renderSimpleMarkdown = (text: string) => {
     if (!text.trim()) {
-      return <p className="text-slate-400 italic text-sm">No notes entered.</p>;
+      return <p className="text-slate-400 italic text-sm">{t('editor.noNotes')}</p>;
     }
 
     const lines = text.split('\n');
@@ -136,7 +138,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     <div className={`flex flex-col flex-1 ${className}`}>
       {/* Editor / Preview Toolbar Tabs */}
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Notes</span>
+        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('editor.notes')}</span>
         <div className="flex items-center bg-sand-100 p-0.5 rounded-lg border border-sand-200">
           <button
             type="button"
@@ -148,7 +150,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             }`}
           >
             <Edit3 className="w-3 h-3" />
-            Edit
+            {t('editor.edit')}
           </button>
           <button
             type="button"
@@ -160,7 +162,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             }`}
           >
             <Eye className="w-3 h-3" />
-            Preview
+            {t('editor.preview')}
           </button>
         </div>
       </div>
@@ -171,7 +173,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           data-testid="markdown-editor-textarea"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t('editor.placeholder')}
           className="w-full flex-1 min-h-[140px] p-3 text-sm text-slate-800 bg-white border border-sand-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-forest-500/20 focus:border-forest-500 transition-all font-mono leading-relaxed"
         />
       ) : (

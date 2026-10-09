@@ -12,6 +12,7 @@ import {
 import { useVaultStore } from '../../store';
 import { isTauriEnvironment, ipc } from '../../store/ipc';
 import { FolderTree } from './FolderTree';
+import { useTranslation } from '../../i18n';
 
 export interface SidebarProps {
   className?: string;
@@ -39,6 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [newFolderName, setNewFolderName] = useState('');
 
   const { vaultTree, vaultPath, activeFile, selectFile, tasks, refreshVault } = useVaultStore();
+  const { t } = useTranslation();
 
   // Handle drag resizing
   useEffect(() => {
@@ -145,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             setIsResizing(true);
           }}
           className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-forest-500/30 transition-colors z-30"
-          title="Drag to resize sidebar"
+          title={t('sidebar.resizeHandle')}
         />
       )}
 
@@ -174,8 +176,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             data-testid="sidebar-toggle-btn"
             onClick={() => setIsCollapsed(true)}
             className="p-1 rounded-md text-stone-400 hover:text-stone-700 hover:bg-sand-200/60 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600 z-10"
-            title="Collapse sidebar"
-            aria-label="Collapse sidebar"
+            title={t('sidebar.collapse')}
+            aria-label={t('sidebar.collapse')}
           >
             <PanelLeftClose className="w-4 h-4" />
           </button>
@@ -190,8 +192,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             data-testid="sidebar-toggle-btn"
             onClick={() => setIsCollapsed(false)}
             className="p-1.5 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-sand-200 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600 shadow-xs"
-            title="Expand sidebar"
-            aria-label="Expand sidebar"
+            title={t('sidebar.expand')}
+            aria-label={t('sidebar.expand')}
           >
             <PanelLeft className="w-4 h-4" />
           </button>
@@ -211,17 +213,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               QuietFlow
             </span>
           </div>
-
-          {onNewNote && (
-            <button
-              type="button"
-              onClick={onNewNote}
-              className="p-1 rounded-md text-stone-500 hover:text-forest-700 hover:bg-sand-200/60 transition-colors"
-              title="New note (Cmd+N)"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          )}
         </div>
       ) : (
         <div className="flex justify-center py-2 mb-2">
@@ -235,10 +226,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* System Views Navigation (Inbox Only) */}
       <div className="px-2 py-1 space-y-0.5">
+        {onNewNote && (
+          <button
+            type="button"
+            data-testid="new-note-btn"
+            onClick={onNewNote}
+            title={t('sidebar.newNote')}
+            aria-label={t('sidebar.newNoteLabel')}
+            className={`flex w-full items-center gap-2 px-2 py-1.5 mb-1.5 rounded-md text-xs font-semibold text-white bg-forest-700 hover:bg-forest-800 shadow-xs transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600 ${
+              isCollapsed ? 'justify-center' : ''
+            }`}
+          >
+            <Plus className="w-4 h-4 shrink-0" />
+            {!isCollapsed && <span className="truncate">{t('sidebar.newNoteLabel')}</span>}
+          </button>
+        )}
+
         <button
           type="button"
           onClick={handleInboxClick}
-          title="Inbox"
+          title={t('sidebar.inbox')}
           className={`flex w-full items-center justify-between px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
             activeScope === 'inbox' || activeFile?.toLowerCase().includes('inbox')
               ? 'bg-sand-200/90 text-forest-700 font-semibold shadow-xs'
@@ -253,7 +260,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   : 'text-stone-400'
               }`}
             />
-            {!isCollapsed && <span className="truncate">Inbox</span>}
+            {!isCollapsed && <span className="truncate">{t('sidebar.inbox')}</span>}
           </div>
           {!isCollapsed && inboxTasksCount > 0 && (
             <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-forest-100 text-forest-700">
@@ -272,14 +279,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <>
             <div className="flex items-center justify-between px-2 py-1 mb-1">
               <span className="text-[10px] font-bold tracking-wider text-stone-400 uppercase">
-                Folders
+                {t('sidebar.folders')}
               </span>
               <button
                 type="button"
                 data-testid="add-folder-btn"
                 onClick={() => setIsCreatingFolder(!isCreatingFolder)}
-                title="New folder"
-                aria-label="New folder"
+                title={t('sidebar.newFolder')}
+                aria-label={t('sidebar.newFolder')}
                 className="p-1 text-stone-400 hover:text-forest-700 hover:bg-sand-200/60 rounded transition-colors"
               >
                 <FolderPlus className="w-3.5 h-3.5" />
@@ -302,7 +309,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       setNewFolderName('');
                     }
                   }}
-                  placeholder="Folder name..."
+                  placeholder={t('sidebar.folderNamePlaceholder')}
                   className="flex-1 text-xs text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none py-0.5"
                 />
                 <button
@@ -311,7 +318,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   disabled={!newFolderName.trim()}
                   className="px-1.5 py-0.5 text-[10px] font-semibold text-white bg-forest-700 hover:bg-forest-800 disabled:opacity-40 rounded transition-colors"
                 >
-                  Add
+                  {t('common.add')}
                 </button>
               </div>
             )}
@@ -378,23 +385,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           onClick={onOpenArchive}
-          title="Archive"
-          aria-label="Archive"
+          title={t('sidebar.archive')}
+          aria-label={t('sidebar.archive')}
           className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-stone-600 hover:bg-sand-200/60 hover:text-stone-900 transition-colors"
         >
           <Archive className="w-4 h-4 text-stone-400 shrink-0" />
-          {!isCollapsed && <span>Archive</span>}
+          {!isCollapsed && <span>{t('sidebar.archive')}</span>}
         </button>
 
         <button
           type="button"
           onClick={onOpenSettings}
-          title="Settings"
-          aria-label="Settings"
+          title={t('sidebar.settings')}
+          aria-label={t('sidebar.settings')}
           className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-stone-600 hover:bg-sand-200/60 hover:text-stone-900 transition-colors"
         >
           <Settings className="w-4 h-4 text-stone-400 shrink-0" />
-          {!isCollapsed && <span>Settings</span>}
+          {!isCollapsed && <span>{t('sidebar.settings')}</span>}
         </button>
       </div>
     </aside>

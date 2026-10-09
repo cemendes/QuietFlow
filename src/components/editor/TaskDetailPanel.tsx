@@ -4,6 +4,7 @@ import { useVaultStore } from '../../store';
 import { SubtaskItem, TaskPriority, TaskStatus } from '../../store/types';
 import MetadataBar from './MetadataBar';
 import MarkdownEditor from './MarkdownEditor';
+import { useTranslation } from '../../i18n';
 
 export interface TaskDetailPanelProps {
   className?: string;
@@ -18,6 +19,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
   const tasks = useVaultStore((state) => state.tasks);
   const updateTask = useVaultStore((state) => state.updateTask);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
+  const { t } = useTranslation();
 
   const activeTask = tasks.find((t) => t.id === activeTaskId);
 
@@ -157,7 +159,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
 
       {/* 2. Slide-Over Right Drawer */}
       <aside
-        aria-label="Task Details"
+        aria-label={t('detail.label')}
         style={{ width: panelWidth }}
         className={`fixed right-0 top-0 bottom-0 z-50 flex flex-col h-full bg-sand-50 border-l border-sand-200 shadow-2xl overflow-hidden ${
           isResizing ? 'transition-none' : 'transition-[width] duration-150'
@@ -171,7 +173,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
           setIsResizing(true);
         }}
         className="absolute top-0 left-0 w-1.5 h-full cursor-col-resize hover:bg-forest-500/30 transition-colors z-30"
-        title="Drag to resize task details"
+        title={t('detail.resizeHandle')}
       />
 
       {/* Header with Title and Action Buttons */}
@@ -180,7 +182,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
           type="text"
           value={activeTask.title}
           onChange={(e) => handleTitleChange(e.target.value)}
-          aria-label="Task title"
+          aria-label={t('detail.titleLabel')}
           className="flex-1 text-lg font-semibold text-slate-800 bg-transparent border-0 border-b border-transparent hover:border-sand-300 focus:border-forest-500 focus:outline-none px-1 py-0.5 rounded transition-colors"
         />
         <div className="flex items-center gap-1">
@@ -190,8 +192,8 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
               useVaultStore.getState().deleteTask(activeTask.id);
               handleClose();
             }}
-            title="Delete task"
-            aria-label="Delete task"
+            title={t('detail.delete')}
+            aria-label={t('detail.delete')}
             className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
           >
             <Trash2 className="w-4 h-4" />
@@ -199,7 +201,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
           <button
             data-testid="close-task-detail-btn"
             onClick={handleClose}
-            aria-label="Close task details"
+            aria-label={t('detail.close')}
             className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-sand-200/60 rounded-lg transition-colors"
           >
             <X className="w-4 h-4" />
@@ -225,7 +227,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
         <div className="space-y-2.5">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Subtasks
+              {t('detail.subtasks')}
             </h4>
             {activeTask.subtasks && activeTask.subtasks.length > 0 && (
               <span className="text-[11px] font-medium text-slate-400">
@@ -290,14 +292,14 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
                     handleAddSubtask();
                   }
                 }}
-                placeholder="Add subtask..."
+                placeholder={t('detail.addSubtaskPlaceholder')}
                 className="flex-1 px-3 py-1.5 text-xs bg-white border border-sand-200 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-forest-500 focus:border-forest-500 transition-all"
               />
               <button
                 type="button"
                 onClick={handleAddSubtask}
                 className="p-1.5 bg-forest-700 text-white rounded-lg hover:bg-forest-800 transition-colors shrink-0"
-                aria-label="Add subtask button"
+                aria-label={t('detail.addSubtaskButton')}
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -310,7 +312,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
           <MarkdownEditor
             value={activeTask.notes || ''}
             onChange={handleNotesChange}
-            placeholder="Add unstructured notes, meeting minutes, or references..."
+            placeholder={t('detail.notesPlaceholder')}
           />
         </div>
       </div>

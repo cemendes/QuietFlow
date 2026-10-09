@@ -14,6 +14,7 @@ import { VaultNode } from '../../store/types';
 import { ipc } from '../../store/ipc';
 import { useVaultStore } from '../../store';
 import FolderContextMenu from './FolderContextMenu';
+import { formatShortDate, useTranslation } from '../../i18n';
 
 export interface FolderItemProps {
   node: VaultNode;
@@ -33,6 +34,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
   onSelectFile,
 }) => {
   const isExpanded = expandedPaths.has(node.path);
+  const { t, language } = useTranslation();
   const [isCreatingSubfolder, setIsCreatingSubfolder] = useState(false);
   const [isCreatingFile, setIsCreatingFile] = useState(false);
   const [newSubName, setNewSubName] = useState('');
@@ -74,10 +76,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
   };
 
   const formatDefaultNoteName = () => {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const now = new Date();
-    const dateStr = `${monthNames[now.getMonth()]} ${now.getDate()}`;
-    return `${node.name} - ${dateStr}`;
+    return `${node.name} - ${formatShortDate(new Date(), language)}`;
   };
 
   const handleCreateFileInFolder = async (customName?: string) => {
@@ -238,7 +237,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
             <button
               type="button"
               data-testid={`folder-menu-btn-${node.name}`}
-              title="Folder options"
+              title={t('folders.options')}
               onClick={(e) => {
                 e.stopPropagation();
                 setShowContextMenu(!showContextMenu);
@@ -252,7 +251,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
             <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity">
               <button
                 type="button"
-                title="New file in folder"
+                title={t('folders.newFile')}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleCreateFileInFolder();
@@ -263,7 +262,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
               </button>
               <button
                 type="button"
-                title="New subfolder"
+                title={t('folders.newSubfolder')}
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsCreatingSubfolder(true);
@@ -331,7 +330,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
                   setNewSubName('');
                 }
               }}
-              placeholder={isCreatingSubfolder ? 'Subfolder name...' : 'Note name...'}
+              placeholder={isCreatingSubfolder ? t('folders.subfolderPlaceholder') : t('folders.notePlaceholder')}
               className="flex-1 px-2 py-1 text-xs bg-white border border-sand-200 rounded-md text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-forest-500"
             />
             <button
@@ -343,7 +342,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
               disabled={!newSubName.trim()}
               className="px-2 py-1 text-[10px] font-semibold text-white bg-forest-700 hover:bg-forest-800 disabled:opacity-40 rounded"
             >
-              Add
+              {t('common.add')}
             </button>
           </div>
         )}
@@ -405,7 +404,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
 
       <button
         type="button"
-        title="Delete file"
+        title={t('folders.deleteFile')}
         onClick={(e) => {
           e.stopPropagation();
           deleteEntry(node.path);

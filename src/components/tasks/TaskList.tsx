@@ -5,6 +5,7 @@ import TaskRow from './TaskRow';
 import QuickAddBar from './QuickAddBar';
 import FocusHeader from './FocusHeader';
 import ZenTheaterModal from '../zen/ZenTheaterModal';
+import { useTranslation } from '../../i18n';
 
 export interface TaskListProps {
   title?: string;
@@ -33,19 +34,20 @@ export const TaskList: React.FC<TaskListProps> = ({
   const setSelectedTag = useVaultStore((state) => state.setSelectedTag);
   const setSelectedPriority = useVaultStore((state) => state.setSelectedPriority);
   const setSearchQuery = useVaultStore((state) => state.setSearchQuery);
+  const { t } = useTranslation();
 
   // Determine display title
   const computedTitle = useMemo(() => {
     if (title) return title;
     if (activeFile) {
-      const fileName = activeFile.split('/').pop()?.replace(/\.md$/, '') || 'Tasks';
+      const fileName = activeFile.split('/').pop()?.replace(/\.md$/, '') || t('common.tasksFallback');
       if (fileName.toLowerCase() === 'inbox') {
-        return '📥 Inbox';
+        return t('tasks.inboxTitle');
       }
       return fileName;
     }
-    return "Today's Focus";
-  }, [title, activeFile]);
+    return t('common.todaysFocus');
+  }, [title, activeFile, t]);
 
   const [activeFocusBucket, setActiveFocusBucket] = React.useState<'all' | 'now' | 'not-now'>('all');
 
@@ -136,11 +138,11 @@ export const TaskList: React.FC<TaskListProps> = ({
         {/* Active Filters Pill Bar (if any filter is active) */}
         {(selectedTag || selectedPriority || searchQuery) && (
           <div data-testid="active-filters-bar" className="flex items-center flex-wrap gap-2 pt-1 text-xs">
-            <span className="text-slate-400 font-medium">Filtered by:</span>
+            <span className="text-slate-400 font-medium">{t('filters.filteredBy')}</span>
 
             {searchQuery && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-sand-200 rounded-md text-slate-700">
-                Search: &quot;{searchQuery}&quot;
+                {t('filters.search', { query: searchQuery })}
                 <button
                   onClick={() => setSearchQuery('')}
                   className="hover:text-terracotta-600 font-bold ml-1"
@@ -164,7 +166,7 @@ export const TaskList: React.FC<TaskListProps> = ({
 
             {selectedPriority && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-terracotta-500/10 border border-terracotta-500/20 rounded-md text-terracotta-700 font-medium">
-                Priority: {selectedPriority}
+                {t('filters.priority', { priority: t(`priorityTag.${selectedPriority}`) })}
                 <button
                   onClick={() => setSelectedPriority(null)}
                   className="hover:text-terracotta-600 font-bold ml-1"
@@ -182,7 +184,7 @@ export const TaskList: React.FC<TaskListProps> = ({
               }}
               className="text-[11px] text-slate-400 hover:text-slate-600 underline ml-1"
             >
-              Clear all
+              {t('filters.clearAll')}
             </button>
           </div>
         )}
@@ -210,11 +212,11 @@ export const TaskList: React.FC<TaskListProps> = ({
                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
               />
             </svg>
-            <p className="text-sm font-medium text-slate-600">No tasks found</p>
+            <p className="text-sm font-medium text-slate-600">{t('tasks.noneFound')}</p>
             <p className="text-xs text-slate-400 mt-1 max-w-sm">
               {searchQuery || selectedTag || selectedPriority
-                ? 'Try adjusting your search query or clearing active filters.'
-                : 'All clear! Press ⌘N or use the input above to capture a new task.'}
+                ? t('tasks.emptyFiltered')
+                : t('tasks.emptyAllClear')}
             </p>
           </div>
         ) : (

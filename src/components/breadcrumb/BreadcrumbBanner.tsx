@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { X, ArrowRight, Compass } from 'lucide-react';
 import { useVaultStore } from '../../store';
+import { useTranslation } from '../../i18n';
 
 export interface BreadcrumbBannerProps {
   thresholdMinutes?: number;
@@ -14,6 +15,7 @@ export const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
 
   const [showBanner, setShowBanner] = useState(false);
   const [breadcrumbFile, setBreadcrumbFile] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Record last activity timestamp on window blur or unmount
@@ -48,7 +50,7 @@ export const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
 
   if (!showBanner || !breadcrumbFile) return null;
 
-  const fileName = breadcrumbFile.split('/').pop()?.replace(/\.md$/, '') || 'your previous notes';
+  const fileName = breadcrumbFile.split('/').pop()?.replace(/\.md$/, '') || t('breadcrumb.previousNotes');
 
   const handleResume = async () => {
     await selectFile(breadcrumbFile);
@@ -66,9 +68,9 @@ export const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
 
       <div className="flex-1 min-w-0 text-xs">
         <p className="font-semibold text-slate-800 truncate">
-          Welcome back! You were exploring <span className="text-forest-700 font-bold">{fileName}</span>.
+          {t('breadcrumb.welcomeBefore')} <span className="text-forest-700 font-bold">{fileName}</span>{t('breadcrumb.welcomeAfter')}
         </p>
-        <p className="text-[11px] text-slate-400">Pick up right where you left off?</p>
+        <p className="text-[11px] text-slate-400">{t('breadcrumb.hint')}</p>
       </div>
 
       <button
@@ -76,14 +78,14 @@ export const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
         onClick={handleResume}
         className="flex items-center gap-1 px-3 py-1.5 bg-forest-700 hover:bg-forest-800 text-white text-xs font-semibold rounded-xl shadow-2xs transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
       >
-        <span>Resume</span>
+        <span>{t('breadcrumb.resume')}</span>
         <ArrowRight className="w-3 h-3" />
       </button>
 
       <button
         type="button"
         onClick={() => setShowBanner(false)}
-        aria-label="Dismiss Breadcrumb"
+        aria-label={t('breadcrumb.dismiss')}
         className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-sand-100 transition-colors shrink-0"
       >
         <X className="w-3.5 h-3.5" />

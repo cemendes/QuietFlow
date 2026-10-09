@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FolderItem } from './FolderItem';
 import { VaultNode } from '../../store/types';
+import { useTranslation } from '../../i18n';
 
 export interface FolderTreeProps {
   tree: VaultNode | null;
@@ -29,6 +30,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   onSelectFile,
   className = '',
 }) => {
+  const { t } = useTranslation();
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => {
     return new Set(collectDirectoryPaths(tree));
   });
@@ -62,7 +64,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   if (!tree) {
     return (
       <div className={`px-3 py-4 text-center text-xs text-stone-400 ${className}`}>
-        No folder open
+        {t('folders.noneOpen')}
       </div>
     );
   }
@@ -73,13 +75,13 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   if (rootItems.length === 0) {
     return (
       <div className={`px-3 py-4 text-center text-xs text-stone-400 ${className}`}>
-        Vault is empty
+        {t('folders.vaultEmpty')}
       </div>
     );
   }
 
   return (
-    <nav aria-label="Vault folders" className={`flex flex-col space-y-0.5 ${className}`}>
+    <nav aria-label={t('folders.navLabel')} className={`flex flex-col space-y-0.5 ${className}`}>
       {rootItems.map((item) => (
         <FolderItem
           key={item.path}

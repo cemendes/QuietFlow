@@ -145,6 +145,22 @@ describe('Sidebar Component', () => {
     expect(screen.getByText(/No folder open/i)).toBeInTheDocument();
   });
 
+  it('renders a labelled New note button above the Inbox and calls onNewNote', () => {
+    const handleNewNote = vi.fn();
+    render(<Sidebar onNewNote={handleNewNote} />);
+
+    const newNoteBtn = screen.getByTestId('new-note-btn');
+    expect(newNoteBtn).toHaveTextContent('New note');
+
+    const inboxBtn = screen.getByTitle('Inbox');
+    expect(
+      newNoteBtn.compareDocumentPosition(inboxBtn) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
+    fireEvent.click(newNoteBtn);
+    expect(handleNewNote).toHaveBeenCalledTimes(1);
+  });
+
   it('handles sidebar collapse and expand toggle', () => {
     const { container } = render(<Sidebar />);
     const toggleBtn = screen.getByTestId('sidebar-toggle-btn');

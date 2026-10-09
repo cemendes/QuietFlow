@@ -1,5 +1,6 @@
 import React from 'react';
 import { useVaultStore } from '../../store';
+import { useTranslation } from '../../i18n';
 
 export interface ViewSwitcherProps {
   className?: string;
@@ -8,17 +9,18 @@ export interface ViewSwitcherProps {
 export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({ className = '' }) => {
   const activeView = useVaultStore((state) => state.activeView);
   const setActiveView = useVaultStore((state) => state.setActiveView);
+  const { t } = useTranslation();
 
   return (
     <div
       role="group"
-      aria-label="View switcher"
+      aria-label={t('view.switcher')}
       className={`inline-flex items-center p-1 bg-sand-100 border border-sand-200 rounded-lg shadow-inner ${className}`}
     >
       <button
         type="button"
-        aria-label="List View"
-        title="List View"
+        aria-label={t('view.list')}
+        title={t('view.list')}
         data-active={activeView === 'list'}
         onClick={() => setActiveView('list')}
         className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
@@ -28,13 +30,13 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({ className = '' }) =>
         }`}
       >
         <span className="text-sm">☰</span>
-        <span>List</span>
+        <span>{t('view.listShort')}</span>
       </button>
 
       <button
         type="button"
-        aria-label="Kanban View"
-        title="Kanban View"
+        aria-label={t('view.kanban')}
+        title={t('view.kanban')}
         data-active={activeView === 'kanban'}
         onClick={() => setActiveView('kanban')}
         className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
@@ -44,7 +46,7 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({ className = '' }) =>
         }`}
       >
         <span className="text-sm">☷</span>
-        <span>Kanban</span>
+        <span>{t('view.kanbanShort')}</span>
       </button>
     </div>
   );

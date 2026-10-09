@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TaskItem, TaskPriority, TaskStatus } from '../../store/types';
 import KanbanCard from './KanbanCard';
+import { useTranslation } from '../../i18n';
 
 export interface KanbanColumnProps {
   id: TaskStatus;
@@ -46,6 +47,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   maxWip,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
+  const { t } = useTranslation();
 
   const isExceededWip = maxWip !== undefined && tasks.length > maxWip;
 
@@ -109,7 +111,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 : 'bg-forest-500/10 text-forest-800'
             }`}
           >
-            {tasks.length} / {maxWip} WIP
+            {t('kanban.wip', { count: tasks.length, max: maxWip })}
           </span>
         ) : (
           <span
@@ -124,7 +126,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
       <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5 min-h-[160px]">
         {tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-sand-200/90 rounded-xl text-center p-4 bg-white/40">
-            <span className="text-xs text-slate-400 font-medium tracking-wide">No tasks</span>
+            <span className="text-xs text-slate-400 font-medium tracking-wide">{t('kanban.noTasks')}</span>
           </div>
         ) : (
           tasks.map((task) => (

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Archive, X, RotateCcw, Search, CheckCircle2, Calendar } from 'lucide-react';
 import { useVaultStore } from '../../store';
+import { useTranslation } from '../../i18n';
 
 export interface ArchiveModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({ isOpen, onClose }) =
   const [searchQuery, setSearchQuery] = useState('');
   const tasks = useVaultStore((state) => state.tasks);
   const toggleTask = useVaultStore((state) => state.toggleTask);
+  const { t } = useTranslation();
 
   if (!isOpen) return null;
 
@@ -23,7 +25,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({ isOpen, onClose }) =
   return (
     <div
       role="dialog"
-      aria-label="Archive"
+      aria-label={t('archive.label')}
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
     >
@@ -43,15 +45,15 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({ isOpen, onClose }) =
               <Archive className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-800 tracking-tight">Completed Tasks Archive</h2>
-              <p className="text-xs text-slate-500">{completedTasks.length} total archived tasks</p>
+              <h2 className="text-base font-bold text-slate-800 tracking-tight">{t('archive.title')}</h2>
+              <p className="text-xs text-slate-500">{t('archive.total', { count: completedTasks.length })}</p>
             </div>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close Archive"
+            aria-label={t('archive.close')}
             className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-sand-200/60 transition-colors"
           >
             <X className="w-4 h-4" />
@@ -66,7 +68,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({ isOpen, onClose }) =
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search archived tasks or #tags..."
+              placeholder={t('archive.searchPlaceholder')}
               className="w-full pl-8 pr-3 py-1.5 text-xs bg-sand-50 border border-sand-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-forest-500"
             />
           </div>
@@ -77,8 +79,8 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({ isOpen, onClose }) =
           {filteredCompleted.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center text-slate-400 space-y-2">
               <CheckCircle2 className="w-8 h-8 stroke-[1.5] text-slate-300" />
-              <p className="text-sm font-medium text-slate-600">No archived tasks found</p>
-              <p className="text-xs text-slate-400">Completed tasks will automatically appear here.</p>
+              <p className="text-sm font-medium text-slate-600">{t('archive.empty')}</p>
+              <p className="text-xs text-slate-400">{t('archive.emptyHint')}</p>
             </div>
           ) : (
             filteredCompleted.map((task) => (
@@ -95,7 +97,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({ isOpen, onClose }) =
                     <p className="text-xs font-medium text-slate-700 line-through truncate">{task.title}</p>
                     {task.completedDate && (
                       <span className="flex items-center gap-1 text-[10px] text-slate-400 mt-0.5">
-                        <Calendar className="w-2.5 h-2.5" /> Completed {task.completedDate}
+                        <Calendar className="w-2.5 h-2.5" /> {t('archive.completedOn', { date: task.completedDate })}
                       </span>
                     )}
                   </div>
@@ -104,12 +106,12 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({ isOpen, onClose }) =
                 <button
                   type="button"
                   onClick={() => toggleTask(task.id)}
-                  title="Restore task to active"
-                  aria-label={`Restore task ${task.title}`}
+                  title={t('archive.restoreTitle')}
+                  aria-label={t('archive.restoreNamed', { title: task.title })}
                   className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-forest-700 bg-white border border-forest-600/30 rounded-lg hover:bg-forest-50 cursor-pointer transition-colors shrink-0"
                 >
                   <RotateCcw className="w-3 h-3" />
-                  Restore
+                  {t('archive.restore')}
                 </button>
               </div>
             ))

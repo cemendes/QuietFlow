@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { sliceTask } from './slicer';
+import { setLanguage } from '../i18n';
 
 describe('Magic Slicer Task Auto-Breaker Suite', () => {
   it('breaks down financial tasks into low-friction steps via offline heuristic fallback', async () => {
@@ -12,6 +13,16 @@ describe('Magic Slicer Task Auto-Breaker Suite', () => {
     const steps = await sliceTask('Draft Master Service Agreement');
     expect(steps.length).toBeGreaterThanOrEqual(3);
     expect(steps[0]).toContain('document');
+  });
+
+  it('returns the offline steps in Brazilian Portuguese when that language is selected', async () => {
+    setLanguage('pt-BR');
+    try {
+      const steps = await sliceTask('Preparar declaração de imposto');
+      expect(steps[0]).toContain('recibos');
+    } finally {
+      setLanguage('en');
+    }
   });
 
   it('uses Gemini API when API key is provided', async () => {
