@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import Sidebar from './Sidebar';
 import { useVaultStore } from '../../store';
@@ -138,6 +138,73 @@ describe('Sidebar Component', () => {
     useVaultStore.setState({ vaultTree: null });
     render(<Sidebar />);
     expect(screen.getByText(/No folder open/i)).toBeInTheDocument();
+  });
+
+  it('renders a labelled New note button above the Inbox and calls onNewNote', () => {
+    const handleNewNote = vi.fn();
+    render(<Sidebar onNewNote={handleNewNote} />);
+
+    const newNoteBtn = screen.getByTestId('new-note-btn');
+    expect(newNoteBtn).toHaveTextContent('New note');
+
+    const inboxBtn = screen.getByTitle('Inbox');
+    expect(
+      newNoteBtn.compareDocumentPosition(inboxBtn) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
+    fireEvent.click(newNoteBtn);
+    expect(handleNewNote).toHaveBeenCalledTimes(1);
+  });
+
+  describe('location cues', () => {
+    const inboxPath = '/path/to/vault/Inbox.md';
+    const treeWithInbox: VaultNode = {
+      ...mockVaultTree,
+      children: [
+        ...mockVaultTree.children!,
+        { name: 'Inbox.md', path: inboxPath, isDirectory: false, fileCount: 0, children: [] },
+      ],
+    };
+
+    it('does not repeat the Inbox note inside the folder tree', () => {
+      useVaultStore.setState({ vaultTree: treeWithInbox });
+      render(<Sidebar />);
+      expect(screen.getByTitle('Inbox')).toBeInTheDocument();
+      expect(screen.queryByTestId(`file-item-${inboxPath}`)).not.toBeInTheDocument();
+      // Other root notes are untouched
+      expect(screen.getByTestId('file-item-/path/to/vault/notes.md')).toBeInTheDocument();
+    });
+
+    it('marks Inbox as the current location only when the Inbox note is open', () => {
+      useVaultStore.setState({ vaultTree: treeWithInbox });
+      render(<Sidebar />);
+      const inboxBtn = screen.getByTitle('Inbox');
+      expect(inboxBtn).toHaveAttribute('data-active', 'false');
+      expect(inboxBtn).not.toHaveAttribute('aria-current');
+
+      act(() => useVaultStore.setState({ activeFile: inboxPath }));
+      expect(inboxBtn).toHaveAttribute('data-active', 'true');
+      expect(inboxBtn).toHaveAttribute('aria-current', 'page');
+    });
+
+    it('gives the active note a visible background and aria-current', () => {
+      render(<Sidebar />);
+      const acmeFile = screen.getByTestId('file-item-/path/to/vault/Customers/Acme Corp.md');
+      expect(acmeFile).toHaveAttribute('aria-current', 'page');
+      expect(acmeFile.className).toContain('bg-[var(--bg-surface)]');
+    });
+
+    it('flags the folder that contains the active note', () => {
+      render(<Sidebar />);
+      expect(screen.getByTestId('folder-row-/path/to/vault/Customers')).toHaveAttribute(
+        'data-contains-active',
+        'true'
+      );
+      expect(screen.getByTestId('folder-row-/path/to/vault/Internal')).toHaveAttribute(
+        'data-contains-active',
+        'false'
+      );
+    });
   });
 
   it('handles sidebar collapse and expand toggle', () => {

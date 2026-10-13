@@ -20,6 +20,7 @@ import {
   Quote,
   CalendarPlus,
 } from 'lucide-react';
+import { useTranslation } from '../../i18n';
 
 declare module '@tiptap/core' {
   interface Storage {
@@ -183,9 +184,11 @@ export interface MarkdownEditorProps {
 export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   value = '',
   onChange,
-  placeholder = 'Add notes, checklist items, or details...',
+  placeholder: placeholderProp,
   className = '',
 }) => {
+  const { t } = useTranslation();
+  const placeholder = placeholderProp ?? t('editor.placeholder');
   const [isSourceMode, setIsSourceMode] = useState(false);
   const [sourceText, setSourceText] = useState(value);
   const isSourceModeRef = useRef(isSourceMode);
@@ -504,7 +507,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     >
       {/* Editor Header */}
       <div className="flex items-center justify-between mb-2 shrink-0">
-        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Notes</span>
+        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('editor.notes')}</span>
       </div>
 
       {/* Formatting Action Toolbar */}

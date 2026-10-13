@@ -12,6 +12,7 @@ import {
   History,
   FileText,
   ExternalLink,
+  Languages,
 } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { isTauriEnvironment } from '../../store/ipc';
@@ -21,13 +22,14 @@ import {
   safeRelaunchApp,
   UpdateInfo,
 } from '../../utils/updater';
+import { LANGUAGES, useTranslation } from '../../i18n';
 
 export interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type TabType = 'vault' | 'ai' | 'snapshots' | 'theme' | 'shortcuts' | 'about';
+type TabType = 'vault' | 'ai' | 'snapshots' | 'theme' | 'language' | 'shortcuts' | 'about';
 
 const formattedBuildTime = (() => {
   try {
@@ -53,6 +55,7 @@ const formattedBuildTime = (() => {
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const vaultPath = useVaultStore((state) => state.vaultPath);
   const loadVault = useVaultStore((state) => state.loadVault);
+  const { t, language, setLanguage } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<TabType>('vault');
   const [tempVaultPath, setTempVaultPath] = useState(vaultPath || '');
@@ -195,7 +198,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   return (
     <div
       role="dialog"
-      aria-label="Settings"
+      aria-label={t('settings.label')}
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
     >
@@ -212,7 +215,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-sand-200 bg-sand-50/70">
           <div className="flex items-center gap-2.5">
-            <h2 className="text-lg font-bold text-slate-800 tracking-tight">Preferences</h2>
+            <h2 className="text-lg font-bold text-slate-800 tracking-tight">{t('settings.title')}</h2>
             <span
               data-testid="preferences-header-version"
               className="text-xs px-2 py-0.5 rounded-full bg-forest-100 text-forest-700 font-medium"
@@ -223,7 +226,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close Settings"
+            aria-label={t('settings.close')}
             className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-sand-200/60 transition-colors"
           >
             <X className="w-4 h-4" />
@@ -245,7 +248,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               }`}
             >
               <Folder className="w-4 h-4 text-forest-600 shrink-0" />
-              Vault Storage
+              {t('settings.tab.vault')}
             </button>
 
             <button
@@ -258,7 +261,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               }`}
             >
               <Wand2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              AI & Magic Slicer
+              {t('settings.tab.ai')}
             </button>
 
             <button
@@ -284,7 +287,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               }`}
             >
               <Palette className="w-4 h-4 text-amber-600 shrink-0" />
-              Theme & Colors
+              {t('settings.tab.theme')}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('language')}
+              className={`flex items-center gap-2.5 w-full px-3 py-2 text-xs font-semibold rounded-lg transition-colors text-left ${
+                activeTab === 'language'
+                  ? 'bg-sand-200 text-forest-800 shadow-2xs'
+                  : 'text-slate-600 hover:bg-sand-100 hover:text-slate-900'
+              }`}
+            >
+              <Languages className="w-4 h-4 text-rose-600 shrink-0" />
+              {t('settings.tab.language')}
             </button>
 
             <button
@@ -297,7 +313,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               }`}
             >
               <Keyboard className="w-4 h-4 text-sky-600 shrink-0" />
-              Shortcuts
+              {t('settings.tab.shortcuts')}
             </button>
 
             <button
@@ -310,7 +326,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               }`}
             >
               <Info className="w-4 h-4 text-purple-600 shrink-0" />
-              About & Status
+              {t('settings.tab.about')}
             </button>
           </div>
 
@@ -319,15 +335,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             {activeTab === 'vault' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800 mb-1">Local Markdown Vault</h3>
+                  <h3 className="text-sm font-bold text-slate-800 mb-1">{t('settings.vault.title')}</h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    QuietFlow stores all tasks and notes directly as plain markdown files on your local drive with zero telemetry or lock-in.
+                    {t('settings.vault.description')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <label htmlFor="vault-location-input" className="block text-xs font-semibold text-slate-700">
-                    Vault Location
+                    {t('settings.vault.location')}
                   </label>
                   <div className="flex items-center gap-2">
                     <input
@@ -344,7 +360,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                       className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-sand-100 hover:bg-sand-200 border border-sand-200 rounded-lg text-slate-700 transition-colors shrink-0"
                     >
                       <FolderOpen className="w-3.5 h-3.5" />
-                      Browse
+                      {t('settings.vault.browse')}
                     </button>
                   </div>
                 </div>
@@ -353,10 +369,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   <div className="text-xs text-slate-500">
                     {savedSuccess ? (
                       <span className="flex items-center gap-1 text-emerald-600 font-medium">
-                        <Check className="w-3.5 h-3.5" /> Vault reloaded successfully
+                        <Check className="w-3.5 h-3.5" /> {t('settings.vault.reloaded')}
                       </span>
                     ) : (
-                      <span>Changes take effect immediately on reload.</span>
+                      <span>{t('settings.vault.hint')}</span>
                     )}
                   </div>
 
@@ -366,7 +382,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     disabled={isApplying || !tempVaultPath.trim()}
                     className="flex items-center gap-1.5 px-4 py-2 bg-forest-700 hover:bg-forest-800 disabled:opacity-50 text-white rounded-lg font-medium text-xs shadow-xs transition-all"
                   >
-                    {isApplying ? 'Applying...' : 'Apply Vault'}
+                    {isApplying ? t('settings.vault.applying') : t('settings.vault.apply')}
                   </button>
                 </div>
               </div>
@@ -375,15 +391,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             {activeTab === 'ai' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800 mb-1">Gemini AI & Magic Slicer</h3>
+                  <h3 className="text-sm font-bold text-slate-800 mb-1">{t('settings.ai.title')}</h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Power the 1-click <b>Magic Slicer</b> task auto-breaker using Google Generative AI. All tasks breakdown into simple, low-friction Markdown checkboxes.
+                    {t('settings.ai.descBefore')} <b>Magic Slicer</b> {t('settings.ai.descAfter')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <label htmlFor="gemini-key-input" className="block text-xs font-semibold text-slate-700">
-                    Google Gemini API Key
+                    {t('settings.ai.keyLabel')}
                   </label>
                   <input
                     id="gemini-key-input"
@@ -394,13 +410,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     className="w-full px-3 py-2 text-xs bg-sand-50 border border-sand-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-forest-500 font-mono"
                   />
                   <p className="text-[11px] text-slate-400">
-                    Keys are stored only locally in your browser/desktop app. If blank, QuietFlow uses instant offline heuristic breakdown.
+                    {t('settings.ai.keyHint')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <label htmlFor="gemini-model-select" className="block text-xs font-semibold text-slate-700">
-                    Gemini Model
+                    {t('settings.ai.model')}
                   </label>
                   <select
                     id="gemini-model-select"
@@ -408,8 +424,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     onChange={(e) => setGeminiModel(e.target.value)}
                     className="w-full px-3 py-2 text-xs bg-sand-50 border border-sand-200 rounded-lg text-slate-800 focus:outline-none focus:ring-1 focus:ring-forest-500"
                   >
-                    <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended - Ultra Fast)</option>
-                    <option value="gemini-3.7-flash">Gemini 3.7 Flash (Advanced Reasoning)</option>
+                    <option value="gemini-2.5-flash">{t('settings.ai.modelFlash25')}</option>
+                    <option value="gemini-3.7-flash">{t('settings.ai.modelFlash37')}</option>
                   </select>
                 </div>
 
@@ -417,7 +433,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   <div className="text-xs text-slate-500">
                     {aiSavedSuccess && (
                       <span className="flex items-center gap-1 text-emerald-600 font-medium">
-                        <Check className="w-3.5 h-3.5" /> AI configuration saved
+                        <Check className="w-3.5 h-3.5" /> {t('settings.ai.saved')}
                       </span>
                     )}
                   </div>
@@ -432,7 +448,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     }}
                     className="flex items-center gap-1.5 px-4 py-2 bg-forest-700 hover:bg-forest-800 text-white rounded-lg font-medium text-xs shadow-xs transition-all cursor-pointer"
                   >
-                    Save AI Settings
+                    {t('settings.ai.save')}
                   </button>
                 </div>
               </div>
@@ -478,9 +494,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             {activeTab === 'theme' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800 mb-1">Color Palette & Aesthetics</h3>
+                  <h3 className="text-sm font-bold text-slate-800 mb-1">{t('settings.theme.title')}</h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Designed with soothing natural tones (warm sand, deep forest green, and subtle terracotta) for all-day focus.
+                    {t('settings.theme.description')}
                   </p>
                 </div>
 
@@ -500,8 +516,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                         <div className="w-3 h-3 rounded-full bg-[#1E3F20]" />
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-slate-800">Warm Sand & Forest (Default)</div>
-                        <div className="text-[11px] text-slate-500">Soft linen background with calming evergreen accents</div>
+                        <div className="text-xs font-bold text-slate-800">{t('settings.theme.warmName')}</div>
+                        <div className="text-[11px] text-slate-500">{t('settings.theme.warmDesc')}</div>
                       </div>
                     </div>
                     {selectedTheme === 'warm-paper' && <Check className="w-4 h-4 text-forest-700" />}
@@ -522,8 +538,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                         <div className="w-3 h-3 rounded-full bg-slate-800" />
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-slate-800">Nordic Minimalist</div>
-                        <div className="text-[11px] text-slate-500">Crisp high-contrast neutrals with muted slate accents</div>
+                        <div className="text-xs font-bold text-slate-800">{t('settings.theme.nordicName')}</div>
+                        <div className="text-[11px] text-slate-500">{t('settings.theme.nordicDesc')}</div>
                       </div>
                     </div>
                     {selectedTheme === 'nordic-slate' && <Check className="w-4 h-4 text-forest-700" />}
@@ -544,8 +560,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                         <div className="w-3 h-3 rounded-full bg-emerald-400" />
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-slate-800">Deep Moss Dark Mode</div>
-                        <div className="text-[11px] text-slate-500">Night owls deep forest palette with glowing accents</div>
+                        <div className="text-xs font-bold text-slate-800">{t('settings.theme.mossName')}</div>
+                        <div className="text-[11px] text-slate-500">{t('settings.theme.mossDesc')}</div>
                       </div>
                     </div>
                     {selectedTheme === 'forest-moss' && <Check className="w-4 h-4 text-forest-700" />}
@@ -554,20 +570,54 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               </div>
             )}
 
+            {activeTab === 'language' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800 mb-1">{t('settings.language.title')}</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    {t('settings.language.description')}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  {LANGUAGES.map(({ code, nativeName }) => (
+                    <button
+                      key={code}
+                      type="button"
+                      data-testid={`language-option-${code}`}
+                      aria-pressed={language === code}
+                      onClick={() => setLanguage(code)}
+                      className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all text-left w-full ${
+                        language === code
+                          ? 'border-forest-600 bg-forest-50/20 ring-1 ring-forest-600'
+                          : 'border-sand-200 hover:border-sand-300 bg-white'
+                      }`}
+                    >
+                      <div>
+                        <div className="text-xs font-bold text-slate-800">{nativeName}</div>
+                        <div className="text-[11px] text-slate-500">{t(`language.${code}`)}</div>
+                      </div>
+                      {language === code && <Check className="w-4 h-4 text-forest-700" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {activeTab === 'shortcuts' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800 mb-1">Keyboard Shortcuts</h3>
+                  <h3 className="text-sm font-bold text-slate-800 mb-1">{t('settings.shortcuts.title')}</h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Designed for fast keyboard-first operation anywhere in macOS.
+                    {t('settings.shortcuts.description')}
                   </p>
                 </div>
 
                 <div className="space-y-2.5 divide-y divide-sand-100">
                   <div className="flex items-center justify-between pt-2">
                     <div>
-                      <div className="text-xs font-semibold text-slate-700">Global Quick Capture</div>
-                      <div className="text-[11px] text-slate-400">Trigger spotlight input anywhere across macOS</div>
+                      <div className="text-xs font-semibold text-slate-700">{t('settings.shortcuts.globalCapture')}</div>
+                      <div className="text-[11px] text-slate-400">{t('settings.shortcuts.globalCaptureDesc')}</div>
                     </div>
                     <kbd className="px-2 py-1 bg-sand-100 border border-sand-200 rounded text-xs font-mono font-semibold text-slate-700">
                       {shortcutKey}
@@ -576,8 +626,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
                   <div className="flex items-center justify-between pt-2.5">
                     <div>
-                      <div className="text-xs font-semibold text-slate-700">In-App Quick Capture</div>
-                      <div className="text-[11px] text-slate-400">Open capture modal inside the app</div>
+                      <div className="text-xs font-semibold text-slate-700">{t('settings.shortcuts.inAppCapture')}</div>
+                      <div className="text-[11px] text-slate-400">{t('settings.shortcuts.inAppCaptureDesc')}</div>
                     </div>
                     <kbd className="px-2 py-1 bg-sand-100 border border-sand-200 rounded text-xs font-mono font-semibold text-slate-700">
                       ⌘K
@@ -586,8 +636,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
                   <div className="flex items-center justify-between pt-2.5">
                     <div>
-                      <div className="text-xs font-semibold text-slate-700">New Task / Note</div>
-                      <div className="text-[11px] text-slate-400">Focus quick add input or create note</div>
+                      <div className="text-xs font-semibold text-slate-700">{t('settings.shortcuts.newTask')}</div>
+                      <div className="text-[11px] text-slate-400">{t('settings.shortcuts.newTaskDesc')}</div>
                     </div>
                     <kbd className="px-2 py-1 bg-sand-100 border border-sand-200 rounded text-xs font-mono font-semibold text-slate-700">
                       ⌘N
@@ -596,8 +646,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
                   <div className="flex items-center justify-between pt-2.5">
                     <div>
-                      <div className="text-xs font-semibold text-slate-700">Toggle Sidebar</div>
-                      <div className="text-[11px] text-slate-400">Collapse or expand navigation sidebar</div>
+                      <div className="text-xs font-semibold text-slate-700">{t('settings.shortcuts.toggleSidebar')}</div>
+                      <div className="text-[11px] text-slate-400">{t('settings.shortcuts.toggleSidebarDesc')}</div>
                     </div>
                     <kbd className="px-2 py-1 bg-sand-100 border border-sand-200 rounded text-xs font-mono font-semibold text-slate-700">
                       ⌘B
@@ -606,8 +656,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
                   <div className="flex items-center justify-between pt-2.5">
                     <div>
-                      <div className="text-xs font-semibold text-slate-700">Dismiss / Close</div>
-                      <div className="text-[11px] text-slate-400">Close drawer, modal, or blur inputs</div>
+                      <div className="text-xs font-semibold text-slate-700">{t('settings.shortcuts.dismiss')}</div>
+                      <div className="text-[11px] text-slate-400">{t('settings.shortcuts.dismissDesc')}</div>
                     </div>
                     <kbd className="px-2 py-1 bg-sand-100 border border-sand-200 rounded text-xs font-mono font-semibold text-slate-700">
                       Esc
@@ -625,13 +675,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     <h3 className="text-sm font-bold text-slate-800">QuietFlow Desktop</h3>
                   </div>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    A calm, local-first markdown task manager crafted for deep work, speed, and privacy.
+                    {t('settings.about.description')}
                   </p>
                 </div>
 
                 <div className="p-4 bg-sand-50 rounded-xl border border-sand-200 space-y-2.5 text-xs">
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Current Version</span>
+                    <span className="text-slate-500">{t('settings.about.version')}</span>
                     <div className="flex items-center gap-1.5 font-mono text-slate-700 font-medium">
                       <span data-testid="app-current-version">v{appVersion}</span>
                       {import.meta.env.DEV && typeof __COMMIT_HASH__ !== 'undefined' && (
@@ -650,16 +700,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     </div>
                   )}
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Architecture</span>
+                    <span className="text-slate-500">{t('settings.about.architecture')}</span>
                     <span className="text-slate-700">Tauri v2 + React 18 + Rust Core</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Storage Backend</span>
-                    <span className="text-slate-700">Plaintext Markdown (Filesystem)</span>
+                    <span className="text-slate-500">{t('settings.about.storage')}</span>
+                    <span className="text-slate-700">{t('settings.about.storageValue')}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Sync & Privacy</span>
-                    <span className="text-emerald-700 font-medium">100% Local / Zero Cloud Leak</span>
+                    <span className="text-slate-500">{t('settings.about.sync')}</span>
+                    <span className="text-emerald-700 font-medium">{t('settings.about.syncValue')}</span>
                   </div>
 
                   {import.meta.env.DEV ? (

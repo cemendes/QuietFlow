@@ -14,6 +14,8 @@ import { ipc } from '../../store/ipc';
 import { useVaultStore } from '../../store';
 import { resolveFolderIcon } from '../../services/logoService';
 import FolderContextMenu from './FolderContextMenu';
+import { useTranslation } from '../../i18n';
+import { NAV_ITEM_ACTIVE, NAV_ITEM_IDLE } from './navItemStyles';
 import { FileHistoryModal } from '../history/FileHistoryModal';
 
 export interface FolderItemProps {
@@ -38,6 +40,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
   onSelectFolder,
 }) => {
   const isExpanded = expandedPaths.has(node.path);
+  const { t } = useTranslation();
   const [isCreatingSubfolder, setIsCreatingSubfolder] = useState(false);
   const [isCreatingFile, setIsCreatingFile] = useState(false);
   const [newSubName, setNewSubName] = useState('');
@@ -246,11 +249,21 @@ export const FolderItem: React.FC<FolderItemProps> = ({
   const isFolderActive = Boolean(activeFolder && activeFolder === node.path);
 
   if (node.isDirectory) {
+    const containsActive = !!activeFile && activeFile.startsWith(`${node.path}/`);
+    // A collapsed folder hides its active note, so the folder row itself carries the full highlight
+    const folderRowState = isFolderActive
+      ? NAV_ITEM_ACTIVE
+      : containsActive
+      ? isExpanded
+        ? 'text-forest-700 font-semibold hover:bg-sand-200'
+        : NAV_ITEM_ACTIVE
+      : 'text-stone-700 font-medium hover:bg-sand-200 hover:text-stone-900';
+
     return (
       <div
         data-testid={`folder-container-${node.path}`}
         className={`flex flex-col select-none rounded-md transition-colors ${
-          isDragOver ? 'bg-forest-100/60 ring-1 ring-forest-500' : ''
+          isDragOver ? 'bg-forest-100 ring-1 ring-forest-500' : ''
         } ${level === 0 ? 'border-l-2 border-forest-500/40 ml-1' : ''}`}
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
@@ -266,11 +279,9 @@ export const FolderItem: React.FC<FolderItemProps> = ({
             setShowContextMenu(true);
           }}
           style={{ paddingLeft: `${Math.max(8, level * 14 + 8)}px` }}
-          className={`group relative flex w-full items-center justify-between py-1.5 pr-2 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-            isFolderActive
-              ? 'bg-sand-200/90 text-forest-800 font-semibold shadow-xs'
-              : 'text-stone-700 hover:bg-sand-200/60 hover:text-stone-900'
-          }`}
+          data-testid={`folder-row-${node.path}`}
+          data-contains-active={containsActive ? 'true' : 'false'}
+          className={`group relative flex w-full items-center justify-between py-1.5 pr-2 rounded-md text-xs transition-colors cursor-pointer ${folderRowState}`}
           onClick={() => {
             if (onSelectFolder) {
               onSelectFolder(node.path);
@@ -325,7 +336,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
             <button
               type="button"
               data-testid={`folder-menu-btn-${node.name}`}
-              title="Folder options"
+              title={t('folders.options')}
               onClick={(e) => {
                 e.stopPropagation();
                 setShowContextMenu(!showContextMenu);
@@ -339,7 +350,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
             <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
               <button
                 type="button"
-                title="New file in folder"
+                title={t('folders.newFile')}
                 onClick={(e) => {
                   e.stopPropagation();
                   const defaultName = formatDefaultNoteName();
@@ -354,7 +365,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
               </button>
               <button
                 type="button"
-                title="New subfolder"
+                title={t('folders.newSubfolder')}
                 onClick={(e) => {
                   e.stopPropagation();
                   setNewSubName('');
@@ -423,7 +434,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
                   setNewSubName('');
                 }
               }}
-              placeholder={isCreatingSubfolder ? 'Subfolder name...' : 'Note name...'}
+              placeholder={isCreatingSubfolder ? t('folders.subfolderPlaceholder') : t('folders.notePlaceholder')}
               className="flex-1 px-2 py-1 text-xs bg-white border border-sand-200 rounded-md text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-forest-500"
             />
             <button
@@ -435,7 +446,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
               disabled={!newSubName.trim()}
               className="px-2 py-1 text-[10px] font-semibold text-white bg-forest-700 hover:bg-forest-800 disabled:opacity-40 rounded"
             >
-              Add
+              {t('common.add')}
             </button>
           </div>
         )}
@@ -485,12 +496,13 @@ export const FolderItem: React.FC<FolderItemProps> = ({
         onClick={() => onSelectFile(node.path)}
         data-testid={`file-item-${node.path}`}
         data-active={isActive ? 'true' : 'false'}
+        aria-current={isActive ? 'page' : undefined}
         className={`group flex w-full items-center justify-between py-1.5 pr-2 rounded-md text-xs transition-all text-left cursor-pointer ${
           isDragOver
-            ? 'bg-forest-100/60 ring-1 ring-forest-500'
+            ? 'bg-forest-100 ring-1 ring-forest-500'
             : isActive
-            ? 'bg-sand-200/90 text-forest-700 font-semibold shadow-xs'
-            : 'text-stone-600 hover:bg-sand-200/50 hover:text-stone-900 font-normal'
+            ? NAV_ITEM_ACTIVE
+            : `${NAV_ITEM_IDLE} font-normal`
         }`}
       >
         <div className="flex items-center gap-1.5 min-w-0 flex-1 pr-1">

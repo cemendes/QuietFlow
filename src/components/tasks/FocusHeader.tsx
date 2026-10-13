@@ -1,6 +1,7 @@
 import React from 'react';
 import { CheckCircle2, Flame, Layers, Sparkles } from 'lucide-react';
 import ViewSwitcher from './ViewSwitcher';
+import { useTranslation } from '../../i18n';
 
 export type FocusBucket = 'all' | 'now' | 'not-now';
 
@@ -25,6 +26,7 @@ export const FocusHeader: React.FC<FocusHeaderProps> = ({
   isSaving = false,
   onOpenZen,
 }) => {
+  const { t } = useTranslation();
   const percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   const radius = 16;
   const circumference = 2 * Math.PI * radius;
@@ -40,7 +42,7 @@ export const FocusHeader: React.FC<FocusHeaderProps> = ({
                 (icon.startsWith('data:') || icon.startsWith('http')) ? (
                   <img
                     src={icon}
-                    alt="Folder logo"
+                    alt={t('focus.folderLogoAlt')}
                     className="w-7 h-7 rounded-lg object-contain border border-sand-200 shadow-2xs shrink-0"
                     onError={(e) => {
                       (e.currentTarget as HTMLElement).style.display = 'none';
@@ -84,14 +86,14 @@ export const FocusHeader: React.FC<FocusHeaderProps> = ({
               </span>
             </div>
             <span className="text-xs font-semibold text-slate-700">
-              {completedCount} of {totalCount} completed
+              {t('focus.completedCount', { completed: completedCount, total: totalCount })}
             </span>
           </div>
 
           {isSaving && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-amber-700 bg-amber-500/10 border border-amber-500/20 rounded-full animate-pulse">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
-              Saving...
+              {t('common.saving')}
             </span>
           )}
         </div>
@@ -105,7 +107,7 @@ export const FocusHeader: React.FC<FocusHeaderProps> = ({
               className="flex items-center gap-1.5 px-3 py-1.5 bg-forest-50 text-forest-800 border border-forest-600/30 rounded-xl text-xs font-semibold hover:bg-forest-100/80 transition-all hover:scale-105 active:scale-95 shadow-2xs cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5 text-forest-600" />
-              <span>Zen Focus</span>
+              <span>{t('focus.zen')}</span>
             </button>
           )}
           <ViewSwitcher />
@@ -125,7 +127,7 @@ export const FocusHeader: React.FC<FocusHeaderProps> = ({
             }`}
           >
             <Layers className="w-3.5 h-3.5 text-slate-500" />
-            All Tasks
+            {t('focus.all')}
           </button>
           <button
             type="button"
@@ -137,7 +139,7 @@ export const FocusHeader: React.FC<FocusHeaderProps> = ({
             }`}
           >
             <Flame className="w-3.5 h-3.5 text-rose-600" />
-            Now Only
+            {t('focus.now')}
           </button>
           <button
             type="button"
@@ -149,7 +151,7 @@ export const FocusHeader: React.FC<FocusHeaderProps> = ({
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
-            Backlog
+            {t('focus.later')}
           </button>
         </div>
       </div>

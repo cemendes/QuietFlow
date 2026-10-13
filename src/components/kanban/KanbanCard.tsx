@@ -1,6 +1,7 @@
 import React from 'react';
 import { GripVertical, FileText } from 'lucide-react';
 import { TaskItem, TaskPriority, TaskStatus } from '../../store/types';
+import { Language, formatShortDate, useTranslation } from '../../i18n';
 import { useVaultStore } from '../../store';
 
 export interface KanbanCardProps {
@@ -36,7 +37,10 @@ const priorityConfig: Record<
   },
 };
 
-const formatDueDate = (dateStr?: string): { formatted: string; isOverdue: boolean } | null => {
+const formatDueDate = (
+  dateStr: string | undefined,
+  language: Language
+): { formatted: string; isOverdue: boolean } | null => {
   if (!dateStr) return null;
   try {
     const parts = dateStr.split('-');
@@ -46,8 +50,7 @@ const formatDueDate = (dateStr?: string): { formatted: string; isOverdue: boolea
     today.setHours(0, 0, 0, 0);
 
     const isOverdue = date < today;
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const formatted = `${monthNames[date.getMonth()]} ${date.getDate()}`;
+    const formatted = formatShortDate(date, language);
     return { formatted, isOverdue };
   } catch {
     return { formatted: dateStr, isOverdue: false };
@@ -61,10 +64,11 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
   onPriorityClick,
   onTagClick,
 }) => {
+  const { t, language } = useTranslation();
   const isDone = task.status === 'done';
   const subtasks = task.subtasks || [];
   const completedSubtasks = subtasks.filter((s) => s.status === 'done').length;
-  const dueDateInfo = formatDueDate(task.dueDate);
+  const dueDateInfo = formatDueDate(task.dueDate, language);
 
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('text/plain', task.id);
@@ -146,7 +150,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
                 priorityConfig[task.priority].border
               }`}
             >
-              {task.priority}
+              {t(`priorityTag.${task.priority}`)}
             </button>
           )}
 
@@ -188,7 +192,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
         {/* Subtask progress */}
         {subtasks.length > 0 && (
           <div
-            title={`${completedSubtasks} of ${subtasks.length} subtasks completed`}
+            title={t('tasks.subtasksProgress', { completed: completedSubtasks, total: subtasks.length })}
             className="flex items-center gap-1 text-[11px] text-slate-400 font-medium ml-auto"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

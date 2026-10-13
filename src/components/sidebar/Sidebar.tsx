@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Inbox,
   Settings,
@@ -12,6 +12,8 @@ import {
 import { useVaultStore } from '../../store';
 import { isTauriEnvironment, ipc } from '../../store/ipc';
 import { FolderTree } from './FolderTree';
+import { useTranslation } from '../../i18n';
+import { NAV_ITEM_ACTIVE, NAV_ITEM_IDLE } from './navItemStyles';
 
 export interface SidebarProps {
   className?: string;
@@ -49,6 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const tasks = useVaultStore((state) => state.tasks);
   const refreshVault = useVaultStore((state) => state.refreshVault);
   const getFolderIcon = useVaultStore((state) => state.getFolderIcon);
+  const { t } = useTranslation();
 
   // Keep activeScope in sync with activeFile and activeFolder
   useEffect(() => {
@@ -128,6 +131,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return t.filePath?.toLowerCase().includes('inbox') && t.status !== 'done';
   }).length;
 
+  // The Inbox note lives at the vault root but is reached through its own nav button,
+  // so it is left out of the folder tree to avoid showing the same destination twice.
+  const inboxNode = useMemo(
+    () => vaultTree?.children?.find((c) => !c.isDirectory && c.name.toLowerCase().includes('inbox')),
+    [vaultTree]
+  );
+  const folderTree = useMemo(
+    () =>
+      vaultTree && inboxNode
+        ? { ...vaultTree, children: vaultTree.children?.filter((c) => c !== inboxNode) }
+        : vaultTree,
+    [vaultTree, inboxNode]
+  );
+  const isInboxActive = !!inboxNode && activeFile === inboxNode.path;
+  const isVaultActive = activeScope === 'vault' || (!!vaultPath && activeFolder === vaultPath);
+
   const handleVaultClick = async () => {
     setActiveScope('vault');
     setActiveTaskId(null);
@@ -142,10 +161,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setActiveView('list');
     if (!vaultPath) return;
 
-    let inboxNode = vaultTree?.children?.find(
-      (c) => !c.isDirectory && (c.name.toLowerCase() === 'inbox.md' || c.name.toLowerCase().includes('inbox'))
-    );
-
     if (!inboxNode) {
       const inboxPath = `${vaultPath}/Inbox.md`;
       const initialContent = `---\ntitle: Inbox\n---\n\n# Tasks\n`;
@@ -158,11 +173,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const handleFileSelect = (filePath: string) => {
-    if (filePath.toLowerCase().includes('inbox')) {
-      setActiveScope('inbox');
-    } else {
-      setActiveScope(null);
-    }
     if (onSelectFile) {
       onSelectFile(filePath);
     } else {
@@ -186,7 +196,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             setIsResizing(true);
           }}
           className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-forest-500/30 transition-colors z-30"
-          title="Drag to resize sidebar"
+          title={t('sidebar.resizeHandle')}
         />
       )}
 
@@ -215,8 +225,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             data-testid="sidebar-toggle-btn"
             onClick={() => setIsCollapsed(true)}
             className="p-1 rounded-md text-stone-400 hover:text-stone-700 hover:bg-sand-200/60 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600 z-10"
-            title="Collapse sidebar"
-            aria-label="Collapse sidebar"
+            title={t('sidebar.collapse')}
+            aria-label={t('sidebar.collapse')}
           >
             <PanelLeftClose className="w-4 h-4" />
           </button>
@@ -231,8 +241,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             data-testid="sidebar-toggle-btn"
             onClick={() => setIsCollapsed(false)}
             className="p-1.5 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-sand-200 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600 shadow-xs"
-            title="Expand sidebar"
-            aria-label="Expand sidebar"
+            title={t('sidebar.expand')}
+            aria-label={t('sidebar.expand')}
           >
             <PanelLeft className="w-4 h-4" />
           </button>
@@ -252,17 +262,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               QuietFlow
             </span>
           </div>
-
-          {onNewNote && (
-            <button
-              type="button"
-              onClick={onNewNote}
-              className="p-1 rounded-md text-stone-500 hover:text-forest-700 hover:bg-sand-200/60 transition-colors"
-              title="New note (Cmd+N)"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          )}
         </div>
       ) : (
         <div className="flex justify-center py-2 mb-2">
@@ -275,21 +274,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       {/* System Views Navigation */}
-      <div className="px-2 pt-3 pb-1 space-y-0.5">
+      <div className="px-2 py-1 space-y-0.5">
+        {onNewNote && (
+          <button
+            type="button"
+            data-testid="new-note-btn"
+            onClick={onNewNote}
+            title={t('sidebar.newNote')}
+            aria-label={t('sidebar.newNoteLabel')}
+            className={`flex w-full items-center gap-2 px-2 py-1.5 mb-1.5 rounded-md text-xs font-semibold text-white bg-forest-700 hover:bg-forest-800 shadow-xs transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600 ${
+              isCollapsed ? 'justify-center' : ''
+            }`}
+          >
+            <Plus className="w-4 h-4 shrink-0" />
+            {!isCollapsed && <span className="truncate">{t('sidebar.newNoteLabel')}</span>}
+          </button>
+        )}
+
         {/* My Vault — loads all tasks across entire vault */}
         <button
           type="button"
           onClick={handleVaultClick}
-          title="My Vault"
-          className={`flex w-full items-center px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
-            activeScope === 'vault' || activeFolder === vaultPath
-              ? 'bg-sand-200/90 text-forest-700 font-semibold shadow-xs'
-              : 'text-stone-600 hover:bg-sand-200/50 hover:text-stone-900'
+          title={t('sidebar.myVault')}
+          data-active={isVaultActive ? 'true' : 'false'}
+          aria-current={isVaultActive ? 'page' : undefined}
+          className={`flex w-full items-center px-2 py-1.5 rounded-md text-xs transition-colors ${
+            isVaultActive ? NAV_ITEM_ACTIVE : `${NAV_ITEM_IDLE} font-medium`
           }`}
         >
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-xs leading-none shrink-0 w-4 text-center">🗄️</span>
-            {!isCollapsed && <span className="truncate">My Vault</span>}
+            {!isCollapsed && <span className="truncate">{t('sidebar.myVault')}</span>}
           </div>
         </button>
 
@@ -297,22 +312,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           onClick={handleInboxClick}
-          title="Inbox"
-          className={`flex w-full items-center justify-between px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
-            activeScope === 'inbox' || activeFile?.toLowerCase().includes('inbox')
-              ? 'bg-sand-200/90 text-forest-700 font-semibold shadow-xs'
-              : 'text-stone-600 hover:bg-sand-200/50 hover:text-stone-900'
+          title={t('sidebar.inbox')}
+          data-active={isInboxActive ? 'true' : 'false'}
+          aria-current={isInboxActive ? 'page' : undefined}
+          className={`flex w-full items-center justify-between px-2 py-1.5 rounded-md text-xs transition-colors ${
+            isInboxActive ? NAV_ITEM_ACTIVE : `${NAV_ITEM_IDLE} font-medium`
           }`}
         >
           <div className="flex items-center gap-2 min-w-0">
             <Inbox
-              className={`w-4 h-4 shrink-0 ${
-                activeScope === 'inbox' || activeFile?.toLowerCase().includes('inbox')
-                  ? 'text-forest-600'
-                  : 'text-stone-400'
-              }`}
+              className={`w-4 h-4 shrink-0 ${isInboxActive ? 'text-forest-600' : 'text-stone-400'}`}
             />
-            {!isCollapsed && <span className="truncate">Inbox</span>}
+            {!isCollapsed && <span className="truncate">{t('sidebar.inbox')}</span>}
           </div>
           {!isCollapsed && inboxTasksCount > 0 && (
             <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-forest-100 text-forest-700">
@@ -331,14 +342,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <>
             <div className="flex items-center justify-between px-2 py-1 mb-1">
               <span className="text-[10px] font-bold tracking-wider text-stone-400 uppercase">
-                Projects
+                {t('sidebar.folders')}
               </span>
               <button
                 type="button"
                 data-testid="add-folder-btn"
                 onClick={() => setIsCreatingFolder(!isCreatingFolder)}
-                title="New project"
-                aria-label="New project"
+                title={t('sidebar.newFolder')}
+                aria-label={t('sidebar.newFolder')}
                 className="p-1 text-stone-400 hover:text-forest-700 hover:bg-sand-200/60 rounded transition-colors"
               >
                 <FolderPlus className="w-3.5 h-3.5" />
@@ -361,7 +372,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       setNewFolderName('');
                     }
                   }}
-                  placeholder="Folder name..."
+                  placeholder={t('sidebar.folderNamePlaceholder')}
                   className="flex-1 text-xs text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none py-0.5"
                 />
                 <button
@@ -370,13 +381,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   disabled={!newFolderName.trim()}
                   className="px-1.5 py-0.5 text-[10px] font-semibold text-white bg-forest-700 hover:bg-forest-800 disabled:opacity-40 rounded transition-colors"
                 >
-                  Add
+                  {t('common.add')}
                 </button>
               </div>
             )}
 
             <FolderTree
-              tree={vaultTree}
+              tree={folderTree}
               activeFile={activeFile}
               activeFolder={activeFolder}
               onSelectFile={handleFileSelect}
@@ -394,11 +405,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ?.filter((c) => c.isDirectory)
               .map((folder) => {
                 const icon = getFolderIcon ? getFolderIcon(folder.path) : (typeof localStorage !== 'undefined' ? localStorage.getItem(`folder-icon-${folder.path}`) : null);
+                const containsActive = !!activeFile && activeFile.startsWith(`${folder.path}/`);
                 return (
                   <button
                     key={folder.path}
                     type="button"
                     title={folder.name}
+                    aria-current={containsActive ? 'true' : undefined}
                     onClick={() => {
                       setIsCollapsed(false);
                       const defaultNote = folder.children?.find((c) => !c.isDirectory && c.name.endsWith('.md'));
@@ -406,7 +419,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         handleFileSelect(defaultNote.path);
                       }
                     }}
-                    className="p-2 rounded-lg text-stone-500 hover:text-forest-700 hover:bg-sand-200/80 transition-colors cursor-pointer group relative flex items-center justify-center"
+                    className={`p-2 rounded-lg transition-colors cursor-pointer group relative flex items-center justify-center ${
+                      containsActive
+                        ? NAV_ITEM_ACTIVE
+                        : 'text-stone-500 hover:text-forest-700 hover:bg-sand-200'
+                    }`}
                   >
                     {icon ? (
                       (icon.startsWith('data:') || icon.startsWith('asset:') || icon.startsWith('http') || icon.includes('/') || icon.includes('.')) ? (
@@ -444,23 +461,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           onClick={onOpenArchive}
-          title="Archive"
-          aria-label="Archive"
-          className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-stone-600 hover:bg-sand-200/60 hover:text-stone-900 transition-colors"
+          title={t('sidebar.archive')}
+          aria-label={t('sidebar.archive')}
+          className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-stone-600 hover:bg-sand-200 hover:text-stone-900 transition-colors"
         >
           <Archive className="w-4 h-4 text-stone-400 shrink-0" />
-          {!isCollapsed && <span>Archive</span>}
+          {!isCollapsed && <span>{t('sidebar.archive')}</span>}
         </button>
 
         <button
           type="button"
           onClick={onOpenSettings}
-          title="Settings"
-          aria-label="Settings"
-          className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-stone-600 hover:bg-sand-200/60 hover:text-stone-900 transition-colors"
+          title={t('sidebar.settings')}
+          aria-label={t('sidebar.settings')}
+          className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-stone-600 hover:bg-sand-200 hover:text-stone-900 transition-colors"
         >
           <Settings className="w-4 h-4 text-stone-400 shrink-0" />
-          {!isCollapsed && <span>Settings</span>}
+          {!isCollapsed && <span>{t('sidebar.settings')}</span>}
         </button>
       </div>
     </aside>

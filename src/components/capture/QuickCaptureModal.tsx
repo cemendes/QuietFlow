@@ -13,6 +13,7 @@ import { useVaultStore } from '../../store';
 import { VaultNode, TaskPriority, NewTaskInput } from '../../store/types';
 import { addTaskToDocument } from '../../core/markdown';
 import { ipc } from '../../store/ipc';
+import { useTranslation } from '../../i18n';
 
 export type CaptureType = 'task' | 'note';
 
@@ -118,6 +119,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
   const activeFile = useVaultStore((state) => state.activeFile);
   const storeAddTask = useVaultStore((state) => state.addTask);
   const refreshActiveFile = useVaultStore((state) => state.refreshActiveFile);
+  const { t } = useTranslation();
 
   const [inputVal, setInputVal] = useState('');
   const [captureType, setCaptureType] = useState<CaptureType>('task');
@@ -251,7 +253,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
   return (
     <div
       role="dialog"
-      aria-label="Quick Capture"
+      aria-label={t('capture.label')}
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-start justify-center pt-24 sm:pt-28 px-4"
     >
@@ -280,7 +282,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
               }`}
             >
               <CheckSquare className="w-3.5 h-3.5 text-forest-600" />
-              Task
+              {t('capture.task')}
             </button>
             <button
               type="button"
@@ -293,7 +295,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
               }`}
             >
               <FileText className="w-3.5 h-3.5 text-amber-600" />
-              Quick Note
+              {t('capture.note')}
             </button>
           </div>
 
@@ -302,7 +304,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
             <div className="flex items-center gap-1.5 bg-sand-100 px-2.5 py-1 rounded-lg border border-sand-200/60 text-xs text-slate-600">
               <Folder className="w-3.5 h-3.5 text-forest-600 shrink-0" />
               <select
-                aria-label="Destination"
+                aria-label={t('capture.destination')}
                 value={selectedFile}
                 onChange={(e) => setSelectedFile(e.target.value)}
                 className="bg-transparent text-xs font-medium text-slate-700 focus:outline-none cursor-pointer max-w-[180px] truncate"
@@ -313,7 +315,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
                   </option>
                 ))}
                 {files.length === 0 && (
-                  <option value="">(No files in vault)</option>
+                  <option value="">{t('capture.noFiles')}</option>
                 )}
               </select>
             </div>
@@ -321,7 +323,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close"
+              aria-label={t('common.close')}
               className="p-1 text-slate-400 hover:text-slate-600 rounded-md hover:bg-sand-200/50 transition-colors"
             >
               <X className="w-4 h-4" />
@@ -340,8 +342,8 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
             onKeyDown={handleKeyDown}
             placeholder={
               captureType === 'task'
-                ? "What's on your mind? (e.g. Call Alice #sales @high due:2026-09-01)"
-                : "What's on your mind? Write a quick note..."
+                ? t('capture.taskPlaceholder')
+                : t('capture.notePlaceholder')
             }
             className="w-full text-base sm:text-lg text-slate-900 placeholder-slate-400 bg-transparent border-0 focus:outline-none focus:ring-0 leading-relaxed"
           />
@@ -370,7 +372,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
                   }`}
                 >
                   <AlertCircle className="w-3 h-3" />
-                  {parsed.priority.toUpperCase()}
+                  {t(`priorityTag.${parsed.priority}`).toUpperCase()}
                 </span>
               )}
 
@@ -391,13 +393,13 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
               <kbd className="px-1.5 py-0.5 bg-white border border-sand-200 rounded text-[10px] font-semibold text-slate-600 shadow-2xs">
                 ↵ Enter
               </kbd>
-              Save
+              {t('common.save')}
             </span>
             <span className="flex items-center gap-1">
               <kbd className="px-1.5 py-0.5 bg-white border border-sand-200 rounded text-[10px] font-semibold text-slate-600 shadow-2xs">
                 Esc
               </kbd>
-              Cancel
+              {t('common.cancel')}
             </span>
           </div>
 
@@ -405,11 +407,11 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
             type="button"
             onClick={handleSave}
             disabled={!inputVal.trim() || isSubmitting}
-            aria-label="Save capture"
+            aria-label={t('capture.saveLabel')}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-forest-700 hover:bg-forest-800 disabled:opacity-40 disabled:hover:bg-forest-700 text-white rounded-lg font-medium text-xs shadow-sm transition-all"
           >
             <CornerDownLeft className="w-3.5 h-3.5" />
-            Save
+            {t('common.save')}
           </button>
         </div>
 
