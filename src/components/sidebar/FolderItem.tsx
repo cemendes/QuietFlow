@@ -15,6 +15,7 @@ import { ipc } from '../../store/ipc';
 import { useVaultStore } from '../../store';
 import FolderContextMenu from './FolderContextMenu';
 import { formatShortDate, useTranslation } from '../../i18n';
+import { NAV_ITEM_ACTIVE, NAV_ITEM_IDLE } from './navItemStyles';
 
 export interface FolderItemProps {
   node: VaultNode;
@@ -176,11 +177,19 @@ export const FolderItem: React.FC<FolderItemProps> = ({
   };
 
   if (node.isDirectory) {
+    const containsActive = !!activeFile && activeFile.startsWith(`${node.path}/`);
+    // A collapsed folder hides its active note, so the folder row itself carries the full highlight
+    const folderRowState = containsActive
+      ? isExpanded
+        ? 'text-forest-700 font-semibold hover:bg-sand-200'
+        : NAV_ITEM_ACTIVE
+      : 'text-stone-700 font-medium hover:bg-sand-200 hover:text-stone-900';
+
     return (
       <div
         data-testid={`folder-container-${node.path}`}
         className={`flex flex-col select-none rounded-md transition-colors ${
-          isDragOver ? 'bg-forest-100/60 ring-1 ring-forest-500' : ''
+          isDragOver ? 'bg-forest-100 ring-1 ring-forest-500' : ''
         }`}
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
@@ -196,7 +205,9 @@ export const FolderItem: React.FC<FolderItemProps> = ({
             setShowContextMenu(true);
           }}
           style={{ paddingLeft: `${Math.max(8, level * 14 + 8)}px` }}
-          className="group relative flex w-full items-center justify-between py-1.5 pr-2 rounded-md text-xs font-medium text-stone-700 hover:bg-sand-200/60 hover:text-stone-900 transition-colors cursor-pointer"
+          data-testid={`folder-row-${node.path}`}
+          data-contains-active={containsActive ? 'true' : 'false'}
+          className={`group relative flex w-full items-center justify-between py-1.5 pr-2 rounded-md text-xs transition-colors cursor-pointer ${folderRowState}`}
           onClick={() => onToggleFolder(node.path)}
         >
           <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -385,12 +396,13 @@ export const FolderItem: React.FC<FolderItemProps> = ({
       onClick={() => onSelectFile(node.path)}
       data-testid={`file-item-${node.path}`}
       data-active={isActive ? 'true' : 'false'}
+      aria-current={isActive ? 'page' : undefined}
       className={`group flex w-full items-center justify-between py-1.5 pr-2 rounded-md text-xs transition-all text-left cursor-pointer ${
         isDragOver
-          ? 'bg-forest-100/60 ring-1 ring-forest-500'
+          ? 'bg-forest-100 ring-1 ring-forest-500'
           : isActive
-          ? 'bg-sand-200/90 text-forest-700 font-semibold shadow-xs'
-          : 'text-stone-600 hover:bg-sand-200/50 hover:text-stone-900 font-normal'
+          ? NAV_ITEM_ACTIVE
+          : `${NAV_ITEM_IDLE} font-normal`
       }`}
     >
       <div className="flex items-center gap-2 min-w-0 flex-1">

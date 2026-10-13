@@ -523,19 +523,26 @@ const actions = {
   reset,
 };
 
+// useSyncExternalStore re-renders only when the snapshot's identity changes, so the full-store
+// snapshot must be rebuilt exactly when `state` is replaced: a snapshot captured during render
+// would never change (stale UI), and a fresh object per call would loop forever.
+let snapshotState: VaultStoreState | null = null;
+let snapshot: VaultStore;
+
+function getFullStore(): VaultStore {
+  if (snapshotState !== state) {
+    snapshotState = state;
+    snapshot = { ...state, ...actions };
+  }
+  return snapshot;
+}
+
 export function useVaultStore(): VaultStore;
 export function useVaultStore<T>(selector: (state: VaultStore) => T): T;
 export function useVaultStore<T>(selector?: (state: VaultStore) => T) {
-  const fullStore: VaultStore = {
-    ...state,
-    ...actions,
-  };
+  const getSnapshot = () => (selector ? selector(getFullStore()) : getFullStore());
 
-  const slice = useSyncExternalStore(
-    subscribe,
-    () => (selector ? selector({ ...state, ...actions }) : fullStore),
-    () => (selector ? selector({ ...state, ...actions }) : fullStore)
-  );
+  const slice = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   return slice;
 }

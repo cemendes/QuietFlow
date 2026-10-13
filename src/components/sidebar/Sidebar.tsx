@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Inbox,
   Settings,
@@ -13,6 +13,7 @@ import { useVaultStore } from '../../store';
 import { isTauriEnvironment, ipc } from '../../store/ipc';
 import { FolderTree } from './FolderTree';
 import { useTranslation } from '../../i18n';
+import { NAV_ITEM_ACTIVE, NAV_ITEM_IDLE } from './navItemStyles';
 
 export interface SidebarProps {
   className?: string;
@@ -35,7 +36,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return saved ? parseInt(saved, 10) : 240;
   });
   const [isResizing, setIsResizing] = useState(false);
-  const [activeScope, setActiveScope] = useState<'today' | 'inbox' | 'starred' | null>('today');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
@@ -99,13 +99,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return isInboxTask && t.status !== 'done';
   }).length;
 
-  const handleInboxClick = async () => {
-    setActiveScope('inbox');
-    if (!vaultPath) return;
+  // The Inbox note lives at the vault root but is reached through its own nav button,
+  // so it is left out of the folder tree to avoid showing the same destination twice.
+  const inboxNode = useMemo(
+    () => vaultTree?.children?.find((c) => !c.isDirectory && c.name.toLowerCase().includes('inbox')),
+    [vaultTree]
+  );
+  const folderTree = useMemo(
+    () =>
+      vaultTree && inboxNode
+        ? { ...vaultTree, children: vaultTree.children?.filter((c) => c !== inboxNode) }
+        : vaultTree,
+    [vaultTree, inboxNode]
+  );
+  const isInboxActive = !!inboxNode && activeFile === inboxNode.path;
 
-    let inboxNode = vaultTree?.children?.find(
-      (c) => !c.isDirectory && (c.name.toLowerCase() === 'inbox.md' || c.name.toLowerCase().includes('inbox'))
-    );
+  const handleInboxClick = async () => {
+    if (!vaultPath) return;
 
     if (!inboxNode) {
       const inboxPath = `${vaultPath}/Inbox.md`;
@@ -119,11 +129,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const handleFileSelect = (filePath: string) => {
-    if (filePath.toLowerCase().includes('inbox')) {
-      setActiveScope('inbox');
-    } else {
-      setActiveScope(null);
-    }
     if (onSelectFile) {
       onSelectFile(filePath);
     } else {
@@ -246,19 +251,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           type="button"
           onClick={handleInboxClick}
           title={t('sidebar.inbox')}
-          className={`flex w-full items-center justify-between px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
-            activeScope === 'inbox' || activeFile?.toLowerCase().includes('inbox')
-              ? 'bg-sand-200/90 text-forest-700 font-semibold shadow-xs'
-              : 'text-stone-600 hover:bg-sand-200/50 hover:text-stone-900'
+          data-active={isInboxActive ? 'true' : 'false'}
+          aria-current={isInboxActive ? 'page' : undefined}
+          className={`flex w-full items-center justify-between px-2 py-1.5 rounded-md text-xs transition-colors ${
+            isInboxActive ? NAV_ITEM_ACTIVE : `${NAV_ITEM_IDLE} font-medium`
           }`}
         >
           <div className="flex items-center gap-2 min-w-0">
             <Inbox
-              className={`w-4 h-4 shrink-0 ${
-                activeScope === 'inbox' || activeFile?.toLowerCase().includes('inbox')
-                  ? 'text-forest-600'
-                  : 'text-stone-400'
-              }`}
+              className={`w-4 h-4 shrink-0 ${isInboxActive ? 'text-forest-600' : 'text-stone-400'}`}
             />
             {!isCollapsed && <span className="truncate">{t('sidebar.inbox')}</span>}
           </div>
@@ -324,7 +325,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
 
             <FolderTree
-              tree={vaultTree}
+              tree={folderTree}
               activeFile={activeFile}
               onSelectFile={handleFileSelect}
             />
@@ -335,11 +336,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ?.filter((c) => c.isDirectory)
               .map((folder) => {
                 const icon = localStorage.getItem(`folder-icon-${folder.path}`);
+                const containsActive = !!activeFile && activeFile.startsWith(`${folder.path}/`);
                 return (
                   <button
                     key={folder.path}
                     type="button"
                     title={folder.name}
+                    aria-current={containsActive ? 'true' : undefined}
                     onClick={() => {
                       setIsCollapsed(false);
                       const defaultNote = folder.children?.find((c) => !c.isDirectory && c.name.endsWith('.md'));
@@ -347,7 +350,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         handleFileSelect(defaultNote.path);
                       }
                     }}
-                    className="p-2 rounded-lg text-stone-500 hover:text-forest-700 hover:bg-sand-200/80 transition-colors cursor-pointer group relative flex items-center justify-center"
+                    className={`p-2 rounded-lg transition-colors cursor-pointer group relative flex items-center justify-center ${
+                      containsActive
+                        ? NAV_ITEM_ACTIVE
+                        : 'text-stone-500 hover:text-forest-700 hover:bg-sand-200'
+                    }`}
                   >
                     {icon ? (
                       icon.startsWith('data:image') ? (
@@ -387,7 +394,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={onOpenArchive}
           title={t('sidebar.archive')}
           aria-label={t('sidebar.archive')}
-          className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-stone-600 hover:bg-sand-200/60 hover:text-stone-900 transition-colors"
+          className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-stone-600 hover:bg-sand-200 hover:text-stone-900 transition-colors"
         >
           <Archive className="w-4 h-4 text-stone-400 shrink-0" />
           {!isCollapsed && <span>{t('sidebar.archive')}</span>}
@@ -398,7 +405,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={onOpenSettings}
           title={t('sidebar.settings')}
           aria-label={t('sidebar.settings')}
-          className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-stone-600 hover:bg-sand-200/60 hover:text-stone-900 transition-colors"
+          className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-stone-600 hover:bg-sand-200 hover:text-stone-900 transition-colors"
         >
           <Settings className="w-4 h-4 text-stone-400 shrink-0" />
           {!isCollapsed && <span>{t('sidebar.settings')}</span>}
