@@ -11,8 +11,8 @@
 This specification addresses usability friction and introduces delight features to elevate QuietFlow into a polished, cognitive-friendly task and note manager for macOS.
 
 ### Key Goals:
-1. **First-Level Folder Auto-Seeding:** Creating a top-level folder immediately auto-creates its primary note (e.g. `PRivia/PRivia.md`), seeds default headers, and selects it.
-2. **Context-Aware Note Naming:** Creating notes inside folders defaults to `[FolderName] - [Month DD]` (e.g. `PRivia - Aug 28`) with an inline rename prompt.
+1. **First-Level Folder Auto-Seeding:** Creating a top-level folder immediately auto-creates its primary note (e.g. `Projects/Projects.md`), seeds default headers, and selects it.
+2. **Context-Aware Note Naming:** Creating notes inside folders defaults to `[FolderName] - [Month DD]` (e.g. `Projects - Aug 28`) with an inline rename prompt.
 3. **Restructured Focus Bucket Logic:**
    - **NOW:** Tasks due today, overdue, OR in-progress (`status === 'in-progress' || isDueToday || isOverdue`).
    - **LATER / BACKLOG:** Future scheduled due dates OR `status === 'backlog'` (without high priority due today).

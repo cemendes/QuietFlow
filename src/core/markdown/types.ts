@@ -1,6 +1,14 @@
 export type TaskStatus = 'todo' | 'in-progress' | 'done' | 'backlog';
 export type TaskPriority = 'low' | 'medium' | 'high';
 
+export interface TaskComment {
+  id: string;
+  author?: string;
+  timestamp: string;
+  content: string;
+  rawLine?: string;
+}
+
 export interface SubtaskItem {
   id: string;
   title: string;
@@ -19,6 +27,7 @@ export interface TaskItem {
   tags: string[];
   notes?: string;
   subtasks?: SubtaskItem[];
+  comments?: TaskComment[];
   rawLine?: string;
   lineIndex?: number;
   filePath?: string;
@@ -34,11 +43,27 @@ export interface Frontmatter {
   [key: string]: any;
 }
 
+export type DocumentSpanType = 'heading' | 'prose' | 'code' | 'task' | 'callout' | 'thematic-break';
+
+export interface DocumentSpan {
+  id: string;
+  type: DocumentSpanType;
+  rawText: string;
+  startLine: number;
+  endLine: number;
+  taskId?: string;
+}
+
 export interface VaultDocument {
+  filePath?: string;
   frontmatter: Frontmatter;
   tasks: TaskItem[];
+  spans?: DocumentSpan[];
   rawContent: string;
   body: string;
+  wordCount?: number;
+  readingTimeMinutes?: number;
+  lastModified?: number;
 }
 
 export interface NewTaskInput {
@@ -50,4 +75,5 @@ export interface NewTaskInput {
   tags?: string[];
   notes?: string;
   subtasks?: Array<{ title: string; status?: TaskStatus }>;
+  comments?: TaskComment[];
 }

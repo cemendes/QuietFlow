@@ -56,3 +56,10 @@ Goal: build out end-to-end/UI test automation for QuietFlow using **Cypress + Cu
 - **Working style — important:** don't just execute silently. Solve the problem, but explain what you did and why as you go (what each config/step does, why a given Cypress/Cucumber/Jenkins pattern was chosen). Keep explanations proportional — teach the key concept, don't lecture. He wants to actually absorb Cypress/Cucumber/Jenkins skills through this, not just get working code.
 - This app already has a Playwright e2e suite (`tests/e2e/playwright-user-journey.spec.ts`) and Vitest unit/component tests — Cypress/Cucumber would be a new, separate layer (likely UI/user-journey testing), not a replacement. Clarify with Rogério whether Cypress is meant to complement or eventually replace the Playwright suite before removing anything.
 - No Cypress/Cucumber/Jenkins config exists in the repo yet — this will be a from-scratch setup (folder structure, `cypress.config.ts`, `cucumber.js`/preprocessor config, feature files + step definitions, then a `Jenkinsfile`).
+<!-- OPENWIKI:START -->
+
+## OpenWiki
+
+See [AGENTS.md](AGENTS.md) for OpenWiki agent instructions.
+
+<!-- OPENWIKI:END -->

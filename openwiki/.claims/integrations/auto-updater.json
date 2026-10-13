@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:c195b8f3a57ae34d6bc510a33debfb7777498f2a7c245a667f1bca7ac596bc48",
+  "claims": [
+    {
+      "id": "claim_218d1681f01344039c86017c2b87a06a",
+      "statement": "QuietFlow configures Tauri's auto-updater plugin in tauri.conf.json with updater artifact creation enabled, a Minisign public key, and GitHub release endpoints, granting full updater permissions via updater:default capability in capabilities/default.json.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/capabilities/default.json#L12-L12",
+          "version": "repo-lines-v1:sha256:fa76196d3efa10895404ddffaab52168fca91cfd2a79029e7d0dd1582a5a8455:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE3NjE5NmQzZWZhMTA4OTU0MDRkZGZmYWFiNTIxNjhmY2E5MWNmZDJhNzkwMjllN2QwZGQxNTgyYTVhODQ1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE3NjE5NmQzZWZhMTA4OTU0MDRkZGZmYWFiNTIxNjhmY2E5MWNmZDJhNzkwMjllN2QwZGQxNTgyYTVhODQ1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGFiNDA3MjQ0NTJkMWRiYzZlYTZjNGRjMjNkZGQzNzgxMzJkNDExNTU2ZjMyMGRhMWNhZjYyMTI3YzZhMDM2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2IzZGNiYmVkOTk1MzQyNWU1OWRhNzYxYTRkMzNkN2Q2Zjg0ZDY1YjkzMjc1MzczNDZkNGY3M2M3ZWQ5OGE5NyJ9"
+        },
+        {
+          "resource": "repo://src-tauri/src/lib.rs#L87-L87",
+          "version": "repo-lines-v1:sha256:794edae5ee4e1c30513948340227a84fbcea6a1ce2eaf9f5656112183c873fb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzk0ZWRhZTVlZTRlMWMzMDUxMzk0ODM0MDIyN2E4NGZiY2VhNmExY2UyZWFmOWY1NjU2MTEyMTgzYzg3M2ZiMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzk0ZWRhZTVlZTRlMWMzMDUxMzk0ODM0MDIyN2E4NGZiY2VhNmExY2UyZWFmOWY1NjU2MTEyMTgzYzg3M2ZiMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzY2ZTg2YjEyMWFlNDg5YTNmYTBlZDI4ZDNjNTdhMTIzMDllMTYwZThlZmU5ZWVmODEyOTc4MTJmM2I0ZThkMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmQzYWY4ODVkYzg2MTUwZjQ4Y2NjNDJhZTBlM2M5ZmNjOTE3NTYwZWIwNmMyOGUwY2MxOGQwOTJhZTA0ZGQxOSJ9"
+        },
+        {
+          "resource": "repo://src-tauri/tauri.conf.json#L35-L35",
+          "version": "repo-lines-v1:sha256:8fc5b3e92beee9eb28c7a1db2072809abb102f34c9d24d05821638d201e7fc68:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZjNWIzZTkyYmVlZTllYjI4YzdhMWRiMjA3MjgwOWFiYjEwMmYzNGM5ZDI0ZDA1ODIxNjM4ZDIwMWU3ZmM2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZjNWIzZTkyYmVlZTllYjI4YzdhMWRiMjA3MjgwOWFiYjEwMmYzNGM5ZDI0ZDA1ODIxNjM4ZDIwMWU3ZmM2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2JkMWFkZGRhZmM1YjBlMjdhYTc2ZDgyOWM1ZjMyNDllZGNkMzBmNjRmZDdiZWYwNTE1ZDU0YTExMzA4NmFkYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGU0ODYzZmY5MTExMjc0ZThmZmQ3NzM0ZWNiMGQ3OWU2MTIxYjk5NmU4MDFiNWJkNGM4MGIxOWJkMzdkNzA5ZSJ9"
+        },
+        {
+          "resource": "repo://src-tauri/tauri.conf.json#L44-L51",
+          "version": "repo-lines-v1:sha256:f804cbb5600ba7966ee80f256cd194d405f136b39f3a0bb8ae3c050056cc2ecc:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU5MTY2YzM4MDkyMzAyZjYzMTIzZDA1NjBlMWZmNmYxYmYyMmY0NzYwMzBiNmExMTI2MTViOTVhMTM0YjRhNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjA5YzA1YWMxZWQwZGMwZjI2ZDM2NzY4YjVkM2M0Mzk5NTBhN2Y4N2YzMWZiMWUyYzNmNjhiMDhhYTRjZDA2MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d85b519a92d84092bf3f190f26e1978e",
+      "statement": "The application performs a background version check 3 seconds after mounting UpdateToast, invoking checkForAppUpdate() which queries @tauri-apps/plugin-updater and gracefully handles non-critical 404 or missing release errors by returning null.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/updater/UpdateToast.tsx#L32-L44",
+          "version": "repo-lines-v1:sha256:409956677ceb7bc0ec21ada0a98a1d85dd7cc8cd145230bc5118c2449aefbced:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViYjYzMTVjMjQzMDQyZDc3NzQxMGY5YjI2ZWJhYTAyNTE0MTlhNzkyMTQ5MTU3MmQwOGI3ZTZmM2U0ZDgzN2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxZTdmYzFlZTkwOWNkMjBjY2Y3NzNkM2M3YjdlZDZiN2VjNTVkZWJiMmMzZWYwMjMyY2ZjYTdmYzUxZTQxZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwMGQ2YTVjZGI5MGNhZWY1ZGRlODQ4NzA0N2E3MzcxM2I4ZWU3MjYzNzYxMWYyYTFkOTk5MzJhODBkOGIzNjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2M2Q0NTVlOWFiZTNkMmUwYmIxNzdjOWY3Zjg5MjA1ZTk3MzFiOWE5ZWMyZGFiNGRjYTI0YWNkYzQ3NmRlZjUifQ"
+        },
+        {
+          "resource": "repo://src/utils/updater.ts#L56-L87",
+          "version": "repo-lines-v1:sha256:b0626d5dee528ddf20cde7b1737d6ee5fa7e1b9c95d81f84041b9dfff543b6b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhZTQyYWQ4NTdmZmNlNzY4NDhjNTdiMjQwYTdjNjc0ZWVhYWE2ZmFjODUzNWEzODhmYWM3ZjIzMDNiMjU5ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhMGYwNjc1MWM0YTg2ODEzYzdhYWIzN2JhYTY2Zjg0N2U5NTg3MjM3ZWFkZDY2ZTM5OWQ5ZGVlN2JmZjI4NzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmYmM4YWVkZTQ5NGRhNDhhYjhkMzg4NWUwY2Y2NzQ3ZTVkMjZkZmE1YzYxOWFmYzM3MzIyZDU0OWNlNTZkNzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b6e2b07dde8d4321a5d565165ee97f31",
+      "statement": "downloadAndInstallUpdate registers an event callback with @tauri-apps/plugin-updater to compute real-time download percentage from Started, Progress, and Finished events and report it back to the UpdateToast progress bar.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/updater/UpdateToast.tsx#L139-L148",
+          "version": "repo-lines-v1:sha256:3cf8c5c23f03b3f109a25871ba4901748947c34dbbaebd49992698039c6be58d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NWRmNDk4NDU0ODVkMzBhZjJlMjUzMGZmZTEzNDMyOWUxYmM4MTg4NzUwNmY1NWE1OWVhNzU3MjZhMjVmM2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmMjE1ZmQwM2NmYzJiZWViZjgwNGExN2FjNWU5NDc5NTFmN2NkMmRjMDU2MDUyMjQ5OWM2MDZmZGJjZDcxODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3MjhkNWVlZmNiNzZlM2ZiOTFjNTQ0OWVjN2FhMjA1NTRkNzA4MmJiOWZiMjhiMjQ5ZGNjMmU1YThkZWVhYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlMzI4ODQ0ZWNkMjUyY2EyNmFmZThjNjZhMDdlM2YxMzYwOGIwNjFhYWRmMjViNjExNDk4NTFmNjIwYWUxNWQifQ"
+        },
+        {
+          "resource": "repo://src/components/updater/UpdateToast.tsx#L58-L61",
+          "version": "repo-lines-v1:sha256:5c2ee958d7d93848e2b94e9d8a03fc40a39c57294d03ab2ca782203eb4e0d26f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTFkZjg3YTQ3MzE2YzcwOGM1NTAyMDk4ZTlhZjZjNDQ1MzRlYjgwYmVhZGNmNjA2MzAyOGVmY2E4NTkzN2FiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE3YWYxMTAxYzk3YjdjMmY1MjU0MDc4MmU2MzRjYzQ0NDBmMGU5NzAzNDFlNTJmOTc1MjMxMWQ3OGI3ZDdkMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmRhOTUyMzgyOTQ1OWIyNWVkMTNkMDA0MGMwNzAwYzdjNDE3ZDE5ZjM5NWQxYzFmMTUyZTI0MDI2MmNlOGEwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTIzNmM5N2E2NDY1NDFiNGVlMGI0MjFkOWNlNzRlMjI0YmVmMjIwODQxMTUwMDMwNzg5YTcwMGY5NmUzY2UwOSJ9"
+        },
+        {
+          "resource": "repo://src/utils/updater.ts#L92-L115",
+          "version": "repo-lines-v1:sha256:b90084cd66004563fce5d1f517b8a8f99559716697035a1af842d4c2e7bd2fde:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMzQ2N2E4MWExNDhmZGI3NGYyODg1MDg2ZjcyNDNlNzc0Yjk4ZDQxZGYwNWVlOWM4OGY4NGQwOGYyZmRhNzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljNWUzYmZhMjNkNDdkODExOTVjMTIxMGIyZDFhNDBmNGEyMmU0MDY2NTc5YTczZmYwYzNmMmZhYTZjMjExZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNzU2ZWMxMzRlM2VkY2Q0YmYxNGFhZWZhNDk3NDdjZmI1ODk5ZTFhMzM5NTBhMWEzNWFjYjUzNzNhNGMwNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiZGNkZTcwZjhmOGMzZmFlMjZhNDE5ZTk1MWM0OGFmYjczZDU1MDkwOTZlZGUzNzkyMmI5ZTJlYzI2NzlkMmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_eae5c78bd0e341559141c8d264c36208",
+      "statement": "safeRelaunchApp guarantees zero data loss by reading the active note document content from useVaultStore and writing it atomically via IPC prior to triggering app relaunch with @tauri-apps/plugin-process or browser window reload.",
+      "evidence": [
+        {
+          "resource": "repo://src/utils/updater.ts#L126-L149",
+          "version": "repo-lines-v1:sha256:7448b5d69480ca70863256cbac8ffda3e4e26605fd29d7d460242e539f2b65a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0ZDBkOGE0NjM0YmNjYjlmZGE5Y2RlNmM0YTk5MGQ2ODZmODQ2ZDIzNDM3M2U2YTE4OWUyODc3NDQ4YjM1NjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiNjFiOTFkZTUwYjdkOTNhMWUwZGZmY2ZlMGZlZThhMWNjN2Q2ZWU0ZTA5NzQ2OWRhMzgwNjAyYWQwMjNkZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aa65bbac1c39433bac22286519982c8e",
+      "statement": "UpdateToast persists the last seen app version in localStorage under quietflow-last-seen-version and displays a top-center \"What's new\" changelog pill when opening the application for the first time following a version update.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/updater/UpdateToast.tsx#L23-L30",
+          "version": "repo-lines-v1:sha256:1422b067afe5133acdf4ae8c294d33e5045f6025ae24d3f1bc5e17c3cfe91f04:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzEyMGFhZjFiY2M2NDc1ZDcwMTU5YzUzNDMzYzY0YjQwNmY5YzYyMjEwNGI1ZGQwMWZhY2YzMGRlZmQzODQwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2FkNzZhYWMxMGYwODdlMDUzZjRlM2MwMGNjYWVmNjE3YmU5ZGI1YmIwMDM3MTczODBjYzUzMzAyMTc0YWRjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2E1ZDU4NDFjMmRhMWI1ZmExOTFiMjY4NTA0ZGVjZjFlYmMzNjVjMzFkY2I2YmYyZWUzOWY4MGVmMjkyZjVhMCJ9"
+        },
+        {
+          "resource": "repo://src/components/updater/UpdateToast.tsx#L81-L109",
+          "version": "repo-lines-v1:sha256:be4ecad84cce9728f602b6de189192394620da50a43d6717b6b63cf2c0c3464a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1ZDAwZWIwYjY3YzBhODRhMmUxZGVhNTczNTMzNGY2ZTBlNzFjOGYxZGJiNGI1MGRkMzQ2OTk3YzA1MTc5Y2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxNWIwZGRkZDdiMjJjODFlNjc4ODRkNGNmZTAyN2VmNWIyYTJjZjM1NGZjNWQ1NTE1MWY1OGUzYjYwZWQ1MjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwNmVkMDNiOTYwZjJjN2IzNGMzOTc1NzQ5MDkxN2IwZmZiMzk2OTg2ZTkzYjhjYTRkMzc2MDA4YmQxMDhiMjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_391ca4bc917b467da9893811b41595cd",
+      "statement": "In non-Tauri browser environments, update operations fall back to an in-memory MockUpdater instance that supports mock configuration via setMockState to simulate update availability, progress streaming across 4 step intervals, signature corruptions, and up-to-date checks.",
+      "evidence": [
+        {
+          "resource": "repo://src/utils/updater.ts#L118-L119",
+          "version": "repo-lines-v1:sha256:d5c8177688f64ba141d6d58d6ddf2ddfc46c916a946bd4cf1ab974c82115be36:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTM1ZTQ0MTYyMmFlYTUzOGFkZjY4YzQ3NTc2MDcyYTY0ZjYxMThiNjRjNDZlY2EwMDJjMjQ3ZWE4OWVlOTM0ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGFmY2RjNzQ2MDliOGZlM2I0NWQwYjI2NDA4NWFjZmZmNjhkNzZhMzY3MzE1MGY2NjI0MWJiOTYwODEwYTVjOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzZlNTFlMGQwMDhmMTZjN2EyYjcwMDJlOGJjNDY1NDg3YWUyZjVhMzNiMDhmNzNmNTM1ZDAwYmYyOGI4N2ZlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzc5MjllOTFlMGY5OWMzZTgyNWRlNjliNDM1ZmI2NDg0ZDFiMGExZGYyZjQ2NTYxYWJmMWEyOWYwNDE4OGI4OCJ9"
+        },
+        {
+          "resource": "repo://src/utils/updater.ts#L14-L51",
+          "version": "repo-lines-v1:sha256:6db03a3dddc7437d39e329c8534bf1d965cd1b8c7403d55ce0384a602b8a7006:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwYzIwNDZkZWJkYmU5OWY3MWEyOGNhOWFjNmEyZjIyZmJkOWVlNWE1ZmFjZDZmNGFlOTdjYzQxMzA2MjU2NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5OTVhMTVkZTA0NjA1MTYzMmYyZmFiM2JjYmYxZjg2MDAxNmUzNDIxMGQxYjY5ZDQ5MDJiZjExY2Q0OWIzMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3NWMwYjlkODhmYzhkMDc2NmNlMWVkYWM3ODFlZDgzNjI1ODhlZWYxNzk5Yzc3OWYzZTEwYzNhNjJkNDAyMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmZDIyMmYyODYxZTU4ZmM2YThlY2ZlODQwYmUzYTQzZDFjMWFhYjM1NmExNzhkNWM2YWU2NzI2ZmI0MWYwZmUifQ"
+        },
+        {
+          "resource": "repo://src/utils/updater.ts#L85-L86",
+          "version": "repo-lines-v1:sha256:2161a0a14535b640e09956d2426b15b0f4739252c12154f2c20f57a31e2e542f:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTM1ZTQ0MTYyMmFlYTUzOGFkZjY4YzQ3NTc2MDcyYTY0ZjYxMThiNjRjNDZlY2EwMDJjMjQ3ZWE4OWVlOTM0ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzU1ZjI4NzYyY2ZiOGM2NmMzOGE3NDZjMDhlYzRhN2I2NmQzYTBjMGVhNjAyZjNiZWRkYjU0YWY1YjViYzQwNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTdkODYzMmU1NGU5Mjk4YWJiOTU4NzI3ZTJkNTE0MDhhYmFmMTM2NjAzNTM3OTEwMTQwYWJmNjViMzBhYjYxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzc5MjllOTFlMGY5OWMzZTgyNWRlNjliNDM1ZmI2NDg0ZDFiMGExZGYyZjQ2NTYxYWJmMWEyOWYwNDE4OGI4OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d7c8423121d649a19498739d99495c18",
+      "statement": "The updater simulation test suite in tests/updater/updater-simulation.test.ts validates update detection, chunked progress streaming, up-to-date responses, Minisign signature corruption rejection, and pre-relaunch note document flushing.",
+      "evidence": [
+        {
+          "resource": "repo://tests/updater/updater-simulation.test.ts#L15-L94",
+          "version": "repo-lines-v1:sha256:cbcf58a3898e074a67dec6f59b7b227ea92e8a7ef0dd0953449e5746afe3c96b:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzY2VmZjgyODMxNGM4ZDBmMmM1MGVhNTA0NGY5ODZkMDhmNDVjOTkyOWYwMDM5OGZlZWFlYmVmMTYyZjJlY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxYTFiZDk4NDVjZmJjNzFmYTczMjBkYmNlNmFjNTVjN2RmMTg5MGU2MTRhNmNmZTUwYzNjMWY5YmY5YzIwNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-31T14:53:08.961Z"
+  }
+}

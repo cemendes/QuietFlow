@@ -19,6 +19,10 @@ export function serializeTaskLine(
   const checkbox = getCheckboxForStatus(task.status);
   const parts: string[] = [checkbox, task.title];
 
+  if (task.status === 'backlog') {
+    parts.push(`@status(backlog)`);
+  }
+
   if (task.dueDate) {
     parts.push(`@due(${task.dueDate})`);
   }
@@ -72,5 +76,39 @@ export function serializeTaskBlock(task: TaskItem | NewTaskInput): string[] {
     }
   }
 
+  if (task.comments && task.comments.length > 0) {
+    for (const comment of task.comments) {
+      const commentLines = comment.content.trim().split('\n');
+      const authorPrefix = comment.author && comment.author !== 'You' ? `${comment.author}, ` : '';
+      lines.push(`  - Comment (${authorPrefix}${comment.timestamp}): ${commentLines[0]}`);
+      for (let i = 1; i < commentLines.length; i++) {
+        lines.push(`    ${commentLines[i]}`);
+      }
+    }
+  }
+
   return lines;
+}
+
+export function patchTaskInDocumentContent(
+  rawContent: string,
+  updatedTask: TaskItem,
+  originalTask: TaskItem
+): string {
+  const lines = rawContent.split(/\r?\n/);
+  const startLine = originalTask.lineIndex ?? 0;
+  let endLine = startLine;
+
+  for (let i = startLine + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^(\s{2,}|\t)/.test(line) && line.trim().length > 0) {
+      endLine = i;
+    } else {
+      break;
+    }
+  }
+
+  const serializedLines = serializeTaskBlock(updatedTask);
+  lines.splice(startLine, endLine - startLine + 1, ...serializedLines);
+  return lines.join('\n');
 }

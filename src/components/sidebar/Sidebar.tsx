@@ -36,11 +36,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return saved ? parseInt(saved, 10) : 240;
   });
   const [isResizing, setIsResizing] = useState(false);
+  const [activeScope, setActiveScope] = useState<'today' | 'inbox' | 'vault' | 'starred' | null>('today');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
-  const { vaultTree, vaultPath, activeFile, selectFile, tasks, refreshVault } = useVaultStore();
+  const vaultTree = useVaultStore((state) => state.vaultTree);
+  const vaultPath = useVaultStore((state) => state.vaultPath);
+  const activeFile = useVaultStore((state) => state.activeFile);
+  const activeFolder = useVaultStore((state) => state.activeFolder);
+  const selectFile = useVaultStore((state) => state.selectFile);
+  const selectFolder = useVaultStore((state) => state.selectFolder);
+  const setActiveView = useVaultStore((state) => state.setActiveView);
+  const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
+  const tasks = useVaultStore((state) => state.tasks);
+  const refreshVault = useVaultStore((state) => state.refreshVault);
+  const getFolderIcon = useVaultStore((state) => state.getFolderIcon);
   const { t } = useTranslation();
+
+  // Keep activeScope in sync with activeFile and activeFolder
+  useEffect(() => {
+    if (activeFile) {
+      const lower = activeFile.toLowerCase();
+      if (lower.endsWith('inbox.md')) {
+        setActiveScope('inbox');
+      } else if (lower.endsWith('today.md')) {
+        setActiveScope('today');
+      } else {
+        setActiveScope(null);
+      }
+    } else if (activeFolder) {
+      setActiveScope(null);
+    }
+  }, [activeFile, activeFolder]);
 
   // Handle drag resizing
   useEffect(() => {
@@ -81,9 +108,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const folderPath = `${vaultPath}/${folderName}`;
     await ipc.createDirectory(folderPath);
 
-    // Auto-create primary note e.g. PRivia/PRivia.md
-    const primaryNotePath = `${folderPath}/${folderName}.md`;
-    const initialContent = `---\ntitle: ${folderName}\n---\n\n# Tasks\n\n- [ ] Initial action item\n`;
+    // Auto-create standard initial note inside folder with clean ISO date (YYYY-MM-DD)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    const initialNoteName = `${dateStr}.md`;
+    const primaryNotePath = `${folderPath}/${initialNoteName}`;
+    const initialContent = `---\ntitle: ${dateStr}\n---\n\n# Tasks\n\n- [ ] Initial action item\n`;
     await ipc.writeFileAtomic(primaryNotePath, initialContent);
 
     await refreshVault();
@@ -95,8 +128,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Compute counts for Inbox badge
   const inboxTasksCount = tasks.filter((t) => {
-    const isInboxTask = t.filePath?.toLowerCase().includes('inbox') || activeFile?.toLowerCase().includes('inbox');
-    return isInboxTask && t.status !== 'done';
+    return t.filePath?.toLowerCase().includes('inbox') && t.status !== 'done';
   }).length;
 
   // The Inbox note lives at the vault root but is reached through its own nav button,
@@ -113,8 +145,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
     [vaultTree, inboxNode]
   );
   const isInboxActive = !!inboxNode && activeFile === inboxNode.path;
+  const isVaultActive = activeScope === 'vault' || (!!vaultPath && activeFolder === vaultPath);
+
+  const handleVaultClick = async () => {
+    setActiveScope('vault');
+    setActiveTaskId(null);
+    setActiveView('list');
+    if (!vaultPath) return;
+    await selectFolder(vaultPath);
+  };
 
   const handleInboxClick = async () => {
+    setActiveScope('inbox');
+    setActiveTaskId(null);
+    setActiveView('list');
     if (!vaultPath) return;
 
     if (!inboxNode) {
@@ -159,7 +203,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Top Bar: Window Drag Region & macOS Inset */}
       <div
         data-tauri-drag-region
-        className="flex items-center justify-between px-3 pt-3.5 pb-2 cursor-grab active:cursor-grabbing min-h-[38px]"
+        className="flex items-center justify-between px-3 pt-3.5 pb-2 min-h-[38px] select-none"
       >
         <div className="flex items-center gap-1.5 h-4">
           {/* Only render simulated dots in browser mock mode, never in native Tauri window */}
@@ -229,7 +273,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
 
-      {/* System Views Navigation (Inbox Only) */}
+      {/* System Views Navigation */}
       <div className="px-2 py-1 space-y-0.5">
         {onNewNote && (
           <button
@@ -247,6 +291,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         )}
 
+        {/* My Vault — loads all tasks across entire vault */}
+        <button
+          type="button"
+          onClick={handleVaultClick}
+          title={t('sidebar.myVault')}
+          data-active={isVaultActive ? 'true' : 'false'}
+          aria-current={isVaultActive ? 'page' : undefined}
+          className={`flex w-full items-center px-2 py-1.5 rounded-md text-xs transition-colors ${
+            isVaultActive ? NAV_ITEM_ACTIVE : `${NAV_ITEM_IDLE} font-medium`
+          }`}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xs leading-none shrink-0 w-4 text-center">🗄️</span>
+            {!isCollapsed && <span className="truncate">{t('sidebar.myVault')}</span>}
+          </div>
+        </button>
+
+        {/* Inbox */}
         <button
           type="button"
           onClick={handleInboxClick}
@@ -327,7 +389,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <FolderTree
               tree={folderTree}
               activeFile={activeFile}
+              activeFolder={activeFolder}
               onSelectFile={handleFileSelect}
+              onSelectFolder={async (path) => {
+                setActiveScope(null);
+                setActiveTaskId(null);
+                setActiveView('list');
+                await selectFolder(path);
+              }}
             />
           </>
         ) : (
@@ -335,7 +404,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {vaultTree?.children
               ?.filter((c) => c.isDirectory)
               .map((folder) => {
-                const icon = localStorage.getItem(`folder-icon-${folder.path}`);
+                const icon = getFolderIcon ? getFolderIcon(folder.path) : (typeof localStorage !== 'undefined' ? localStorage.getItem(`folder-icon-${folder.path}`) : null);
                 const containsActive = !!activeFile && activeFile.startsWith(`${folder.path}/`);
                 return (
                   <button
@@ -357,11 +426,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }`}
                   >
                     {icon ? (
-                      icon.startsWith('data:image') ? (
+                      (icon.startsWith('data:') || icon.startsWith('asset:') || icon.startsWith('http') || icon.includes('/') || icon.includes('.')) ? (
                         <img
                           src={icon}
                           alt={folder.name}
-                          className="w-5 h-5 rounded object-cover shadow-2xs"
+                          className="w-5 h-5 rounded object-contain shadow-2xs"
                         />
                       ) : (
                         <span className="text-base leading-none">{icon}</span>

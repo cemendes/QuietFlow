@@ -6,7 +6,9 @@ import { useTranslation } from '../../i18n';
 export interface FolderTreeProps {
   tree: VaultNode | null;
   activeFile: string | null;
+  activeFolder?: string | null;
   onSelectFile: (path: string) => void;
+  onSelectFolder?: (path: string) => void;
   className?: string;
 }
 
@@ -24,42 +26,89 @@ function collectDirectoryPaths(node: VaultNode | null): string[] {
   return paths;
 }
 
+function normalizePath(p: string): string {
+  return p ? p.trim().replace(/\/+$/, '') : '';
+}
+
+const COLLAPSED_FOLDERS_STORAGE_KEY = 'quietflow-collapsed-folders';
+
 export const FolderTree: React.FC<FolderTreeProps> = ({
   tree,
   activeFile,
+  activeFolder,
   onSelectFile,
+  onSelectFolder,
   className = '',
 }) => {
   const { t } = useTranslation();
-  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => {
-    return new Set(collectDirectoryPaths(tree));
+  const [collapsedPaths, setCollapsedPaths] = useState<Set<string>>(() => {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(COLLAPSED_FOLDERS_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            return new Set(parsed.map(normalizePath));
+          }
+        }
+      } catch {
+        // ignore parse error
+      }
+    }
+    return new Set();
   });
 
-  // Whenever tree structure changes (e.g. initial vault load), ensure directories are in expanded set
+  // Prune any collapsed paths that no longer exist in the vault tree
   useEffect(() => {
-    if (tree) {
-      setExpandedPaths((prev) => {
-        const allDirs = collectDirectoryPaths(tree);
-        const next = new Set(prev);
-        for (const p of allDirs) {
-          next.add(p);
+    if (!tree) return;
+    const allDirs = new Set(collectDirectoryPaths(tree).map(normalizePath));
+    setCollapsedPaths((prev) => {
+      let changed = false;
+      const next = new Set<string>();
+      for (const p of prev) {
+        const normP = normalizePath(p);
+        if (allDirs.has(normP)) {
+          next.add(normP);
+        } else {
+          changed = true;
         }
-        return next;
-      });
-    }
+      }
+      if (changed && typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(COLLAPSED_FOLDERS_STORAGE_KEY, JSON.stringify(Array.from(next)));
+        } catch {
+          // ignore storage error
+        }
+      }
+      return changed ? next : prev;
+    });
   }, [tree]);
 
   const handleToggleFolder = (path: string) => {
-    setExpandedPaths((prev) => {
+    const norm = normalizePath(path);
+    setCollapsedPaths((prev) => {
       const next = new Set(prev);
-      if (next.has(path)) {
-        next.delete(path);
+      if (next.has(norm)) {
+        next.delete(norm);
       } else {
-        next.add(path);
+        next.add(norm);
+      }
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(COLLAPSED_FOLDERS_STORAGE_KEY, JSON.stringify(Array.from(next)));
+        } catch {
+          // ignore storage error
+        }
       }
       return next;
     });
   };
+
+  // Directories are expanded unless explicitly collapsed by the user
+  const expandedPaths = React.useMemo(() => {
+    const allDirs = collectDirectoryPaths(tree);
+    return new Set(allDirs.filter((p) => !collapsedPaths.has(normalizePath(p))));
+  }, [tree, collapsedPaths]);
 
   if (!tree) {
     return (
@@ -88,9 +137,11 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           node={item}
           level={0}
           activeFile={activeFile}
+          activeFolder={activeFolder}
           expandedPaths={expandedPaths}
           onToggleFolder={handleToggleFolder}
           onSelectFile={onSelectFile}
+          onSelectFolder={onSelectFolder}
         />
       ))}
     </nav>

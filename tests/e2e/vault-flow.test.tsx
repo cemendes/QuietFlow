@@ -114,15 +114,15 @@ title: Work Projects
     const listTab = screen.getByRole('button', { name: /List/i });
     fireEvent.click(listTab);
 
-    // 4. Open Task Detail Drawer and edit subtasks
+    // 4. Open Full-Page Task Detail and edit subtasks
     const taskItem = screen.getByText('Complete Q3 planning');
     fireEvent.click(taskItem);
 
-    // TaskDetailPanel opens
-    expect(await screen.findByRole('complementary', { name: /Task Details/i })).toBeInTheDocument();
+    // TaskDetailPage opens full-page
+    expect(await screen.findByTestId('task-detail-page')).toBeInTheDocument();
 
     // Add subtask
-    const subtaskInput = screen.getByPlaceholderText('Add subtask...');
+    const subtaskInput = screen.getByTestId('new-subtask-input');
     fireEvent.change(subtaskInput, { target: { value: 'Draft roadmap slides' } });
     fireEvent.keyDown(subtaskInput, { key: 'Enter', code: 'Enter' });
 
@@ -130,11 +130,11 @@ title: Work Projects
       expect(screen.getByText('Draft roadmap slides')).toBeInTheDocument();
     });
 
-    // Close TaskDetailPanel
-    const closeDetailBtn = screen.getByTestId('close-task-detail-btn');
-    fireEvent.click(closeDetailBtn);
+    // Close / Back to List
+    const backBtn = screen.getByTestId('back-to-list-btn');
+    fireEvent.click(backBtn);
     await waitFor(() => {
-      expect(screen.queryByRole('complementary', { name: /Task Details/i })).not.toBeInTheDocument();
+      expect(screen.queryByTestId('task-detail-page')).not.toBeInTheDocument();
     });
 
     // 5. Open Quick Capture Modal via shortcut or trigger

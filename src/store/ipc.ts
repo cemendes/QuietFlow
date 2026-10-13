@@ -12,6 +12,18 @@ export function isTauriEnvironment(): boolean {
   return typeof window !== 'undefined' && (!!window.__TAURI_INTERNALS__ || !!window.__TAURI__);
 }
 
+export async function startDraggingWindow(e?: { button?: number; defaultPrevented?: boolean }): Promise<void> {
+  if (e && e.button !== undefined && e.button !== 0) return;
+  if (isTauriEnvironment()) {
+    try {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      await getCurrentWindow().startDragging();
+    } catch (err) {
+      console.warn('startDraggingWindow error:', err);
+    }
+  }
+}
+
 export interface IpcInterface {
   initVault: (path: string) => Promise<VaultTree>;
   readFile: (path: string) => Promise<string>;
@@ -20,8 +32,13 @@ export interface IpcInterface {
   deleteEntry: (path: string) => Promise<void>;
   moveEntry: (sourcePath: string, destinationPath: string) => Promise<void>;
   getDefaultVaultPath: () => Promise<string>;
+  getSavedVaultPath: () => Promise<string>;
+  setSavedVaultPath: (path: string) => Promise<void>;
   startWatchingVault: (path: string) => Promise<void>;
   listenVaultChanged: (callback: (vaultPath: string) => void) => Promise<() => void>;
+  listSnapshots: (vaultPath: string, filePath: string) => Promise<any[]>;
+  restoreSnapshot: (vaultPath: string, filePath: string, snapshotId: string) => Promise<void>;
+  createManualSnapshot: (vaultPath: string, filePath: string) => Promise<any>;
 }
 
 // In-memory fallback mock for browser/testing environment
@@ -200,12 +217,61 @@ category: Customers
     return '/MockVault';
   }
 
+  async getSavedVaultPath(): Promise<string> {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('quietflow-vault-path');
+      if (saved) return saved;
+    }
+    return '/MockVault';
+  }
+
+  async setSavedVaultPath(path: string): Promise<void> {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('quietflow-vault-path', path);
+    }
+  }
+
   async startWatchingVault(_path: string): Promise<void> {
     // No-op in browser mock
   }
 
   async listenVaultChanged(_callback: (vaultPath: string) => void): Promise<() => void> {
     return () => {};
+  }
+
+  private mockSnapshots = new Map<string, Array<{ id: string; timestamp: string; fileName: string; relativePath: string; sizeBytes: number; snapshotPath: string; taskCount: number; content: string }>>();
+
+  async listSnapshots(_vaultPath: string, filePath: string): Promise<any[]> {
+    const list = this.mockSnapshots.get(filePath) || [];
+    return list.map(({ content, ...meta }) => meta);
+  }
+
+  async restoreSnapshot(_vaultPath: string, filePath: string, snapshotId: string): Promise<void> {
+    const list = this.mockSnapshots.get(filePath) || [];
+    const target = list.find((s) => s.id === snapshotId);
+    if (target) {
+      this.files.set(filePath, target.content);
+    }
+  }
+
+  async createManualSnapshot(vaultPath: string, filePath: string): Promise<any> {
+    const content = this.files.get(filePath) || '';
+    const now = Date.now().toString();
+    const taskCount = content.split('\n').filter((l) => l.trim().startsWith('- [')).length;
+    const meta = {
+      id: now,
+      timestamp: now,
+      fileName: filePath.split('/').pop() || 'note.md',
+      relativePath: filePath,
+      sizeBytes: content.length,
+      snapshotPath: `${vaultPath}/.quietflow/snapshots/${now}.md`,
+      taskCount,
+      content,
+    };
+    const list = this.mockSnapshots.get(filePath) || [];
+    list.unshift(meta);
+    this.mockSnapshots.set(filePath, list);
+    return meta;
   }
 }
 
@@ -228,6 +294,22 @@ export const ipc: IpcInterface = {
     return browserMock.getDefaultVaultPath();
   },
 
+  getSavedVaultPath: async (): Promise<string> => {
+    if (isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      return await invoke<string>('get_saved_vault_path');
+    }
+    return browserMock.getSavedVaultPath();
+  },
+
+  setSavedVaultPath: async (path: string): Promise<void> => {
+    if (isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      return await invoke<void>('set_saved_vault_path', { path });
+    }
+    return browserMock.setSavedVaultPath(path);
+  },
+
   readFile: async (path: string): Promise<string> => {
     if (isTauriEnvironment()) {
       const { invoke } = await import('@tauri-apps/api/core');
@@ -240,6 +322,10 @@ export const ipc: IpcInterface = {
     if (isTauriEnvironment()) {
       const { invoke } = await import('@tauri-apps/api/core');
       return await invoke<void>('write_file_atomic', { path, content });
+    }
+    // Auto-create snapshot in mock if previous content exists
+    if (browserMock['files']?.has(path) && (browserMock['files']?.get(path)?.length || 0) > 0) {
+      await browserMock.createManualSnapshot('', path);
     }
     return browserMock.writeFileAtomic(path, content);
   },
@@ -285,5 +371,29 @@ export const ipc: IpcInterface = {
       return unlisten;
     }
     return browserMock.listenVaultChanged(callback);
+  },
+
+  listSnapshots: async (vaultPath: string, filePath: string): Promise<any[]> => {
+    if (isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      return await invoke<any[]>('list_snapshots_cmd', { vaultPath, filePath });
+    }
+    return browserMock.listSnapshots(vaultPath, filePath);
+  },
+
+  restoreSnapshot: async (vaultPath: string, filePath: string, snapshotId: string): Promise<void> => {
+    if (isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      return await invoke<void>('restore_snapshot_cmd', { vaultPath, filePath, snapshotId });
+    }
+    return browserMock.restoreSnapshot(vaultPath, filePath, snapshotId);
+  },
+
+  createManualSnapshot: async (vaultPath: string, filePath: string): Promise<any> => {
+    if (isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      return await invoke<any>('create_manual_snapshot_cmd', { vaultPath, filePath });
+    }
+    return browserMock.createManualSnapshot(vaultPath, filePath);
   },
 };

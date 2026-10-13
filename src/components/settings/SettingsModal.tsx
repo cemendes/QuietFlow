@@ -9,10 +9,19 @@ import {
   Check,
   Sparkles,
   Wand2,
+  History,
+  FileText,
+  ExternalLink,
   Languages,
 } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { isTauriEnvironment } from '../../store/ipc';
+import {
+  checkForAppUpdate,
+  downloadAndInstallUpdate,
+  safeRelaunchApp,
+  UpdateInfo,
+} from '../../utils/updater';
 import { LANGUAGES, useTranslation } from '../../i18n';
 
 export interface SettingsModalProps {
@@ -20,7 +29,28 @@ export interface SettingsModalProps {
   onClose: () => void;
 }
 
-type TabType = 'vault' | 'ai' | 'theme' | 'language' | 'shortcuts' | 'about';
+type TabType = 'vault' | 'ai' | 'snapshots' | 'theme' | 'language' | 'shortcuts' | 'about';
+
+const formattedBuildTime = (() => {
+  try {
+    if (typeof __BUILD_TIME__ !== 'undefined' && __BUILD_TIME__) {
+      const d = new Date(__BUILD_TIME__);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleString(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
+      }
+    }
+  } catch {
+    // fallback
+  }
+  return null;
+})();
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const vaultPath = useVaultStore((state) => state.vaultPath);
@@ -42,6 +72,63 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const [shortcutKey] = useState('Option+Shift+Space');
   const [isApplying, setIsApplying] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [appVersion, setAppVersion] = useState(
+    typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.1.0-alpha.5'
+  );
+  const [showChangelogDraft, setShowChangelogDraft] = useState(false);
+
+  useEffect(() => {
+    if (isTauriEnvironment()) {
+      import('@tauri-apps/api/app')
+        .then(({ getVersion }) => getVersion())
+        .then((ver) => setAppVersion(ver))
+        .catch(() => {});
+    }
+  }, []);
+
+  // In-app updater states
+  const [updateStatus, setUpdateStatus] = useState<
+    'idle' | 'checking' | 'available' | 'up-to-date' | 'downloading' | 'ready' | 'error'
+  >('idle');
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+
+  const handleCheckUpdates = async () => {
+    setUpdateStatus('checking');
+    setUpdateError(null);
+    try {
+      const update = await checkForAppUpdate();
+      if (update) {
+        setUpdateInfo(update);
+        setUpdateStatus('available');
+      } else {
+        setUpdateStatus('up-to-date');
+      }
+    } catch (err: any) {
+      setUpdateStatus('error');
+      setUpdateError(err?.message || 'Failed to check for updates.');
+    }
+  };
+
+  const handleDownloadUpdate = async () => {
+    setUpdateStatus('downloading');
+    setDownloadProgress(0);
+    setUpdateError(null);
+    try {
+      await downloadAndInstallUpdate((_downloaded, _total, percent) => {
+        setDownloadProgress(percent);
+      });
+      setUpdateStatus('ready');
+    } catch (err: any) {
+      setUpdateStatus('error');
+      setUpdateError(err?.message || 'Download failed or signature verification failed.');
+    }
+  };
+
+  const handleRelaunch = async () => {
+    await safeRelaunchApp();
+  };
 
   const applyTheme = (themeName: 'warm-paper' | 'nordic-slate' | 'forest-moss') => {
     setSelectedTheme(themeName);
@@ -129,8 +216,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         <div className="flex items-center justify-between px-6 py-4 border-b border-sand-200 bg-sand-50/70">
           <div className="flex items-center gap-2.5">
             <h2 className="text-lg font-bold text-slate-800 tracking-tight">{t('settings.title')}</h2>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-forest-100 text-forest-700 font-medium">
-              QuietFlow v0.1.0-alpha.2
+            <span
+              data-testid="preferences-header-version"
+              className="text-xs px-2 py-0.5 rounded-full bg-forest-100 text-forest-700 font-medium"
+            >
+              QuietFlow v{appVersion}
             </span>
           </div>
           <button
@@ -172,6 +262,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             >
               <Wand2 className="w-4 h-4 text-emerald-600 shrink-0" />
               {t('settings.tab.ai')}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('snapshots')}
+              className={`flex items-center gap-2.5 w-full px-3 py-2 text-xs font-semibold rounded-lg transition-colors text-left ${
+                activeTab === 'snapshots'
+                  ? 'bg-sand-200 text-forest-800 shadow-2xs'
+                  : 'text-slate-600 hover:bg-sand-100 hover:text-slate-900'
+              }`}
+            >
+              <History className="w-4 h-4 text-teal-600 shrink-0" />
+              Snapshots & Swap
             </button>
 
             <button
@@ -347,6 +450,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   >
                     {t('settings.ai.save')}
                   </button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'snapshots' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800 mb-1">Vault Snapshots & Swap Recovery</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    QuietFlow automatically captures safety snapshot copies of your notes before every modification. All backups are stored locally in <code className="bg-sand-100 px-1 py-0.5 rounded text-forest-700">.quietflow/snapshots</code>.
+                  </p>
+                </div>
+
+                <div className="p-4 bg-sand-50 rounded-xl border border-sand-200 space-y-3 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-slate-700">Snapshot Strategy</span>
+                    <span className="text-slate-600">Rate-limited Pre-Write (Every 2 min)</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-slate-700">Retention Limit</span>
+                    <span className="text-slate-600">20 revisions per note</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-slate-700">Expiration Window</span>
+                    <span className="text-slate-600">14 days (Auto-pruned)</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-slate-700">Storage Overhead</span>
+                    <span className="text-emerald-700 font-medium">100% Local / Zero Cloud Leak</span>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-white rounded-xl border border-sand-200 space-y-2">
+                  <div className="text-xs font-bold text-slate-800">How to Recover Notes</div>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Right-click any note in the sidebar and select <span className="font-semibold text-slate-700">"Version History"</span> to preview past revisions and restore any snapshot with 1 click. If a corrupted file is detected, QuietFlow will automatically display an instant recovery banner.
+                  </p>
                 </div>
               </div>
             )}
@@ -539,23 +679,180 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   </p>
                 </div>
 
-                <div className="p-4 bg-sand-50 rounded-xl border border-sand-200 space-y-2 text-xs">
-                  <div className="flex justify-between">
+                <div className="p-4 bg-sand-50 rounded-xl border border-sand-200 space-y-2.5 text-xs">
+                  <div className="flex justify-between items-center">
                     <span className="text-slate-500">{t('settings.about.version')}</span>
-                    <span className="font-mono text-slate-700">0.1.0-alpha</span>
+                    <div className="flex items-center gap-1.5 font-mono text-slate-700 font-medium">
+                      <span data-testid="app-current-version">v{appVersion}</span>
+                      {import.meta.env.DEV && typeof __COMMIT_HASH__ !== 'undefined' && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-sand-200/70 text-slate-600 font-mono">
+                          dev · {__COMMIT_HASH__}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex justify-between">
+                  {formattedBuildTime && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Build Date & Time</span>
+                      <span className="font-mono text-slate-700 font-medium text-[11px]" data-testid="app-build-time">
+                        {formattedBuildTime}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center">
                     <span className="text-slate-500">{t('settings.about.architecture')}</span>
                     <span className="text-slate-700">Tauri v2 + React 18 + Rust Core</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-slate-500">{t('settings.about.storage')}</span>
                     <span className="text-slate-700">{t('settings.about.storageValue')}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-slate-500">{t('settings.about.sync')}</span>
                     <span className="text-emerald-700 font-medium">{t('settings.about.syncValue')}</span>
                   </div>
+
+                  {import.meta.env.DEV ? (
+                    <div className="flex justify-between items-center pt-2 border-t border-sand-200/60">
+                      <span className="text-slate-500">Development Draft</span>
+                      <button
+                        type="button"
+                        data-testid="toggle-changelog-draft-btn"
+                        onClick={() => setShowChangelogDraft(!showChangelogDraft)}
+                        className="text-forest-700 hover:text-forest-900 font-semibold underline underline-offset-2 cursor-pointer flex items-center gap-1.5"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-forest-600" />
+                        <span>{showChangelogDraft ? 'Hide Changelog Draft' : 'View Changelog Draft'}</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center pt-2 border-t border-sand-200/60">
+                      <span className="text-slate-500">Release Notes</span>
+                      <button
+                        type="button"
+                        data-testid="view-public-changelog-btn"
+                        onClick={async () => {
+                          const url = 'https://github.com/cemendes/QuietFlow/blob/main/CHANGELOG.md';
+                          if (isTauriEnvironment()) {
+                            try {
+                              const { open } = await import('@tauri-apps/plugin-shell');
+                              await open(url);
+                              return;
+                            } catch {
+                              // Fallback
+                            }
+                          }
+                          window.open(url, '_blank');
+                        }}
+                        className="text-forest-700 hover:text-forest-900 font-semibold cursor-pointer flex items-center gap-1.5 hover:underline"
+                      >
+                        <span>View Full Changelog</span>
+                        <ExternalLink className="w-3 h-3 text-forest-600" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Dev Changelog Draft Viewer */}
+                {import.meta.env.DEV && showChangelogDraft && (
+                  <div className="p-4 bg-white rounded-xl border border-forest-200/80 shadow-xs space-y-2 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between pb-1 border-b border-sand-100">
+                      <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-forest-700" />
+                        <span>Changelog Draft (Unreleased Changes)</span>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-forest-100 text-forest-700 font-semibold">
+                        CHANGELOG.md
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-600 space-y-1.5 font-sans leading-relaxed pt-1">
+                      <div className="font-semibold text-slate-800">✨ Added in this local build:</div>
+                      <ul className="list-disc list-inside space-y-1 pl-1 text-slate-600">
+                        <li><span className="font-medium text-slate-700">Vault Snapshots & Swap Engine:</span> Auto rate-limited pre-write backups in <code className="bg-sand-100 px-1 py-0.5 rounded">.quietflow/snapshots</code> with 20-version / 14-day auto-pruning.</li>
+                        <li><span className="font-medium text-slate-700">Corruption Guard:</span> Proactive empty/corrupted note detection with 1-click restore banner.</li>
+                        <li><span className="font-medium text-slate-700">Note Version History Modal:</span> Timeline viewer, task count diffs, and on-demand snapshots.</li>
+                        <li><span className="font-medium text-slate-700">Full-Page Task Detail View:</span> Dedicated canvas view with markdown notes & comments activity feed.</li>
+                        <li><span className="font-medium text-slate-700">Autonomous Menu Crawler:</span> 17-state Playwright crawler exploring all menus, modals, and context actions.</li>
+                        <li><span className="font-medium text-slate-700">Chaos Monkey Harness:</span> Gremlins stress testing firing 1,000 rapid interactions.</li>
+                        <li><span className="font-medium text-slate-700">Markdown Parser Fuzzing:</span> 100-iteration random garbage fuzzer and URL hashtag fixes.</li>
+                        <li><span className="font-medium text-slate-700">Pre-version Gatekeeper:</span> Automated release checks running Rust backend + Vitest + Playwright.</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* Software Update Card */}
+                <div className="p-4 bg-white rounded-xl border border-sand-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-slate-800">Software Updates</div>
+                      <div className="text-[11px] text-slate-500">
+                        {updateStatus === 'idle' && 'Check for latest improvements and security updates.'}
+                        {updateStatus === 'checking' && 'Checking GitHub Releases for updates...'}
+                        {updateStatus === 'available' && `New release v${updateInfo?.version} is available!`}
+                        {updateStatus === 'up-to-date' && 'QuietFlow is up to date.'}
+                        {updateStatus === 'downloading' && `Downloading update... ${downloadProgress}%`}
+                        {updateStatus === 'ready' && 'Update downloaded! Ready to install.'}
+                        {updateStatus === 'error' && (updateError || 'Failed to check for updates.')}
+                      </div>
+                    </div>
+
+                    {updateStatus === 'idle' || updateStatus === 'up-to-date' || updateStatus === 'error' ? (
+                      <button
+                        type="button"
+                        data-testid="check-updates-btn"
+                        onClick={handleCheckUpdates}
+                        className="px-3 py-1.5 text-xs font-semibold text-forest-700 bg-sand-100 hover:bg-sand-200 border border-sand-300 rounded-lg transition-colors"
+                      >
+                        Check for Updates
+                      </button>
+                    ) : updateStatus === 'checking' ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="px-3 py-1.5 text-xs font-semibold text-slate-400 bg-sand-50 border border-sand-200 rounded-lg cursor-not-allowed"
+                      >
+                        Checking...
+                      </button>
+                    ) : updateStatus === 'available' ? (
+                      <button
+                        type="button"
+                        data-testid="download-update-btn"
+                        onClick={handleDownloadUpdate}
+                        className="px-3 py-1.5 text-xs font-semibold text-white bg-forest-700 hover:bg-forest-800 shadow-xs rounded-lg transition-colors"
+                      >
+                        Download & Install
+                      </button>
+                    ) : updateStatus === 'ready' ? (
+                      <button
+                        type="button"
+                        data-testid="relaunch-update-btn"
+                        onClick={handleRelaunch}
+                        className="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 shadow-xs rounded-lg transition-colors"
+                      >
+                        Relaunch Now
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {/* Download Progress Bar */}
+                  {updateStatus === 'downloading' && (
+                    <div className="w-full bg-sand-100 rounded-full h-2 overflow-hidden border border-sand-200">
+                      <div
+                        data-testid="update-progress-bar"
+                        className="bg-forest-600 h-2 rounded-full transition-all duration-150"
+                        style={{ width: `${downloadProgress}%` }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Release Notes Preview */}
+                  {updateInfo?.body && (
+                    <div className="p-2.5 bg-sand-50/80 rounded-lg border border-sand-200/80 text-[11px] text-slate-600 whitespace-pre-line">
+                      <div className="font-semibold text-slate-700 mb-1">Release Notes:</div>
+                      {updateInfo.body}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

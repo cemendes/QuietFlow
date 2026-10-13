@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:91fdf3cb76993a76f3f59f91fcbb1af43323419ee055ad1399af430adaec8e5c",
+  "claims": [
+    {
+      "id": "claim_03a4ed3a2f6b418bbad1354b66b10e0c",
+      "statement": "QuietFlow implements its centralized reactive vault store using a module-scoped state container, subscriber listener Set, and React 18's useSyncExternalStore hook with component selector support.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/vaultStore.ts#L46-L75",
+          "version": "repo-lines-v1:sha256:8686ef6d5d81a8c604635ea1d1e2cbd6f87c9bf4b5561818cee3a36e7b5df74b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjNjAwMzkyNmM1MTI2NjMzNmU1YTUwOWUzOWY1MGQ0NWYzZTk5ZGRiM2NjNTI4NDExOWNkYmM0N2MyZGJiNzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1Y2QwMzE2YmZlNTQ5YWVlMWEyNTFmY2Q2MWNiMjliZWM1YzZkZjRlY2UxYzY2YjVhZGQyZTI3MjRmMmZkNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkZTgxYWUwYWEzMTQwMjAyNzExZGY0N2JlZGUxZmZlMDZjZDFiOTQ3MzQ0NWQ3NWJiZTYyYjM4YjNjZTJiNTUifQ"
+        },
+        {
+          "resource": "repo://src/store/vaultStore.ts#L748-L774",
+          "version": "repo-lines-v1:sha256:a22ab7a5a54cf451532bc46bfa90f6c49ec694d5cc6aaed245725bf750e1b09d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmNGJkZTNlOTgyZjlkZWY2MjExYzdkMDljMzU3Yzk0M2ZkMDgyODVhYmY4NjYzY2M5NTcxNTk2MGExMDc4MTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjYzBlMWMxYjgzZjAyMjJhZDJkOTFlZjZmMTM4NGJhMmUwNTEwN2QwMGM5OWNhMzhkNWFmYmMzMWQ1Mzk3YjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1YzJkZTAxZjU0Y2U0ZDlmYmRkZWQ2NzQ3MzdlMDdmZmE4Nzg0MjEwM2FiMGI2YWVhMGFjZGUwNzVjOGI2ZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e184095100cf466da2a0528490f71571",
+      "statement": "Vault initialization loads directory trees and logo configurations, auto-selects or creates today.md when no markdown note exists, and registers filesystem watchers via IPC.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/vaultStore.ts#L85-L174",
+          "version": "repo-lines-v1:sha256:fbafa112c5e3bbf3354c41bd1852406a6e2ab66e9496fb406754ef9eecfa1e98:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NmNhMjcyNmJkM2U4YzExZDgzYzY5ZTc1ZjM2OWQ2YThjYjUwY2I2MDE5YjIzOTM2MGIzZDFmZWFmZmUxYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkMzgwOGU2ZjA0ODE3M2Y5ODQ5ZjhhNWJhM2U1MThlNmY5Y2M4NDU5ODhiMTBhNWMyNzU1YmRkNjBmMjVlYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwOGMxOGNlODA4ZjhkNTI5OWViNmI5YTI5NjczOTlkYTIyNTBiMTUwNDVhNTQ3OGNlOWI3NzFmYTQ0ODIxYWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_84582010138b4df3bbe4ec18e1369e16",
+      "statement": "QuietFlow distinguishes self-initiated disk writes from external filesystem edits by tracking lastSelfWriteTimestamp, skipping active document re-reads when changes occur within 600 milliseconds of an internal save.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/vaultStore.ts#L146-L161",
+          "version": "repo-lines-v1:sha256:c16cc28126d7ce1685a681c2152290fb0033e31d150f3083159b1610d63927fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExZGY4N2E0NzMxNmM3MDhjNTUwMjA5OGU5YWY2YzQ0NTM0ZWI4MGJlYWRjZjYwNjMwMjhlZmNhODU5MzdhYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxN2FmMTEwMWM5N2I3YzJmNTI1NDA3ODJlNjM0Y2M0NDQwZjBlOTcwMzQxZTUyZjk3NTIzMTFkNzhiN2Q3ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzYTFjNmVlZDI0YzcxZGNmMjM3OTFlZWQyNmQ3Yzk1MjE3OTVhNzIyZDNlYzRlNzRmMDYwYzE3ZDU3MTUxZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2NjFhMTVhMTUzYTBjM2Q4MjMyMWVkMTc0Y2U5YzJiY2RhMGVhNGVjOTRiNWZlZmY3OWM4ZGE4ZWMzNzFmNWIifQ"
+        },
+        {
+          "resource": "repo://src/store/vaultStore.ts#L77-L83",
+          "version": "repo-lines-v1:sha256:c9ec510d688612ee99e911f70b407a9bf4bf2b98690db35c944c3d41e08f6b53:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzFmZDY5YzVkMmYzNmJjYjExNThjYmRjNWQ3ZTQ2YjhjYzExMTc0MGE0Y2NiMGMxNjM4YmJmZWU5YTQzMWZkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTIwNDBlMDk1YTk0ZTJhZGE3NGU0MjFmMzcxODc1MWE5MWE4MTBiZmQ2NmY0OGY0ZTkzOWM3Yjc0ODBlYjY3MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjE4ODlhN2Q4NmZmZTU1NTZkNmUyNzg0ZjliY2UwY2Y3NjE3OTAyY2JjNGM1Zjc2NTk2OGRmZGQ3MjZkOTMwNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d5fdf2309bbd45cfbfaa0dfa10d19a5b",
+      "statement": "Selecting a file parses markdown into AST documents and task items while checking empty files for historical snapshots to flag corruption warnings, whereas selecting a folder recursively aggregates task items across all contained markdown files.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/vaultStore.ts#L191-L254",
+          "version": "repo-lines-v1:sha256:adde1b849c64aed655bf11bc7daa50d11ad8aa0579a6a1590a195d4d80e9d528:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1ODY0OTA2OTkwNmY0MjFlNDU1YjY4NTY5OTQwZmJmZmNmOTlhYTI0NjY3NWE0ZTIyMDM3NTVhNjI4NmJjMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1MWM3MjA3ZjgzMmQ3ZDc4MGJjYzQ3ZDQzYTc4NDU2MmRmM2Y4OTAwZTJjMmI1MTE4MjIyMzAxMGYyYTFmMzgifQ"
+        },
+        {
+          "resource": "repo://src/store/vaultStore.ts#L256-L297",
+          "version": "repo-lines-v1:sha256:57ae855c09c8e75a81a1171a99d6cc83a8a9d9ed666799bbc9450b6f6f0e16c3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MmZmZjY0OGQ4ZWM3NDA5MmUzNjMyNjk3ZTY2ZDdiOTQwNjkwYzFkODcxN2Q5ZThiNmZiMzU5YjJhZWQ3ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxNTc1ZWIxYzhkZGNiZGY1ZTBlYWFjYjQzMzljZTBhMzE0NDU5NGFjZWE1ZDFhYTlhMTdkYjdhOWZmMGI5ODkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e77ff410f7d74bdd8ae2bdc0b7973559",
+      "statement": "Task operations perform optimistic memory state updates before executing markdown AST manipulations and atomic disk writes, reverting memory state if disk writes fail.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/vaultStore.ts#L394-L446",
+          "version": "repo-lines-v1:sha256:233426aa7439cd885a7b0a1d4d79610705b8d99f0bff439c9a49a3f872697a86:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ZmY1NzU3ZTc5MmNkOWEzMjYxZjhiN2Y4NGI2YThiYzA1MmY5NWFmZjMyMmI4Yjc2ODA2MjQyNmNhMjU0YWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2MmEyMzNhZDEyOTA3ZGUyZWIxZDc3YTkzZDVhZWUxZDc2NWQ3MDAzOGNjNWY3ZWEwY2I2OTRhOTZmMmQ5NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyYjMzNGYyMGQ2MjMyYjdjM2E2ODNjM2ViNzRmZjUwYzE0NzRmYTMxYjhkOTJjMDM5MDE4MDYwOTgxODk4MGMifQ"
+        },
+        {
+          "resource": "repo://src/store/vaultStore.ts#L486-L541",
+          "version": "repo-lines-v1:sha256:d4e834159ed08b6d08cf632403a0164726afc15b39813bcb80dde5b3981fe74d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMjE5MTFhNDVkNTJkMzE4YzBlYjUyYWVhY2VlODc4OGE5MjVjZGU0YjcxMDhiM2Y4NjAyOTFmNmNlOGUxZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4NjEzNjU1NWY5ZGVhM2Y5YTQxZDVhOWFjZDg4ODliZmJiMmYwYjhjMzU1OGUxMGVkODZkYzRiMGVjMWQ0ZDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4b9890b55a4d4091add3fea2bbdd58d4",
+      "statement": "Moving a task across files atomically deletes the task from the source markdown document, appends it to the destination document, and updates store state for active files.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/vaultStore.ts#L578-L643",
+          "version": "repo-lines-v1:sha256:016c654fcdcda7e3a08ee444c010d317965f4c5a28ba041dbd9dc7e4cc5111c8:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyZGEzNTUzMGI5NjcxOTMzNTRlYTNlODVhYTQwYWQxNTcyZjYyNzFlYmY4NjA0YWIyZTlkZTE5NzU1YmY4ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3NTNjZWRiN2EyOTM0YjJjZjgxMDMzODI2MTg5MjJhMDc2YmQyNGQyMzMxYzJkZjVjODM0ZTI5NDk5NzAzMTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a6808c55e49b4ed784f0d3d2ef422ca8",
+      "statement": "Folder branding configurations map relative vault folder paths to emojis or image files in .logos/config.json, providing immediate visual updates via a two-tier localStorage and Tauri asset URL caching strategy.",
+      "evidence": [
+        {
+          "resource": "repo://src/services/logoService.ts#L126-L197",
+          "version": "repo-lines-v1:sha256:f833461d3c47f6ff6ef4a52e3ad0e965623df471f17e54829bbf7f10fd561f1f:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NGE0NmEyZmJhODhjNWZhMTBkOWEzOGQ1YjgwMjViZjU0NjYxODMwNmRjMzljODBlMWQ0Njc5ZjRmZWM0MzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4OTZmZjQ4OWNlMzJkZWQ0ODhkOTJkNzg5YWYwNzUzNzAyZTBjNTI3ZjNhZjQ0MzAwNzMxYmEwODY1YWI0YjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/services/logoService.ts#L13-L121",
+          "version": "repo-lines-v1:sha256:ef97f71bd717365a227bda47fafa061926e54b9a03bc594340bda8ca897ad7c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyMzVlMGE2MGUyMmYwZDkyY2IzYzU2MjA0YWNlMzRiYzc5NGFiZTI0ZDcxN2Y4YzJkYjg1YjZkMTc2YmYwNDFjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4OWE5NDJmMzU4YTViNDM0MmEzODFkZGVhNjFkZWUyODVmYmJmYzNiNDViZjVlMjEwNmMxZTdmM2FlN2ZlYzc2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1NzMyZmY3MzAxODcwNTRlMDIyYjkwMWNiMDdhNjJkMThmNTRjZjY4NDc0NWE0NTM3ODA5Y2QxZjAzZjkxYWZjIn0"
+        },
+        {
+          "resource": "repo://src/store/vaultStore.ts#L665-L705",
+          "version": "repo-lines-v1:sha256:ddd807ce824139926a9502d7525e634d08c61bd4dfce197a382232933d68dbc9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNTkyYTJmNTAxOGZmMTQ1YjczZTIzMWRlYWQ1YTdlYTJjY2NiZDYwZTNhMmQ5ODVkZjg3YWE1NDg4YmRiZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhNjJmZTZlZGFlODNmZjk4MjkwYzFhNTRmNDUxYTkyNmZhODIwOWQwNzE5NDAwZWMwNzIwNDllNDcxZDhmNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1Mzg2NGE3ZjE3ZjBkOGUxNmYwY2IzMzU0YmYwMTMzYTQ0OGZmNzA3YzE3YzE4YTMxM2Y0MjE0MDQ5MjJkNjkifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-31T14:53:08.961Z"
+  }
+}

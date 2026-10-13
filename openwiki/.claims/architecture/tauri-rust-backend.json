@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:4ff2872e097c3b1b1324186c96c3a808bfb48ed32b0ad703c219a56541d9d52b",
+  "claims": [
+    {
+      "id": "claim_f0fb493a69be4356a269605873d6a1b7",
+      "statement": "The QuietFlow Tauri Rust backend initializes application plugins, registers shared watcher state, and exposes IPC command handlers for vault management.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/lib.rs#L78-L107",
+          "version": "repo-lines-v1:sha256:cb15d2d3407fa60ec5073e600f4d9b6f7ae65af8a14e947d7e55bdd001b9f515:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5YTQ3MDBkMzEyMmE3ZGIyZjIxMGVlZjRlOTMxNmQyZDVmZmQwNDkzMjhlZTllMDYyMTk4ZTJjOTkxNzgyNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3MjNkMjBkMjA3OWFjMzNiN2MxMDRhOTU0NzUzMjRmM2QxNTk4N2NlNmYwZGI5MjUxNWQ4NDJlZDA2ZDgxZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3263a6b9bfdf466fa406469d2d3b4a26",
+      "statement": "The vault scanner builds a recursive directory tree hierarchy, creating missing directories and an initial today.md note when initializing a new vault path.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/fs.rs#L20-L87",
+          "version": "repo-lines-v1:sha256:3f07a02f1273b4fe7376e69a6626c601589386b65f6830b5d891cd08c2bba9de:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkMTdiMTU1ZmVlNTlkNGNiMTAzOTJjNjZiNmMxMGIxZjczODIwYTU3MTM2ZTBhNWE2ZmY2MzQ5Y2U0NmFlYWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3ZTU0ZmI3NzhjMGZmYWZhZjVlYTFmZWY0M2JjOTRhMmI0MGQzNGY1ZjQ0MDA0YzY1NTdmODU3YjgwMWExZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzYWU1YjgyMzdlNDYzZjFiMTU3ZDIyMWM2NmI3MWViNmY1Y2Q0M2M4MjIyZmU4MmJiZThhOGE3ZDFjYzIzODgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_df42a9e924374faa980caba85156ab06",
+      "statement": "Directory scanning sorts entries deterministically with subdirectories listed alphabetically first, followed by files alphabetically.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/fs.rs#L71-L78",
+          "version": "repo-lines-v1:sha256:790dd6ea81f715a33f6aed2432bae97e5ce191eb7fc9e3a1d8c28426b5d909e6:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzIzNmE0NWM4NDhmMjU2M2ZiODc0NjE1NGU1Mzk3MzdkZWViMTA1MWRlYWY2NWNmODk1MjhkMTMzYmZiMGJkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJkMTFjYWY0M2U5N2VmMzY5ZTZiZWVkMWEyNjhiZDA1ODM4ZjI5YjlkZDI1NGJmNjliYTY0ODg0MTQ3MjM0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTk5YmRlZmVlYWNhNjM0MGUwMjkwZGM4NmU4ODljODlkNWUxODlhYTViYTQ0YjU4NWIzYjcwNzM0ZjRhNjJkOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmU0NzE3ZDc2Yzg2YTA4NWY3YTU5ODBhNzYyNWM4ODllZTM0ZWUwYTE5ZTA4OWYzYzg4ZWUxMzIyMDAwNjUxOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_75d9a84ee4784e6c8cf754c81295cef3",
+      "statement": "Atomic file writes prevent partial data corruption by writing to a unique temporary file, syncing data to hardware storage, and executing an atomic filesystem rename.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/fs.rs#L98-L137",
+          "version": "repo-lines-v1:sha256:426097912b5b384ca5b504a1a5d6d0780037255a8701000ecbc70574c04c845d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmZmYyNGI4OGIyOWM3YTRiMTdjYWM0MDk2Mjk5ODg3MWEzZTc3NTY1MjZlODYyZTdmZWEwYjg3MjhjNzE5YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2YTNlNjMwYmY2ZjE1YmU4ZTY1MThmNTBkM2ZhYmMxZTI3ODA4OTM5MjFjMzczY2QxMzQ2Yzg5MWU0OGRhMGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2MzJiNWI5ZTU5YTAzNGM2ZTEwZjYzMmNiODE1ZDk3Y2M1MmM5Y2NiMWZjZjc1ODY4NzM3ODkwOWFkMWU5YmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dbde698aaaf64df38c758214cde301c3",
+      "statement": "Atomic file writes automatically attempt to capture a pre-write snapshot before mutating existing non-empty files.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/fs.rs#L109-L110",
+          "version": "repo-lines-v1:sha256:23347b0600111d4994348a34ab138b54b8897ba840a6de9a78de6462dfce7024:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjhjMWFmY2U0ZGVjOTYwZjU3OWVhZTUyMGEzZjJiY2FjZTRlNzUxYTIzZGY3ODM2ZTA4Zjk1Yjk1ODU2NjAzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjI1ZGFjYWI5MDg2N2VhNTI4ZWVjM2Q2ZTJlNzMxZTE3NWI4NTViZmJhZDkzMTI3OTQwM2VlYTZkOWNjNDc4OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzM2NGFiNGI3NGUyMjIxMTc3MTQzY2FkNDAzNGM1ZTJhMmRkY2ZjMTg4YTc3MWIzYjY4MDQ4NDQ3NjA1NDE4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTc3YmY1NmE4NDA5Y2VmZjdjNDY2NmU5NDllNGYwMjRlZGQ1YzI1NzUxNmRiMjQyNWZkNTU2ZDNkZjdiZGFiMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1fd4dff5b789461e8bdf0d88c846e54e",
+      "statement": "The vault watcher configures recursive filesystem monitoring using notify::RecommendedWatcher and stores active watcher instances in application-managed state.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/watcher.rs#L16-L47",
+          "version": "repo-lines-v1:sha256:e6a9d49104d7b5b4277aa2dd678e9158c7582d653cdeda7df7ec441315dfb936:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3ZjBjZGVkNjcwZWNiMDJhMmM2NTNiZGM1ZTIyNzcxYjAwNzM0MWZiMzA2YmU5Y2FmNjJlNDk0MmU2NGI2YjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzZjZmMzYzNWVhODIwZmI1YTVkODI2MmUyZDc4MGVmYjMwNjA0YTgxMWVkOGFhNmJjYjYzZjI1OGY4NWQ4NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkOTcwOWZjMGUzZjE2NWZkYTJmMzJhOGRmNzY0MTY2YTNlZDQ3ZjU2ZTJmMDQ1NzAwMTY1OGFmNjBkZTllNjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_465e3ae2756a4af6b6fc74367bf7e933",
+      "statement": "The watcher background thread ignores hidden and temporary files and applies a 150ms trailing edge debounce before emitting vault changed events to the frontend.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/watcher.rs#L51-L75",
+          "version": "repo-lines-v1:sha256:710221ae558dc711d9c1c22f1b671b4fd303713796337fed9c01daec44b9ccec:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkMTg5M2U0MDZhNTY5NzllNGE4NjY0ODUzYTQ4NDc5NzEyODhmMTc0M2I0ZjAyYzliYmNmYjljOGE1ZTYzNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkOTcwOWZjMGUzZjE2NWZkYTJmMzJhOGRmNzY0MTY2YTNlZDQ3ZjU2ZTJmMDQ1NzAwMTY1OGFmNjBkZTllNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZmIzNmYwNDZkNDFlYmExZjMyMzRjOTg0MmFiNGIyZDM0NzUyNmQxNjQ3OTY4YjU4NWU5MGMxMThlYWU1ZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_119aec1a04b94d219b521be5dfee2920",
+      "statement": "The snapshot module maps relative note paths into sanitized directory structures under .quietflow/snapshots to isolate point-in-time recovery versions.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L29-L39",
+          "version": "repo-lines-v1:sha256:c51690f080d7981b5a2d881c834c6ed4027471cc15da59be6770190971c8d59d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NGUzMDI0NThmNWQzNjM3NDFkNTk1NzI0ZDhlMjI2MGQ0ZGQ5OWE5NTA0YjFkNGFiNWQ5MDlhZmM1OTkyYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhODViOTIzMjUyOWE2OGEyMGM1ZDhiZTdkODk3MWJkNjcyYzZkODNhMTZkZDJjYWQ2NWU3ZWEwNmI4MjFiZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhYmM1NzkxZDY1MmNlZGRiMDI3NjNiYzNiZDVlZWNkODQ1ZjY3MWNmNWUzZGQzNWY1MmRlNzc0MzhhNzM5NDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e8ce2d422c324ba3a5d9ac3ce28c7f35",
+      "statement": "Automated pre-write snapshot creation enforces a 120-second rate limit per file to prevent excessive disk snapshot creation during frequent saves.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L24-L24",
+          "version": "repo-lines-v1:sha256:f4994ef6e39934bb4939239b5ec7de06dc602c5ef35b6ffae7d8bdf09e53dd71:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQ5OTRlZjZlMzk5MzRiYjQ5MzkyMzliNWVjN2RlMDZkYzYwMmM1ZWYzNWI2ZmZhZTdkOGJkZjA5ZTUzZGQ3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQ5OTRlZjZlMzk5MzRiYjQ5MzkyMzliNWVjN2RlMDZkYzYwMmM1ZWYzNWI2ZmZhZTdkOGJkZjA5ZTUzZGQ3MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTZmZjEyNjRlMDc1ZWRjMTY0YWU1MWNmMmExYTQ5M2JlOTcyZjEyMmJiMTY5OTFlMzU3ZmYwNGM1MTkzZTMyZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWZiZmUwNGQ5MjIzMjEzODY2Yzk4ZTMyYjczZjk4NDUwMzkzMWQyZTg4NWE0N2EyMWE5M2NhMzgzMmIyN2U4ZCJ9"
+        },
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L78-L102",
+          "version": "repo-lines-v1:sha256:ba8ded5f12341cd78df498aea350b4c770330c2b467a61c6aea8aaae968f75c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZWJkN2Q5NzEwODg4NDEwNzA2Njc5M2M3NGIwYjAxMTllZmI5MjQwMDZjNzA5NTgxNjk5OWJlZmVjMjY3ZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1OTU5YjZiZjA2NTc5OGMyMDkwYzliNTFjYTY2YzM1NTE0OTM1YTk3OGYzZTgwZDdhODYwMTY2NThhMTg2YjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhMjkyYTg5ZDE2NTMyNzhmMGRjMWZlMmEwY2EzZGIzZmE0OWNlYTBhZjg0NjUyMjM1ZGJhNzA3NTg1ZjE1ZGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_046f242cfe224dea9cd9be19aea75a0a",
+      "statement": "Manual snapshot creation bypasses rate limits, evaluates markdown task counts using line heuristics, and records point-in-time snapshot metadata.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L282-L327",
+          "version": "repo-lines-v1:sha256:f8e31d286e675a8652ddbaf3070244b2feabd9be102b062bd708f5ef212cf6fd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMWVlMzNlZTk1ZmFlZTFjMTBlOWViZjNkM2RlNDFiYjE5MjUxNWNhZDc3Y2RhMjA1ZTU0NmRhMTcwMDFhNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxZDdkYWU2NmU5NGJhZjQyMWEyY2M2MmU3NDYzNjE1OWY1ZWI0OTA3MGU4MDNiYjI3ZGMxZTgyZTAyYjY0MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L42-L53",
+          "version": "repo-lines-v1:sha256:7ad6daf7c6d3bea3c28f1ff9b8426b6d9d6047bd34df15579649b30c8596aaef:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzYzJjNTJkNDhlZjQxZjgxOTE5OTBjZmM1YzZlODc1MjhjNzk1ODZlMzFmYTgyZjJjZGM0NGQyNzU1MWM1MzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4MDk0N2ZjODczMDJmNWMyZDRiN2Y4N2UwZjdhNjZmODkwY2UwMDA1MmRlOTRkNThiMDUzOGRhYTZkZjFhYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlMmVkZGQyZDcwNzA3NzVjYmQxOWJiYmU5MDAxNWY5YmIwYTE4N2YxY2Y1MmYxMDBjZmMwODZhNGY2NmUyMzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_316b419edffb4ba68652ed2720d77fb1",
+      "statement": "Snapshot restoration reads historical version contents and overwrites target files atomically using temporary staging files.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L180-L217",
+          "version": "repo-lines-v1:sha256:eaab4c966d0e25c6f90fd4b76658b1a1b92546e18d94ba34d8fa475919b6658e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwOGVjYmU0MjZkOTg0ZDBlOTgxNzBmYzA1MWExYmMzMWJlODI5Y2Q2ZGU0OWQ4MjVkN2M5ODc5YzYzOGU0MTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxNTZkNDk3NTA0ODNhZmJkNmZiMjk4NWNmOTEwNGM2MjgyY2FkM2IzZGRiODBkYWM3ZThjNTkyMWYwOTQyOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzNzAwNzkzZTBkZDVlZDg1NTk5YzI0Njc1YTY2ZDBjZDEwNjgzYjliYTc1ZThjODliYmU2ODhjZjM1ZmJjN2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_478550316af44727a817008752bbb4a7",
+      "statement": "Snapshot retention pruning automatically deletes snapshot files older than 14 days and caps total snapshots to a maximum of 20 per note folder.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L220-L257",
+          "version": "repo-lines-v1:sha256:ff1d588ea409958ba27bf405025853ecd5cd766ee546cbc5707261349a3a7f01:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NjFjYWVjNzJiMmM5ZTgxZDNhYmJjNjJjNWJkNzg2NjI2ZmEyNGM3OTExOWJkOTRiNTM0ODdhNTJkOGIyYTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiMzkyZTljNzg3NmU1Nzc0MDMzYTFlNWFiOGJmOTQ3NmM5ZWI3ZTY1MjY0NDIwMDYyNzM1MzAyMzA0MzE5MjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMWJiYzc5ZTFkNWM3NjUxNjliOWE4NmZmZGQyNTVhMzBiZDg4NWY1MWQzMzJjYjllMGExOTM2ZmFiYzVhNDcifQ"
+        },
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L25-L26",
+          "version": "repo-lines-v1:sha256:5cc22e77654709cb2a2a98675069c856ea192a83c2ea0b01ccd52e1132785be0:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzEwYzVhN2VlZTNkZjE4YjFhZjBmOWU1OTYxODMzMzI1OGFlZjFjN2M0NDM2OWFmNGRjZmRhMWY0MjQxM2FlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNlNGFmMjEyODQxMzE3OWM5ZjhlZWQxN2MxMjg4NTcyZGE2YzAzOTFiNDA3N2E5ZWE3NTYxMWZiN2U1OWI5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2NjZmZjNGQ5NjA3OWI2OGZmY2YxZDlhYTdiY2RmNWM3MWUyNTc0YjEyNDhiYmM5ZTIyNjRjOTFkZTc0MTUxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDUwODI4NGUxOTBkM2Q3ZTBiYThhMmZiYTM3NjVjMTYxNTc2ZWY0MmRlZjZkMDM5ODYyMjIxNTQyNDQ3YjAxOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6aa42604df024c3a81741ccf2502f5a4",
+      "statement": "QuietFlow persists saved vault path configuration in vault_path.txt within the OS application configuration directory, defaulting to Documents/QuietFlowVault.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/lib.rs#L31-L75",
+          "version": "repo-lines-v1:sha256:dbe6cfc6b08eb2cf3519e7bef53a6d51ea127125e46dec949c16aeb338b47a1b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4YTY4YmYzMWM5ZmZmMmY0YTM3NTQwZWFjY2YxNmEzM2UyZTgwZjdhNGEyOGNkM2M0N2YzNWIzYmNmZTg1OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlYzA5YTk5MGFhODBmMjE3YWJhYjE0YWZkYTcxZjc5Yzk0OTc3ZmI3MjZjYjMzZjcwZGZkMzczNWFmNjAwODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwMzk4MzE3ZjE5MTg3MWNlNGZhNmJjMzU4MThmNzA5NDk3ZWU5NDlhNDVjM2Q1OTJhZTljMDlmZjcwNTcyMTcifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-31T14:53:08.961Z"
+  }
+}

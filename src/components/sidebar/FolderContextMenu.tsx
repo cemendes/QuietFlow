@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Edit3, FilePlus, FolderPlus, Trash2, Image, Smile } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Edit3, FilePlus, FolderPlus, Trash2, Image, Smile, History } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 
 export interface FolderContextMenuProps {
@@ -9,6 +9,7 @@ export interface FolderContextMenuProps {
   onRename: (newName: string) => void;
   onAddNote?: () => void;
   onAddSubfolder?: () => void;
+  onViewHistory?: () => void;
   onDelete: () => void;
   onSetEmoji?: (emoji: string) => void;
   onUploadLogo?: (dataUrl: string) => void;
@@ -23,6 +24,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
   onRename,
   onAddNote,
   onAddSubfolder,
+  onViewHistory,
   onDelete,
   onSetEmoji,
   onUploadLogo,
@@ -32,6 +34,42 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
   const [renamedValue, setRenamedValue] = useState(folderName);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const { t } = useTranslation();
+  const menuRef = useRef<HTMLDivElement>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isRenaming && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [isRenaming]);
+
+  useEffect(() => {
+    setRenamedValue(folderName);
+  }, [folderName]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    // Use mousedown so clicks outside register immediately
+    document.addEventListener('mousedown', handleOutsideClick);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -72,6 +110,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
 
   return (
     <div
+      ref={menuRef}
       data-testid="folder-context-menu"
       className="absolute right-2 top-8 z-50 w-52 bg-white border border-sand-200 rounded-xl shadow-xl py-1.5 text-xs text-slate-700 animate-in fade-in zoom-in-95 duration-100"
       onClick={(e) => e.stopPropagation()}
@@ -80,7 +119,7 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
         <div className="px-3 py-2 flex items-center gap-1.5">
           <input
             type="text"
-            autoFocus
+            ref={renameInputRef}
             value={renamedValue}
             onChange={(e) => setRenamedValue(e.target.value)}
             onKeyDown={(e) => {
@@ -119,6 +158,20 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
             <Edit3 className="w-3.5 h-3.5 text-stone-500" />
             <span>{t('folderMenu.rename')}</span>
           </button>
+
+          {!isDirectory && onViewHistory && (
+            <button
+              type="button"
+              onClick={() => {
+                onViewHistory();
+                onClose();
+              }}
+              className="flex w-full items-center gap-2 px-3 py-1.5 hover:bg-sand-100 transition-colors text-left"
+            >
+              <History className="w-3.5 h-3.5 text-stone-500" />
+              <span>Version History</span>
+            </button>
+          )}
 
           {isDirectory && onAddNote && (
             <button

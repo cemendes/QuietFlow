@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -7,57 +7,99 @@ import {
   FileText,
   FolderPlus,
   FilePlus,
-  Trash2,
   MoreVertical,
 } from 'lucide-react';
 import { VaultNode } from '../../store/types';
 import { ipc } from '../../store/ipc';
 import { useVaultStore } from '../../store';
+import { resolveFolderIcon } from '../../services/logoService';
 import FolderContextMenu from './FolderContextMenu';
-import { formatShortDate, useTranslation } from '../../i18n';
+import { useTranslation } from '../../i18n';
 import { NAV_ITEM_ACTIVE, NAV_ITEM_IDLE } from './navItemStyles';
+import { FileHistoryModal } from '../history/FileHistoryModal';
 
 export interface FolderItemProps {
   node: VaultNode;
   level?: number;
   activeFile: string | null;
+  activeFolder?: string | null;
   expandedPaths: Set<string>;
   onToggleFolder: (path: string) => void;
   onSelectFile: (path: string) => void;
+  onSelectFolder?: (path: string) => void;
 }
 
 export const FolderItem: React.FC<FolderItemProps> = ({
   node,
   level = 0,
   activeFile,
+  activeFolder,
   expandedPaths,
   onToggleFolder,
   onSelectFile,
+  onSelectFolder,
 }) => {
   const isExpanded = expandedPaths.has(node.path);
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const [isCreatingSubfolder, setIsCreatingSubfolder] = useState(false);
   const [isCreatingFile, setIsCreatingFile] = useState(false);
   const [newSubName, setNewSubName] = useState('');
+  const newEntryInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if ((isCreatingFile || isCreatingSubfolder) && newEntryInputRef.current) {
+      newEntryInputRef.current.focus();
+      if (isCreatingFile) {
+        newEntryInputRef.current.select();
+      }
+    }
+  }, [isCreatingFile, isCreatingSubfolder]);
+
   const [isDragOver, setIsDragOver] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const vaultPath = useVaultStore((state) => state.vaultPath);
+  const logoConfig = useVaultStore((state) => state.logoConfig);
+  const setStoreFolderIcon = useVaultStore((state) => state.setFolderIcon);
+  const getStoreFolderIcon = useVaultStore((state) => state.getFolderIcon);
+
   const [folderIcon, setFolderIcon] = useState<string | null>(() => {
-    return localStorage.getItem(`folder-icon-${node.path}`);
+    return getStoreFolderIcon ? getStoreFolderIcon(node.path) : (typeof localStorage !== 'undefined' ? localStorage.getItem(`folder-icon-${node.path}`) : null);
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem(`folder-icon-${node.path}`);
-    if (saved) setFolderIcon(saved);
-  }, [node.path]);
+    let isMounted = true;
+    if (vaultPath) {
+      resolveFolderIcon(vaultPath, node.path, logoConfig).then((resolved) => {
+        if (isMounted && resolved) {
+          setFolderIcon(resolved);
+        }
+      });
+    } else {
+      const saved = typeof localStorage !== 'undefined' ? localStorage.getItem(`folder-icon-${node.path}`) : null;
+      if (saved) setFolderIcon(saved);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [node.path, vaultPath, logoConfig]);
 
-  const handleSetEmoji = (emoji: string) => {
-    localStorage.setItem(`folder-icon-${node.path}`, emoji);
+  const handleSetEmoji = async (emoji: string) => {
     setFolderIcon(emoji);
+    if (setStoreFolderIcon) {
+      await setStoreFolderIcon(node.path, emoji);
+    } else if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(`folder-icon-${node.path}`, emoji);
+    }
   };
 
-  const handleUploadLogo = (dataUrl: string) => {
-    localStorage.setItem(`folder-icon-${node.path}`, dataUrl);
+  const handleUploadLogo = async (dataUrl: string) => {
     setFolderIcon(dataUrl);
+    if (setStoreFolderIcon) {
+      await setStoreFolderIcon(node.path, dataUrl);
+    } else if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(`folder-icon-${node.path}`, dataUrl);
+    }
   };
 
   const refreshVault = useVaultStore((state) => state.refreshVault);
@@ -77,7 +119,34 @@ export const FolderItem: React.FC<FolderItemProps> = ({
   };
 
   const formatDefaultNoteName = () => {
-    return `${node.name} - ${formatShortDate(new Date(), language)}`;
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const baseDate = `${year}-${month}-${day}`;
+
+    // If folder already has files, find next unique candidate name
+    if (!node.children || node.children.length === 0) {
+      return baseDate;
+    }
+
+    const existingNames = new Set(
+      node.children.map((c) => c.name.replace(/\.md$/i, ''))
+    );
+
+    if (!existingNames.has(baseDate)) {
+      return baseDate;
+    }
+
+    // Generate short random suffix (e.g. 2026-08-28-a3f9)
+    const generateRandomSuffix = () =>
+      Math.random().toString(36).substring(2, 6);
+
+    let randomCandidate = `${baseDate}-${generateRandomSuffix()}`;
+    while (existingNames.has(randomCandidate)) {
+      randomCandidate = `${baseDate}-${generateRandomSuffix()}`;
+    }
+    return randomCandidate;
   };
 
   const handleCreateFileInFolder = async (customName?: string) => {
@@ -125,6 +194,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragOver(false);
 
     // 1. Check if a task was dropped
@@ -176,10 +246,14 @@ export const FolderItem: React.FC<FolderItemProps> = ({
     }
   };
 
+  const isFolderActive = Boolean(activeFolder && activeFolder === node.path);
+
   if (node.isDirectory) {
     const containsActive = !!activeFile && activeFile.startsWith(`${node.path}/`);
     // A collapsed folder hides its active note, so the folder row itself carries the full highlight
-    const folderRowState = containsActive
+    const folderRowState = isFolderActive
+      ? NAV_ITEM_ACTIVE
+      : containsActive
       ? isExpanded
         ? 'text-forest-700 font-semibold hover:bg-sand-200'
         : NAV_ITEM_ACTIVE
@@ -190,7 +264,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
         data-testid={`folder-container-${node.path}`}
         className={`flex flex-col select-none rounded-md transition-colors ${
           isDragOver ? 'bg-forest-100 ring-1 ring-forest-500' : ''
-        }`}
+        } ${level === 0 ? 'border-l-2 border-forest-500/40 ml-1' : ''}`}
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
@@ -208,10 +282,21 @@ export const FolderItem: React.FC<FolderItemProps> = ({
           data-testid={`folder-row-${node.path}`}
           data-contains-active={containsActive ? 'true' : 'false'}
           className={`group relative flex w-full items-center justify-between py-1.5 pr-2 rounded-md text-xs transition-colors cursor-pointer ${folderRowState}`}
-          onClick={() => onToggleFolder(node.path)}
+          onClick={() => {
+            if (onSelectFolder) {
+              onSelectFolder(node.path);
+            }
+            onToggleFolder(node.path);
+          }}
         >
-          <div className="flex items-center gap-1.5 min-w-0 flex-1">
-            <span className="text-stone-400 group-hover:text-stone-600 transition-transform">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1 pr-1">
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFolder(node.path);
+              }}
+              className="text-stone-400 hover:text-stone-700 group-hover:text-stone-600 transition-transform p-0.5"
+            >
               {isExpanded ? (
                 <ChevronDown className="w-3.5 h-3.5 shrink-0" />
               ) : (
@@ -221,17 +306,19 @@ export const FolderItem: React.FC<FolderItemProps> = ({
 
             {/* Custom Logo / Emoji or Default Folder Icon */}
             {folderIcon ? (
-              folderIcon.startsWith('data:image') ? (
+              (folderIcon.startsWith('data:') || folderIcon.startsWith('http')) ? (
                 <img
                   src={folderIcon}
                   alt={node.name}
-                  className="w-4 h-4 rounded object-cover shadow-2xs shrink-0"
+                  className="w-4 h-4 rounded object-contain shrink-0"
+                  onError={() => setFolderIcon(null)}
                 />
-              ) : (
+              ) : !folderIcon.includes('.') && !folderIcon.includes('/') ? (
                 <span className="text-sm leading-none shrink-0">{folderIcon}</span>
-              )
-            ) : (
-              <span className="text-forest-600 shrink-0">
+              ) : null
+            ) : null}
+            {(!folderIcon || (folderIcon.includes('.') && !folderIcon.startsWith('data:') && !folderIcon.startsWith('http'))) && (
+              <span className={isFolderActive ? 'text-forest-700 shrink-0' : 'text-forest-600 shrink-0'}>
                 {isExpanded ? (
                   <FolderOpen className="w-4 h-4" />
                 ) : (
@@ -240,10 +327,11 @@ export const FolderItem: React.FC<FolderItemProps> = ({
               </span>
             )}
 
-            <span className="truncate text-left">{node.name}</span>
+            <span className="truncate text-left flex-1 min-w-0">{node.name}</span>
           </div>
 
-          <div className="flex items-center gap-1">
+          {/* Action buttons (only takes space on hover via overlay or compact layout) */}
+          <div className="flex items-center gap-0.5 shrink-0">
             {/* Context Menu Button */}
             <button
               type="button"
@@ -253,19 +341,23 @@ export const FolderItem: React.FC<FolderItemProps> = ({
                 e.stopPropagation();
                 setShowContextMenu(!showContextMenu);
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 text-stone-400 hover:text-stone-700 hover:bg-sand-300/50 rounded transition-opacity"
+              className="hidden group-hover:flex p-1 text-stone-400 hover:text-stone-700 hover:bg-sand-300/50 rounded transition-opacity"
             >
               <MoreVertical className="w-3 h-3" />
             </button>
 
             {/* Quick Actions: Add subfolder / Add file */}
-            <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity">
+            <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
               <button
                 type="button"
                 title={t('folders.newFile')}
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleCreateFileInFolder();
+                  const defaultName = formatDefaultNoteName();
+                  setNewSubName(defaultName);
+                  setIsCreatingFile(true);
+                  setIsCreatingSubfolder(false);
+                  if (!isExpanded) onToggleFolder(node.path);
                 }}
                 className="p-1 text-stone-400 hover:text-forest-700 hover:bg-sand-300/50 rounded"
               >
@@ -276,23 +368,16 @@ export const FolderItem: React.FC<FolderItemProps> = ({
                 title={t('folders.newSubfolder')}
                 onClick={(e) => {
                   e.stopPropagation();
+                  setNewSubName('');
                   setIsCreatingSubfolder(true);
                   setIsCreatingFile(false);
+                  if (!isExpanded) onToggleFolder(node.path);
                 }}
                 className="p-1 text-stone-400 hover:text-forest-700 hover:bg-sand-300/50 rounded"
               >
                 <FolderPlus className="w-3 h-3" />
               </button>
             </div>
-
-            {node.fileCount > 0 && !isCreatingSubfolder && !isCreatingFile && (
-              <span
-                data-testid={`folder-badge-${node.name}`}
-                className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-sand-200 text-stone-600 group-hover:bg-sand-300/80 transition-colors shrink-0"
-              >
-                {node.fileCount}
-              </span>
-            )}
           </div>
 
           {showContextMenu && (
@@ -306,9 +391,17 @@ export const FolderItem: React.FC<FolderItemProps> = ({
                 await ipc.moveEntry(node.path, newPath);
                 await refreshVault();
               }}
-              onAddNote={() => handleCreateFileInFolder()}
+              onAddNote={() => {
+                const defaultName = formatDefaultNoteName();
+                setNewSubName(defaultName);
+                setIsCreatingFile(true);
+                setIsCreatingSubfolder(false);
+                if (!isExpanded) onToggleFolder(node.path);
+              }}
               onAddSubfolder={() => {
+                setNewSubName('');
                 setIsCreatingSubfolder(true);
+                setIsCreatingFile(false);
                 if (!isExpanded) onToggleFolder(node.path);
               }}
               onDelete={() => deleteEntry(node.path)}
@@ -327,7 +420,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
           >
             <input
               type="text"
-              autoFocus
+              ref={newEntryInputRef}
               value={newSubName}
               onChange={(e) => setNewSubName(e.target.value)}
               onKeyDown={(e) => {
@@ -377,54 +470,112 @@ export const FolderItem: React.FC<FolderItemProps> = ({
     );
   }
 
-  // File Item with Drag-and-Drop + Delete
+  // File Item with Drag-and-Drop + Context Menu
   const isActive = activeFile === node.path;
   const displayName = node.name.replace(/\.md$/i, '');
 
   return (
-    <div
-      draggable
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnter={(e) => {
-        e.preventDefault();
-        setIsDragOver(true);
-      }}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      style={{ paddingLeft: `${Math.max(8, level * 14 + 18)}px` }}
-      onClick={() => onSelectFile(node.path)}
-      data-testid={`file-item-${node.path}`}
-      data-active={isActive ? 'true' : 'false'}
-      aria-current={isActive ? 'page' : undefined}
-      className={`group flex w-full items-center justify-between py-1.5 pr-2 rounded-md text-xs transition-all text-left cursor-pointer ${
-        isDragOver
-          ? 'bg-forest-100 ring-1 ring-forest-500'
-          : isActive
-          ? NAV_ITEM_ACTIVE
-          : `${NAV_ITEM_IDLE} font-normal`
-      }`}
-    >
-      <div className="flex items-center gap-2 min-w-0 flex-1">
-        <FileText
-          className={`w-3.5 h-3.5 shrink-0 ${
-            isActive ? 'text-forest-600' : 'text-stone-400 group-hover:text-stone-600'
-          }`}
-        />
-        <span className="truncate">{displayName}</span>
+    <div className="relative">
+      <div
+        draggable
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDragOver(true);
+        }}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setShowContextMenu(true);
+        }}
+        style={{ paddingLeft: `${Math.max(8, level * 14 + 18)}px` }}
+        onClick={() => onSelectFile(node.path)}
+        data-testid={`file-item-${node.path}`}
+        data-active={isActive ? 'true' : 'false'}
+        aria-current={isActive ? 'page' : undefined}
+        className={`group flex w-full items-center justify-between py-1.5 pr-2 rounded-md text-xs transition-all text-left cursor-pointer ${
+          isDragOver
+            ? 'bg-forest-100 ring-1 ring-forest-500'
+            : isActive
+            ? NAV_ITEM_ACTIVE
+            : `${NAV_ITEM_IDLE} font-normal`
+        }`}
+      >
+        <div className="flex items-center gap-1.5 min-w-0 flex-1 pr-1">
+          {folderIcon ? (
+            folderIcon.startsWith('data:image') ? (
+              <img
+                src={folderIcon}
+                alt={node.name}
+                className="w-3.5 h-3.5 rounded object-cover shadow-2xs shrink-0"
+              />
+            ) : (
+              <span className="text-xs leading-none shrink-0">{folderIcon}</span>
+            )
+          ) : (
+            <FileText
+              className={`w-3.5 h-3.5 shrink-0 ${
+                isActive ? 'text-forest-600' : 'text-stone-400 group-hover:text-stone-600'
+              }`}
+            />
+          )}
+          <span className="truncate flex-1 min-w-0">{displayName}</span>
+        </div>
+
+        <div className="flex items-center gap-0.5 shrink-0">
+          {/* Note Context Menu Button */}
+          <button
+            type="button"
+            data-testid={`file-menu-btn-${displayName}`}
+            title="Note options"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowContextMenu(!showContextMenu);
+            }}
+            className="hidden group-hover:flex p-1 text-stone-400 hover:text-stone-700 hover:bg-sand-300/50 rounded transition-opacity"
+          >
+            <MoreVertical className="w-3 h-3" />
+          </button>
+        </div>
       </div>
 
-      <button
-        type="button"
-        title={t('folders.deleteFile')}
-        onClick={(e) => {
-          e.stopPropagation();
-          deleteEntry(node.path);
-        }}
-        className="opacity-0 group-hover:opacity-100 p-1 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-opacity"
-      >
-        <Trash2 className="w-3 h-3" />
-      </button>
+      {showContextMenu && (
+        <FolderContextMenu
+          folderName={displayName}
+          folderPath={node.path}
+          isDirectory={false}
+          onRename={async (newName) => {
+            const parentDir = node.path.substring(0, node.path.lastIndexOf('/'));
+            const safeName = newName.trim().endsWith('.md') ? newName.trim() : `${newName.trim()}.md`;
+            const newPath = parentDir ? `${parentDir}/${safeName}` : safeName;
+            try {
+              await ipc.moveEntry(node.path, newPath);
+              await refreshVault();
+            } catch (err) {
+              console.error('Failed to rename note:', err);
+            }
+          }}
+          onDelete={async () => {
+            await deleteEntry(node.path);
+          }}
+          onViewHistory={() => setIsHistoryOpen(true)}
+          onSetEmoji={handleSetEmoji}
+          onUploadLogo={handleUploadLogo}
+          onClose={() => setShowContextMenu(false)}
+        />
+      )}
+
+      {isHistoryOpen && (
+        <FileHistoryModal
+          isOpen={isHistoryOpen}
+          filePath={node.path}
+          onClose={() => setIsHistoryOpen(false)}
+        />
+      )}
     </div>
   );
 };

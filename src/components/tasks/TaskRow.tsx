@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Wand2, Sparkles } from 'lucide-react';
+import { Trash2, Wand2, Sparkles, FileText } from 'lucide-react';
 import { TaskItem, TaskPriority } from '../../store/types';
 import { triggerCompletionFeedback } from '../../utils/feedback';
 import { triggerCelebration } from '../../utils/celebrations';
@@ -102,6 +102,22 @@ export const TaskRow: React.FC<TaskRowProps> = ({
       })
     );
     e.dataTransfer.effectAllowed = 'move';
+
+    // Create compact drag ghost pill
+    const ghost = document.createElement('div');
+    ghost.textContent = `☐ ${task.title}`;
+    ghost.style.cssText = `
+      position: absolute; top: -9999px; left: -9999px;
+      max-width: 200px; padding: 4px 10px;
+      background: #065F46; color: white;
+      border-radius: 6px; font-size: 11px; font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    `;
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, 0, 0);
+    // Clean up after drag starts rendering
+    requestAnimationFrame(() => document.body.removeChild(ghost));
   };
 
   const [isSlicing, setIsSlicing] = useState(false);
@@ -172,12 +188,34 @@ export const TaskRow: React.FC<TaskRowProps> = ({
       <div className="flex-1 min-w-0 flex items-center gap-2">
         <span
           className={`text-sm leading-snug truncate ${
-            isDone ? 'line-through text-slate-400 font-normal' : 'text-slate-800 font-medium'
+            isDone
+              ? 'line-through text-slate-400 font-normal'
+              : !task.title || !task.title.trim()
+              ? 'text-slate-400 italic font-normal'
+              : 'text-slate-800 font-medium'
           }`}
         >
-          {task.title}
+          {task.title && task.title.trim() ? task.title : 'Untitled task (click to edit)'}
         </span>
       </div>
+
+      {/* Note Backlink Badge */}
+      {task.filePath && (
+        <button
+          type="button"
+          data-testid={`note-backlink-${task.id}`}
+          title={`Open ${task.filePath.split('/').pop()}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            useVaultStore.getState().selectFile(task.filePath!);
+            useVaultStore.getState().setActiveView('document');
+          }}
+          className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/60 rounded-md transition-colors truncate max-w-[140px]"
+        >
+          <FileText className="w-3 h-3 text-emerald-600 shrink-0" />
+          <span className="truncate">{task.filePath.split('/').pop()?.replace(/\.md$/, '')}</span>
+        </button>
+      )}
 
       {/* Tags Chips */}
       {task.tags && task.tags.length > 0 && (

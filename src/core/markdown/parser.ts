@@ -1,11 +1,13 @@
 import matter from 'gray-matter';
 import {
+  DocumentSpan,
   Frontmatter,
   NewTaskInput,
   SubtaskItem,
   TaskItem,
   TaskPriority,
   TaskStatus,
+  TaskComment,
   VaultDocument,
 } from './types';
 import { serializeTaskBlock } from './serializer';
@@ -72,9 +74,9 @@ function parseTaskLine(
     completedDate = completedMatch[1].trim();
   }
 
-  // Parse #tags
+  // Parse #tags (require starting with a letter or underscore so issue numbers like #45 are preserved in title)
   const tags: string[] = [];
-  const tagMatches = remainder.matchAll(/#([a-zA-Z0-9_-]+)/g);
+  const tagMatches = remainder.matchAll(/(?:^|\s)#([a-zA-Z_][a-zA-Z0-9_-]*)/g);
   for (const tm of tagMatches) {
     tags.push(tm[1]);
   }
@@ -87,8 +89,13 @@ function parseTaskLine(
     .replace(/@(low|medium|high)\b/gi, '')
     .replace(/@status\([^)]+\)/gi, '')
     .replace(/@completed\([^)]+\)/gi, '')
-    .replace(/#[a-zA-Z0-9_-]+/g, '')
+    .replace(/(?:^|\s)#[a-zA-Z_][a-zA-Z0-9_-]*/g, '')
     .trim();
+
+  // Tasks without a title (e.g. newly typed "- [ ] " or "- [x] ") should not be created as tasks
+  if (!title) {
+    return null;
+  }
 
   const baseSlug = slugify(title) || 'item';
   let id: string;
@@ -122,8 +129,29 @@ function extractFrontmatter(content: string): { frontmatter: Frontmatter; body: 
       };
     }
     const parsed = matter(content);
+    const data = (parsed.data as Frontmatter) || {};
+
+    // Normalize date objects for title and date to clean strings (e.g. YYYY-MM-DD)
+    if ((data.title as unknown) instanceof Date) {
+      data.title = (data.title as unknown as Date).toISOString().slice(0, 10);
+    }
+    if ((data.date as unknown) instanceof Date) {
+      data.date = (data.date as unknown as Date).toISOString().slice(0, 10);
+    }
+
+    // Normalize tags to string[]
+    if (data.tags !== undefined) {
+      if (typeof data.tags === 'string') {
+        data.tags = [data.tags];
+      } else if (Array.isArray(data.tags)) {
+        data.tags = (data.tags as any[]).map(String);
+      } else {
+        data.tags = [];
+      }
+    }
+
     return {
-      frontmatter: (parsed.data as Frontmatter) || {},
+      frontmatter: data,
       body: parsed.content || '',
     };
   } catch {
@@ -141,14 +169,180 @@ function extractFrontmatter(content: string): { frontmatter: Frontmatter; body: 
       if (parts.length >= 2) {
         const key = parts[0].trim();
         const val = parts.slice(1).join(':').trim().replace(/^['"](.*)['"]$/, '$1');
-        (frontmatter as any)[key] = val;
+        if (key === 'tags') {
+          if (val.startsWith('[') && val.endsWith(']')) {
+            frontmatter.tags = val
+              .slice(1, -1)
+              .split(',')
+              .map((s) => s.trim().replace(/^['"](.*)['"]$/, '$1'))
+              .filter(Boolean);
+          } else if (val) {
+            frontmatter.tags = [val];
+          }
+        } else {
+          (frontmatter as any)[key] = val;
+        }
       }
     }
     return { frontmatter, body };
   }
 }
 
-export function parseMarkdownDocument(content: string): VaultDocument {
+function extractDocumentSpans(
+  lines: string[],
+  tasks: TaskItem[],
+  startIndex: number
+): DocumentSpan[] {
+  const spans: DocumentSpan[] = [];
+  const taskMap = new Map<number, TaskItem>();
+  for (const t of tasks) {
+    if (t.lineIndex !== undefined) {
+      taskMap.set(t.lineIndex, t);
+    }
+  }
+
+  let i = startIndex;
+  let spanCounter = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // Empty lines
+    if (trimmed.length === 0) {
+      i++;
+      continue;
+    }
+
+    // Check if line is start of task
+    if (taskMap.has(i)) {
+      const task = taskMap.get(i)!;
+      const startLine = i;
+      let endLine = i;
+      let j = i + 1;
+      while (j < lines.length && /^(\s{2,}|\t)/.test(lines[j]) && lines[j].trim().length > 0) {
+        endLine = j;
+        j++;
+      }
+      const rawSpanText = lines.slice(startLine, endLine + 1).join('\n');
+      spans.push({
+        id: `span-task-${task.id}`,
+        type: 'task',
+        rawText: rawSpanText,
+        startLine,
+        endLine,
+        taskId: task.id,
+      });
+      i = endLine + 1;
+      continue;
+    }
+
+    // Code block span
+    if (trimmed.startsWith('```')) {
+      const startLine = i;
+      let endLine = i;
+      let j = i + 1;
+      while (j < lines.length) {
+        if (lines[j].trim().startsWith('```')) {
+          endLine = j;
+          break;
+        }
+        endLine = j;
+        j++;
+      }
+      const rawSpanText = lines.slice(startLine, endLine + 1).join('\n');
+      spans.push({
+        id: `span-${spanCounter++}`,
+        type: 'code',
+        rawText: rawSpanText,
+        startLine,
+        endLine,
+      });
+      i = endLine + 1;
+      continue;
+    }
+
+    // Heading span
+    if (/^#{1,6}\s+/.test(line)) {
+      spans.push({
+        id: `span-${spanCounter++}`,
+        type: 'heading',
+        rawText: line,
+        startLine: i,
+        endLine: i,
+      });
+      i++;
+      continue;
+    }
+
+    // Thematic break
+    if (/^(\*\*\*|---|___)$/.test(trimmed)) {
+      spans.push({
+        id: `span-${spanCounter++}`,
+        type: 'thematic-break',
+        rawText: line,
+        startLine: i,
+        endLine: i,
+      });
+      i++;
+      continue;
+    }
+
+    // Callout / blockquote
+    if (trimmed.startsWith('>')) {
+      const startLine = i;
+      let endLine = i;
+      let j = i + 1;
+      while (j < lines.length && lines[j].trim().startsWith('>')) {
+        endLine = j;
+        j++;
+      }
+      const rawSpanText = lines.slice(startLine, endLine + 1).join('\n');
+      spans.push({
+        id: `span-${spanCounter++}`,
+        type: 'callout',
+        rawText: rawSpanText,
+        startLine,
+        endLine,
+      });
+      i = endLine + 1;
+      continue;
+    }
+
+    // General prose paragraph
+    const startLine = i;
+    let endLine = i;
+    let j = i + 1;
+    while (j < lines.length) {
+      const nextTrimmed = lines[j].trim();
+      if (
+        nextTrimmed.length === 0 ||
+        taskMap.has(j) ||
+        nextTrimmed.startsWith('```') ||
+        /^#{1,6}\s+/.test(lines[j]) ||
+        /^(\*\*\*|---|___)$/.test(nextTrimmed) ||
+        nextTrimmed.startsWith('>')
+      ) {
+        break;
+      }
+      endLine = j;
+      j++;
+    }
+    const rawSpanText = lines.slice(startLine, endLine + 1).join('\n');
+    spans.push({
+      id: `span-${spanCounter++}`,
+      type: 'prose',
+      rawText: rawSpanText,
+      startLine,
+      endLine,
+    });
+    i = endLine + 1;
+  }
+
+  return spans;
+}
+
+export function parseMarkdownDocument(content: string, filePath?: string): VaultDocument {
   const { frontmatter, body } = extractFrontmatter(content);
 
   const lines = content.split(/\r?\n/);
@@ -156,10 +350,12 @@ export function parseMarkdownDocument(content: string): VaultDocument {
   const slugCounts = new Map<string, number>();
 
   let inFrontmatter = false;
+  let frontmatterEndIndex = 0;
   let inCodeBlock = false;
   let currentTask: TaskItem | null = null;
   let currentNotes: string[] = [];
   let currentSubtasks: SubtaskItem[] = [];
+  let currentComments: TaskComment[] = [];
 
   const finalizeCurrentTask = () => {
     if (currentTask) {
@@ -169,10 +365,17 @@ export function parseMarkdownDocument(content: string): VaultDocument {
       if (currentSubtasks.length > 0) {
         currentTask.subtasks = [...currentSubtasks];
       }
+      if (currentComments.length > 0) {
+        currentTask.comments = [...currentComments];
+      }
+      if (filePath) {
+        currentTask.filePath = filePath;
+      }
       tasks.push(currentTask);
       currentTask = null;
       currentNotes = [];
       currentSubtasks = [];
+      currentComments = [];
     }
   };
 
@@ -188,6 +391,7 @@ export function parseMarkdownDocument(content: string): VaultDocument {
     if (inFrontmatter) {
       if (trimmed === '---') {
         inFrontmatter = false;
+        frontmatterEndIndex = i + 1;
       }
       continue;
     }
@@ -207,6 +411,9 @@ export function parseMarkdownDocument(content: string): VaultDocument {
       finalizeCurrentTask();
       const parsedTask = parseTaskLine(line, i, slugCounts);
       if (parsedTask) {
+        if (filePath) {
+          parsedTask.filePath = filePath;
+        }
         currentTask = parsedTask;
       }
       continue;
@@ -233,6 +440,27 @@ export function parseMarkdownDocument(content: string): VaultDocument {
           continue;
         }
 
+        // Comment line check
+        const commentMatch = trimmed.match(/^-\s*[Cc]omment\s*\(([^)]+)\):\s*(.*)$/i);
+        if (commentMatch) {
+          const meta = commentMatch[1].trim();
+          let author = 'You';
+          let timestamp = meta;
+          if (meta.includes(',')) {
+            const parts = meta.split(',');
+            author = parts[0].trim();
+            timestamp = parts.slice(1).join(',').trim();
+          }
+          currentComments.push({
+            id: `comment-${i}`,
+            author,
+            timestamp,
+            content: commentMatch[2].trim(),
+            rawLine: line,
+          });
+          continue;
+        }
+
         // Note line check
         let noteContent = trimmed;
         if (trimmed.startsWith('- Notes:')) {
@@ -253,11 +481,19 @@ export function parseMarkdownDocument(content: string): VaultDocument {
 
   finalizeCurrentTask();
 
+  const spans = extractDocumentSpans(lines, tasks, frontmatterEndIndex);
+  const wordCount = body.trim().length > 0 ? body.trim().split(/\s+/).length : 0;
+  const readingTimeMinutes = Math.max(1, Math.ceil(wordCount / 200));
+
   return {
+    filePath,
     frontmatter,
     tasks,
+    spans,
     rawContent: content,
     body,
+    wordCount,
+    readingTimeMinutes,
   };
 }
 

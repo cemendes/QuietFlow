@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:bc7a2157b9e46f638152ae9591e4e26bf60676cea6bb3ac42a8ac02bf18a58b2",
+  "claims": [
+    {
+      "id": "claim_6e2a39a020a849f489966c5d0294fb95",
+      "statement": "The ipc bridge facade provides environment detection via isTauriEnvironment(), which inspects window.__TAURI_INTERNALS__ or window.__TAURI__ to determine if native Tauri API modules should be dynamically imported.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/ipc.ts#L11-L13",
+          "version": "repo-lines-v1:sha256:8f1a0282d4f70cdf0a98677997c5357f6ea76b1b10fde65434cb81cafa9b3e5d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQxODY5MzA4ZjEwMjI3Y2ZjYWNhN2YyMTVkY2FjODUwNDRjMTJhNmYxYTIyNTZhMWQyMWExOGJjOTUzYWY0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI1ODBlOTY0ZjgzYTQ3M2Y0M2Q0NDM4NDYyOTQ5ZDY4YjU2MDBmZGE3ODdmMTYzNzQ1ZDAwZGU4OWNiZjM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjg3NDA5MmUyYjhhMjFhNDgyYTUwMGExNzJiNmNkZTUwZDRkMzIwZDRhY2EyNTI4OWJlYTRkZGZjODY5NzY0MiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cb61f7067e9748d08dbab72aadef8f1b",
+      "statement": "The IpcInterface standardizes 14 operations covering vault scanning, atomic file reads/writes, directory CRUD, path configuration, filesystem event subscriptions, and snapshot versioning.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/ipc.ts#L15-L30",
+          "version": "repo-lines-v1:sha256:5b499f1a74336a2c3ba1eb89e31cfc762926c4a63a1d0ae62c87e1447a89325b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNGZkNWUwZDc0NzczNTcxZDJjMGRjYWRmNDRhMjRiMDdjMzc4OWNiNjViOTgwYjg5YWRkMzU4Njc5MDE4ZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4M2EwMzBhNWI4YjIyM2FkN2M4MjVhZjhjNjNlZjY0OTc3MmM3YzQwZGMwOWUxODgyZjY1MDE3ZDBkMjIxOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1NzZhYzZiN2Y0ZGM3NWQ0MDBiYTg5MWVjM2UzYWI4OGJlMDBhZjcyMmU3YWRiOTQzMjc5NTFkZGI5MjA0ZDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5f2c9140476c486f8df1f3f674584342",
+      "statement": "When running outside Tauri environments, ipc methods fall back to BrowserMockIpc, an in-memory implementation seeded with mock notes and hierarchy state.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/ipc.ts#L265-L384",
+          "version": "repo-lines-v1:sha256:7d30dd85ad4ec043a28627928a6f46afeab012c05bc1b6abf9fca1dfb7d978df:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkOWFhMTgxY2ZhY2UyYzc2YjEwNDBmNzU0YzUyMjVlNjJiN2U1NWE3YzU1YmEwYTI4NWVmYzYwNmY3ZmE1YTA5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhYTFkMWE2MzM5MDIyOWM3OTgzNDdlODNhMDQwNTQ0MWM5NDAwMDM1Mjg0YWQxNjhjMWJmNmNkZjFkNzBhMzcwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmN2IyMmY0Njc4NjIwZGQwNTNlMDBhYzJkZTg3YjZkMGMxM2M0NTQ2Y2JhODk5ZjcwZTVhNDk4ODA1OThiMmZiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://src/store/ipc.ts#L33-L89",
+          "version": "repo-lines-v1:sha256:51091b5ba61d5b19ba70068669b7ac683170393251dcde4b03280ec51a8fcf61:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkNzYwN2RiMDljZDdjYTQ0NzZlNjg1YzdjOTIzYzM2MmVmNGUyNjYyMTEyYzk3ZTJkMmY1OGRhZjA1ODFlMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjZmMxNDQyZDZlNGM4ZTY2YTA5MWU3ZTBjYTQyNTkwYWVkMDVmNjRkZWQwNzczMDc5MTBmODkzNGZiYzFhZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0NzVkNGQ4NTQzZWY3NTdkMTU4ODQyNTdlOTE5ODg2NmQ1NGI1MjE0YjZhZGFhNDBjYjA2OWMxNmFlNjE0NDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_be732c7412c84d7197d55791b4ea7bb1",
+      "statement": "BrowserMockIpc persists saved vault path configurations using browser localStorage under the key quietflow-vault-path.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/ipc.ts#L205-L217",
+          "version": "repo-lines-v1:sha256:d47ba9a2affe6dad09d4e171d92c4db28dca0290a41da65cab93926c3d5f89bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkYzhhNGU2ZDIzZjhmYjQ5MTA2OWRjM2M5NjlmOTQzNzcwYTM4ZWYzNmRiNDEzZGMzY2Q0YmYwZjBiZGM4ZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2NWRiNWVkYzFhYTJiYjQ2ZTgyZWY0MWQ5ZDE5OTY0Y2VlMjI0Mzg2NTBmMjhkODI0OGY0YzM2MWQxMDk5NmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhMDdkODExOTdiZTJjMzg1NjAzMDJiZTUzOTY0OWRjNzYwNzJmZDgzMDk5MTEyOWUyNDg3YzU2NjdhMzFjM2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a8c2a5a61f42455e886b825340bd56a1",
+      "statement": "Atomic file writing in the Rust backend (write_file_atomic) creates parent directories if missing, triggers a pre-write snapshot check, writes to a temporary .tmp file, syncs data to disk, and renames the file to the target path.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/fs.rs#L98-L137",
+          "version": "repo-lines-v1:sha256:426097912b5b384ca5b504a1a5d6d0780037255a8701000ecbc70574c04c845d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmZmYyNGI4OGIyOWM3YTRiMTdjYWM0MDk2Mjk5ODg3MWEzZTc3NTY1MjZlODYyZTdmZWEwYjg3MjhjNzE5YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2YTNlNjMwYmY2ZjE1YmU4ZTY1MThmNTBkM2ZhYmMxZTI3ODA4OTM5MjFjMzczY2QxMzQ2Yzg5MWU0OGRhMGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2MzJiNWI5ZTU5YTAzNGM2ZTEwZjYzMmNiODE1ZDk3Y2M1MmM5Y2NiMWZjZjc1ODY4NzM3ODkwOWFkMWU5YmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6154c940c7814cf79ae2297cfd7b3db1",
+      "statement": "Pre-write snapshots in the Rust backend automatically snapshot non-empty files prior to atomic writes if at least 120 seconds have elapsed since the newest snapshot for that file.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L56-L140",
+          "version": "repo-lines-v1:sha256:361c08a000c68db0dda05690f94e48bed28590ba57b3228911cee71ba73d288f:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MDMyYmVhOWUzOGFiMWJiNDhmMjk2YWRlYjYwM2ZkMjU2MmIzYzc5MGNiNjA0MmE5NDFkN2ZmZDM5ZWFlODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiMTJmNTZlODVlNjk4ZGI2NmEyNmRkYWU5YTUyMWQwMTlhOGJkMDk2OTVjMjg1MTZkNDMzYmMxNjI0Nzc4YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1ZjY1ZWU3MDgxM2QzNWE3M2I2YjM1ZmEyODEwNTllMTA2ODI0YjRjZjczOWQ4ZmMxNjQyMTdmNTYyMTU4NTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_210c229b66064de6822c17795e9b6de0",
+      "statement": "Directory scanning in the Rust backend (scan_directory_tree) auto-initializes non-existent paths with a starter today.md, ignores hidden files starting with ., counts files recursively, and sorts directories before files alphabetically.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/fs.rs#L20-L87",
+          "version": "repo-lines-v1:sha256:3f07a02f1273b4fe7376e69a6626c601589386b65f6830b5d891cd08c2bba9de:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkMTdiMTU1ZmVlNTlkNGNiMTAzOTJjNjZiNmMxMGIxZjczODIwYTU3MTM2ZTBhNWE2ZmY2MzQ5Y2U0NmFlYWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3ZTU0ZmI3NzhjMGZmYWZhZjVlYTFmZWY0M2JjOTRhMmI0MGQzNGY1ZjQ0MDA0YzY1NTdmODU3YjgwMWExZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzYWU1YjgyMzdlNDYzZjFiMTU3ZDIyMWM2NmI3MWViNmY1Y2Q0M2M4MjIyZmU4MmJiZThhOGE3ZDFjYzIzODgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_44c443ffe9884db8a092ca4daa3c9484",
+      "statement": "Native vault file watching uses notify::RecommendedWatcher wrapped in SafeVaultWatcher state (Arc<Mutex<VaultWatcherState>>) and processes file events in a background thread.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/lib.rs#L78-L82",
+          "version": "repo-lines-v1:sha256:ee97956bfcabc837b0d49c827f73ef79995df17887200de74d40c86f9fd09598:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTlhNDcwMGQzMTIyYTdkYjJmMjEwZWVmNGU5MzE2ZDJkNWZmZDA0OTMyOGVlOWUwNjIxOThlMmM5OTE3ODI1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDEyYzQ1NjY3MDRmOGVkYWY3MmNiMjUyM2Y1NThiMDZlYTQyNjJlMTU2MTgzMWUwODRmMDRjMTM2NjljOGIyMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDcyM2QyMGQyMDc5YWMzM2I3YzEwNGE5NTQ3NTMyNGYzZDE1OTg3Y2U2ZjBkYjkyNTE1ZDg0MmVkMDZkODFlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWU2ZTBmNDU3OTdjYTRiNDBhZTliZjc0NTIxYjVlNGZmMmZiZjNkYTY5ZTY3MmQwODFjY2FmM2ZmZmUxZWY0ZCJ9"
+        },
+        {
+          "resource": "repo://src-tauri/src/vault/watcher.rs#L8-L47",
+          "version": "repo-lines-v1:sha256:f9e83769fcb19a1d6cfecdb1ff4008ecd57bcffc169b7c93e0b090dbd097925e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlNDg1ODIyNTYzYTE0NDhhZWZhYzUzZjQ0OWMwNDM3ZjIwOTFmMmExZGI1NTY1NThjNWM4MDU1ODI0NzBmZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxNDYyNWRiMTI5YTcyZTA5ODgxNmVlYTFlZjViMmQ2MDI5NmEwODA2MjdlZDJiNWQ4NDJiZDVmMjhhM2QwZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkOTcwOWZjMGUzZjE2NWZkYTJmMzJhOGRmNzY0MTY2YTNlZDQ3ZjU2ZTJmMDQ1NzAwMTY1OGFmNjBkZTllNjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f729ff37569a4275b28887edb3f238d3",
+      "statement": "The filesystem watcher background thread filters out dotfile paths, debounces events until 150ms of silence passes, and emits the vault://changed event to the Tauri frontend.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/watcher.rs#L51-L75",
+          "version": "repo-lines-v1:sha256:710221ae558dc711d9c1c22f1b671b4fd303713796337fed9c01daec44b9ccec:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkMTg5M2U0MDZhNTY5NzllNGE4NjY0ODUzYTQ4NDc5NzEyODhmMTc0M2I0ZjAyYzliYmNmYjljOGE1ZTYzNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkOTcwOWZjMGUzZjE2NWZkYTJmMzJhOGRmNzY0MTY2YTNlZDQ3ZjU2ZTJmMDQ1NzAwMTY1OGFmNjBkZTllNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZmIzNmYwNDZkNDFlYmExZjMyMzRjOTg0MmFiNGIyZDM0NzUyNmQxNjQ3OTY4YjU4NWU5MGMxMThlYWU1ZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f427110013fc4b5495e6169625daeffe",
+      "statement": "When vaultStore processes a vault://changed event, it suppresses active file reloads if a local self-write occurred within the last 600ms, preventing cursor disruption during user edits.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/vaultStore.ts#L148-L161",
+          "version": "repo-lines-v1:sha256:f55aee98c8f820c1022ed244e7030f55fb9c2e98779912247fc4ff8a13abe3e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMmI0YjQ2NWRjMWEwMjY3ODE5ZGNhYmNiNTU3M2JjZjhkNGRkZTNhZWMyYzMyNGNiODUwYTZiZWU5ZTY0YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxN2FmMTEwMWM5N2I3YzJmNTI1NDA3ODJlNjM0Y2M0NDQwZjBlOTcwMzQxZTUyZjk3NTIzMTFkNzhiN2Q3ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxNTg1NmY2OTkxMmVkYjlmMTc2OGIzNjcyNjUxN2Q0MTI1NjI4YjM3YTljMGM0ODU1M2U4MDc5MjBjNjY4MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2NjFhMTVhMTUzYTBjM2Q4MjMyMWVkMTc0Y2U5YzJiY2RhMGVhNGVjOTRiNWZlZmY3OWM4ZGE4ZWMzNzFmNWIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-31T14:53:08.961Z"
+  }
+}

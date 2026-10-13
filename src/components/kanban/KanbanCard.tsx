@@ -1,7 +1,8 @@
 import React from 'react';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, FileText } from 'lucide-react';
 import { TaskItem, TaskPriority, TaskStatus } from '../../store/types';
 import { Language, formatShortDate, useTranslation } from '../../i18n';
+import { useVaultStore } from '../../store';
 
 export interface KanbanCardProps {
   task: TaskItem;
@@ -102,11 +103,15 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
       <div className="flex items-start gap-2 w-full">
         <GripVertical className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 shrink-0 mt-0.5 transition-colors" />
         <h4
-          className={`text-xs font-semibold leading-relaxed break-words flex-1 tracking-tight ${
-            isDone ? 'line-through text-slate-400' : 'text-slate-800'
+          className={`text-xs leading-relaxed break-words flex-1 tracking-tight ${
+            isDone
+              ? 'line-through text-slate-400 font-normal'
+              : !task.title || !task.title.trim()
+              ? 'text-slate-400 italic font-normal'
+              : 'text-slate-800 font-semibold'
           }`}
         >
-          {task.title}
+          {task.title && task.title.trim() ? task.title : 'Untitled task'}
         </h4>
       </div>
 
@@ -163,6 +168,24 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
               </svg>
               <span>{dueDateInfo.formatted}</span>
             </div>
+          )}
+
+          {/* Note Backlink Badge */}
+          {task.filePath && (
+            <button
+              type="button"
+              data-testid={`kanban-note-backlink-${task.id}`}
+              title={`Open ${task.filePath.split('/').pop()}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                useVaultStore.getState().selectFile(task.filePath!);
+                useVaultStore.getState().setActiveView('document');
+              }}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/60 rounded-md transition-colors truncate max-w-[120px]"
+            >
+              <FileText className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+              <span className="truncate">{task.filePath.split('/').pop()?.replace(/\.md$/, '')}</span>
+            </button>
           )}
         </div>
 

@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:9943c193c8ea2a8802dfdf06be18afdd1e56b59b7b054df6452b4a55955fdf6b",
+  "claims": [
+    {
+      "id": "claim_5be54b5d2272416d8a66a73f4bf5a7d7",
+      "statement": "The Zen Theater modal isolates a single target task within a distraction-free overlay, maintaining focus execution state via a one-second timer sweep animation rendered on an SVG circular track.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/zen/ZenTheaterModal.tsx#L21-L32",
+          "version": "repo-lines-v1:sha256:3bbc0cad85f0439e41c9c3dfde1246ec56bbd84392ed27d863320d144837846c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljOGRmNTI1ZjIxMmUyNmY1MmQwOTkxYmQ2MjcxMjA3N2I0ZTllZGM4MzA2OTk5NjhkYTk5Nzg1YmU1NmNjOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxNjViMmM3YjExYjY2ZGZmMjJiZWNmYWE2ZTVjMTNlOWE2Zjg2NWMwYzA0NDNmYzQ1MjZjZWRiNWVkZWY3ZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1MGU3ZTM0M2FhYjZjMzI1NDAzNDRkNmVkZjdiNDQ1ZDZhZjM1MzU4MjNlOWM3MzQ4MDZlZTc0M2ZlYmRlZjIifQ"
+        },
+        {
+          "resource": "repo://src/components/zen/ZenTheaterModal.tsx#L49-L101",
+          "version": "repo-lines-v1:sha256:e382f4a84bd201dc92a62b47df0f0f12649a1a506a48f415fe1a02999cce304e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyNDQ3MjJmOTgxZDc1MDdkYTQ1ZDliNzllOWY1NTVhNmZlZDAwNDMwOTI2OWRiNGNiMTVjYTdiOWRmMzUzMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTVlYzU5Yjk0MjlkOWYyNTJkYzFiNWQxNGVjOTc3N2M4N2EwYzc5ZDIwNmNlYjNiOTZjZWRlYTE4OTk1MTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlNGFkODQxM2E3OTE1YTAxMWNhZWUwZDBlMmJmMDY0YzU5OTgwOTA4MWJlMTZlMDJhNTdjYTM1MGViODJiN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4YjJiZTk0ZTc5YjBhYmUwM2MwYjRjOWQxYTM1OWVlNzNiYjMyODgzNzU1MzMzNTJkOGI3MzcwYmI0YjgzYWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_86ae892a61774bac898f19c1fb041127",
+      "statement": "Zen Theater modal launch candidates are resolved from specific task selections or automatically fall back to the first incomplete task in the current filtered list.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/tasks/TaskList.tsx#L172-L178",
+          "version": "repo-lines-v1:sha256:9a398eda6e0a76a0fd51dffdf4e39ac52eec4d0c3a2d67163dfe8232add0cddd:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODcyZTFhMjBlMTkyMjYwZWE2ZmE4YTc5YjRjNDA4MDI5ZjdjMWZmNzhlNjg2MWNiM2EyZjFmZWE2NzMzM2I1MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJhMmNiMjVhMTIyYjQ0MjIxYTYyMzRlYzY2MGE3YjVmYjdmOWJkZTdiM2I5ZTJiM2M1NTlhMGQ5NmZhYzczOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWY4MTE5NzRlNTdkNjRiYTJlOGNiMGEzMGViYjY2MDhjZGY2NDZjNmQzMzYyMGM0NDBkMDRlZDgwZDE1NTNmZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGIyMTRlMWJlMTdkYmQxNWI5OTc4N2U0NThhNTVjNTRiM2NhNmE1MjVlNDQzYWQyYzNiOTk5ZGM2M2MwMzRiMSJ9"
+        },
+        {
+          "resource": "repo://src/components/tasks/TaskRow.tsx#L281-L289",
+          "version": "repo-lines-v1:sha256:3dd7e3b9ffc81535dbde4656f2382979c977e41100325e4dcf03087f9a43d1fc:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTRmZDEwOGQ2NzQ5M2U3Nzg2OThjOWZkMTVhYWEzMDI3YWM0MTBlNGJkYzYxMjQwYTJmYzM3MzE5NjM5MTU4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZjNGMyZDkyMmRkZmNjYjE3NzcwMmZiMWNjZGQ0MDE3NWE3ZGFiNWZiYTI2ZjEyOTEyYzg3MWJlNjJkMTEyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjllMDExMDU1ZDEzMzA3Zjk1NDNhZmVkMjVlOTVkNDU3ZTI4M2NlYjRkODAwZTg0NmIwODJhYzM4YjRkYjU0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmY5MGRhOGFiYzU0ZTQxMzMwY2JmM2U5MzZkMzg5MWRiNzIzZDQ3NzM3YWNmNDllOWYwODJjM2FiNjMzZWJiYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b5470284b6924d16b27ffeef60596ec6",
+      "statement": "Task completion within Zen Theater triggers synthetic Web Audio haptic feedback, canvas particle celebrations, vault store state mutation, and modal teardown in a single atomic sequence.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/zen/ZenTheaterModal.tsx#L55-L60",
+          "version": "repo-lines-v1:sha256:7bf4368e278c6225a91af9c4317de28953be8dd1ddb12c8b9949e5c04c7376c5:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGYzNDE1ZjA5NzI0MGNjY2FiMzJhNzZlOGY3MmI4OGQ0ZDhlNWE0NmQyYjViMTA3NGU4YWRjYTg3MzFjNDQ3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJhMmNiMjVhMTIyYjQ0MjIxYTYyMzRlYzY2MGE3YjVmYjdmOWJkZTdiM2I5ZTJiM2M1NTlhMGQ5NmZhYzczOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWM4NmU1Zjg5OTk3YTNiMzhjOTFjZjllNWFhNmNjZGNlYjZhN2UzZWFjZDg5MTRkZTlmNzZmMTE1ODU1MWY1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTYwZWU5ZWJiZmU1NTIwYjBlMDJmYTBhYzRiZjBmM2E5YjI3ZWFhNmI2ODhiZTQ2MjQyZTE0ODc3MzMzMjY0ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_529890bd1e634308a145eb1e3af8929e",
+      "statement": "The dopamine celebration engine creates a full-screen HTML5 overlay canvas running a requestAnimationFrame physics loop across 12 distinct particle themes, automatically removing the canvas when all active particles decay.",
+      "evidence": [
+        {
+          "resource": "repo://src/utils/celebrations.ts#L16-L125",
+          "version": "repo-lines-v1:sha256:ab30047dc4c4afbaecbc54762bdc00c77c0d04f79bf275fd20c01c9050b0c3d9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1MWIyOGYwMDgzNGQ3OTA2ZGE5MzZjOGNiMWU0Y2YyMDAyM2UxMDhkY2QxYmIwNDE3NGE1N2MxNTIyZWQ1ZjZmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiMDJkMmMwZDZkYzVlNzRkOTJmYTE0YjkxZGJlYTI2NDA5MGJlYjM1ZmRiOTE4OGQ5YjM0MTE4MWRjZTlmNGNlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyYzQzM2I4NGI3ZDllZTVlZTgyMmQ1N2E1ZmRlZWY5NmY0OTk2NGJhYjQzMDMwNzhmZWYyYjBmYTA4N2U4YTcwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyYTVkNGRlMmRkMjExZTIyYWM4M2UwYWJkMDg3NzE3OWE2YjNmOGU4ZTU4YTljZGY4MmQ5YTAxMDZjODczMTgzIn0"
+        },
+        {
+          "resource": "repo://src/utils/celebrations.ts#L228-L283",
+          "version": "repo-lines-v1:sha256:4bccc46c29faf8ec96bf024866159f549f13fa3ee5e20c25e006a1c139f56067:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyZmU5ODlhYWJjODI3YzA1YjRlMGIxZDBiM2E0YmFkMDBlMzU3NzAxMDk4YWY2MzU4Y2E1NjU1ODM0NjQzZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5ZjEwNDVmMDZjZjU5YWExNzgwODE2YTdlMTRmMDQ1MGMwNGI1ZjY5ZTg3MjU2Y2E1YTJjY2JlNjM5MDY3NTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3MzAxMWJlNzYyOTQyNjE4NDFlNWY4ZTE5NTljYzNkYmQ0OWIzMmE3ZDg5M2JiNzAxNGI2NmEwMWQ1NThhZDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8baa16b34d2d47189f757dc24e7fca6b",
+      "statement": "Task completion feedback synthesizes a zero-asset 45-millisecond wooden-pebble mechanical click using a Web Audio sine oscillator with exponential frequency and gain decays, accompanied by device vibration when available.",
+      "evidence": [
+        {
+          "resource": "repo://src/utils/feedback.ts#L9-L44",
+          "version": "repo-lines-v1:sha256:c4a8bc831a536bcda8892f1d5739d8da12a73b77db2d30de961aeea62b399bcf:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmMWIwNjM4MjZlYmNjNGExMjc5ZWI5MTAyZmNkMjRhOTMzZmM5N2QyOWRiYTZjNzNkMDE1Yzk2OTM3ZDE5ODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwZTM3ZWEzYzQ0NjNjMzBlZDQ5NGM5NDU3YWViNjQ2YmQxYTU2OWQ3OGYzYjZkNTI4ZDJiZTJlZDE2N2RkNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5ZWNhNjE1NGMzZjI5NTdlMDAzMDkyZjg4MGY2ZGJhM2U4M2UxZTU3OWI0NWIwZTlhZGQ1NDg0MTViZjRhMzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0N2VkY2I5ZjJlNjVlMjM3NDRhNDJhNjkwMTg0ZjBiZTA0OGFlOWI2Nzk3ODRmN2IzNGI1ZWYwNGY0NjYwOTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b1d6f7a7cfdf4c83b6834e832e557add",
+      "statement": "The Zen Theater component listens for global Escape keydown events to safely close the focus overlay and clean up its active interval and listeners.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/zen/ZenTheaterModal.tsx#L33-L44",
+          "version": "repo-lines-v1:sha256:5b6b785f20f7fb47b1348d61df5e7c27ef9d8ae219e00a9e595537c34cbdb00d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3YTU2ZDJmMmNhOTY3N2M0YWJlZDA4NjQ0N2FhNDJlOThlNDdhN2QwODlkNDA0MWRjZTA5YmU2MTZjMWIzOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzYjA2ZDYzNGYyMDkzNDM4ZWVkMDQwZTNiMGFiNjQxZTFkMjhmYmZhYmJjMzllYmNhNTVjOTA4Mzg2MDk4ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkNzkzNThjYTJhZWIwYTY4MDMwOTg1MDVhNzI5YzA3Yzg3YTZiMTFiNzE0NmE0ZjZjMjQ3NzBjMmNmMDliMTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-31T14:53:08.961Z"
+  }
+}

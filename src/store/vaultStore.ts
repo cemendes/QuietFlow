@@ -5,11 +5,22 @@ import {
   parseMarkdownDocument,
   updateTaskInDocument,
 } from '../core/markdown';
+import {
+  loadLogoConfig,
+  persistFolderEmoji,
+  persistFolderLogo,
+  getFolderRelativePath,
+  isValidRenderableIcon,
+} from '../services/logoService';
 import { ipc } from './ipc';
 import {
+  DocumentViewState,
+  LensViewMode,
   NewTaskInput,
+  SnapshotMetadata,
   TaskItem,
   TaskPriority,
+  VaultNode,
   VaultStore,
   VaultStoreState,
   ViewMode,
@@ -19,13 +30,19 @@ const INITIAL_STATE: VaultStoreState = {
   vaultPath: null,
   vaultTree: null,
   activeFile: null,
+  activeFolder: null,
   activeDocument: null,
   tasks: [],
   activeTaskId: null,
   searchQuery: '',
   activeView: 'list',
+  lensViewMode: 'split',
+  documentViewState: {},
   selectedTag: null,
   selectedPriority: null,
+  logoConfig: {},
+  snapshots: [],
+  corruptedFileWarning: null,
   isLoading: false,
   isSaving: false,
   error: null,
@@ -73,31 +90,81 @@ async function writeVaultFile(filePath: string, content: string): Promise<void> 
 async function loadVault(vaultPath: string): Promise<void> {
   set({ isLoading: true, error: null });
   try {
-    const tree = await ipc.initVault(vaultPath);
-    set({ vaultPath, vaultTree: tree, isLoading: false });
-
-    // Auto-select today.md or first note if activeFile is empty
-    let targetNode =
-      tree.children?.find((c) => !c.isDirectory && c.name.toLowerCase() === 'today.md') ||
-      tree.children?.find((c) => !c.isDirectory && c.name.endsWith('.md'));
-
-    if (!targetNode && vaultPath) {
-      // Auto-create today.md if none exists in this vault
-      const todayPath = `${vaultPath}/today.md`;
-      const initialContent = `---\ntitle: Today's Focus\n---\n\n# Tasks\n`;
-      await writeVaultFile(todayPath, initialContent);
-      await refreshVault();
-      targetNode = {
-        name: 'today.md',
-        path: todayPath,
-        isDirectory: false,
-        children: [],
-        fileCount: 0,
-      };
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('quietflow-vault-path', vaultPath);
+    }
+    // Save to OS application support directory via backend IPC
+    if (typeof ipc?.setSavedVaultPath === 'function') {
+      try {
+        await ipc.setSavedVaultPath(vaultPath);
+      } catch {
+        // Ignored
+      }
     }
 
-    if (targetNode && !getState().activeFile) {
-      await selectFile(targetNode.path);
+    const [tree, logoConfig] = await Promise.all([
+      ipc.initVault(vaultPath),
+      loadLogoConfig(vaultPath),
+    ]);
+    set((prev) => ({
+      ...prev,
+      vaultPath,
+      vaultTree: tree,
+      logoConfig,
+      isLoading: false,
+    }));
+
+    // 1. Try to restore saved active file or folder from previous session
+    let restored = false;
+    if (typeof localStorage !== 'undefined') {
+      const savedFile = localStorage.getItem('quietflow-last-active-file');
+      if (savedFile) {
+        const fileNode = findNodeByPath(tree, savedFile);
+        if (fileNode && !fileNode.isDirectory) {
+          await selectFile(savedFile);
+          restored = true;
+        }
+      }
+      if (!restored) {
+        const savedFolder = localStorage.getItem('quietflow-last-active-folder');
+        if (savedFolder) {
+          const folderNode = findNodeByPath(tree, savedFolder);
+          if (folderNode && folderNode.isDirectory) {
+            await selectFolder(savedFolder);
+            restored = true;
+          }
+        }
+      }
+    }
+
+    // 2. Auto-select today.md or first note only if no saved state was restored
+    if (!restored && !getState().activeFile && !getState().activeFolder) {
+      let targetNode =
+        tree.children?.find((c) => !c.isDirectory && c.name.toLowerCase() === 'today.md') ||
+        tree.children?.find((c) => !c.isDirectory && c.name.endsWith('.md'));
+
+      if (!targetNode && vaultPath) {
+        // Auto-create today.md if none exists in this vault
+        try {
+          const todayPath = `${vaultPath}/today.md`;
+          const initialContent = `---\ntitle: Today's Focus\n---\n\n# Tasks\n`;
+          await writeVaultFile(todayPath, initialContent);
+          await refreshVault();
+          targetNode = {
+            name: 'today.md',
+            path: todayPath,
+            isDirectory: false,
+            children: [],
+            fileCount: 0,
+          };
+        } catch {
+          // Safe fallback in mock/read-only vaults
+        }
+      }
+
+      if (targetNode && !getState().activeFile) {
+        await selectFile(targetNode.path);
+      }
     }
 
     // Clean up any existing listener
@@ -106,22 +173,33 @@ async function loadVault(vaultPath: string): Promise<void> {
       vaultUnlisten = null;
     }
 
-    await ipc.startWatchingVault(vaultPath);
-    vaultUnlisten = await ipc.listenVaultChanged(async (changedVaultPath) => {
-      if (changedVaultPath === getState().vaultPath) {
-        const isSelfWrite = Date.now() - lastSelfWriteTimestamp < 600;
-        await refreshVault();
-        // Only refresh active file if this was an external change (not initiated by app save)
-        if (!isSelfWrite && getState().activeFile) {
-          await refreshActiveFile();
+    try {
+      await ipc.startWatchingVault(vaultPath);
+      vaultUnlisten = await ipc.listenVaultChanged(async (changedVaultPath) => {
+        if (changedVaultPath === getState().vaultPath) {
+          const isSelfWrite = Date.now() - lastSelfWriteTimestamp < 600;
+          await refreshVault();
+          // Only refresh active file/folder if this was an external change (not initiated by app save)
+          if (!isSelfWrite) {
+            if (getState().activeFile) {
+              await refreshActiveFile();
+            } else if (getState().activeFolder) {
+              await selectFolder(getState().activeFolder!);
+            }
+          }
         }
-      }
-    });
+      });
+    } catch {
+      // Ignore watcher failure in browser mock
+    }
   } catch (err: any) {
-    set({
+    console.error('loadVault error:', err);
+    set((prev) => ({
+      ...prev,
+      vaultPath,
       isLoading: false,
       error: err?.message || err?.toString() || 'Failed to load vault',
-    });
+    }));
   }
 }
 
@@ -130,18 +208,120 @@ async function refreshVault(): Promise<void> {
   if (!currentPath) return;
 
   try {
-    const tree = await ipc.initVault(currentPath);
-    set({ vaultTree: tree });
+    const [tree, logoConfig] = await Promise.all([
+      ipc.initVault(currentPath),
+      loadLogoConfig(currentPath),
+    ]);
+    set({ vaultTree: tree, logoConfig });
   } catch (err: any) {
     console.error('Failed to refresh vault tree:', err);
   }
 }
 
+function collectMarkdownFiles(node: VaultNode | null): string[] {
+  if (!node) return [];
+  const files: string[] = [];
+  if (!node.isDirectory && (node.name.endsWith('.md') || !node.name.includes('.'))) {
+    files.push(node.path);
+  }
+  if (node.children) {
+    for (const child of node.children) {
+      files.push(...collectMarkdownFiles(child));
+    }
+  }
+  return files;
+}
+
+function normalizePath(p: string): string {
+  return p ? p.trim().replace(/\/+$/, '') : '';
+}
+
+function findNodeByPath(root: VaultNode | null, targetPath: string): VaultNode | null {
+  if (!root) return null;
+  if (normalizePath(root.path) === normalizePath(targetPath)) return root;
+  if (root.children) {
+    for (const child of root.children) {
+      const found = findNodeByPath(child, targetPath);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+async function selectFolder(folderPath: string): Promise<void> {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('quietflow-last-active-folder', folderPath);
+    localStorage.removeItem('quietflow-last-active-file');
+  }
+  set({
+    isLoading: true,
+    error: null,
+    activeFolder: folderPath,
+    activeFile: null,
+    activeDocument: null,
+    activeTaskId: null,
+    activeView: 'list',
+  });
+  try {
+    const root = getState().vaultTree;
+    const currentVault = getState().vaultPath;
+    const isRoot =
+      !folderPath ||
+      folderPath === currentVault ||
+      normalizePath(folderPath) === normalizePath(currentVault || '');
+
+    const folderNode = isRoot ? root : findNodeByPath(root, folderPath);
+    const mdFiles = folderNode
+      ? collectMarkdownFiles(folderNode)
+      : isRoot && root
+      ? collectMarkdownFiles(root)
+      : [];
+
+    const fileResults = await Promise.all(
+      mdFiles.map(async (file) => {
+        try {
+          const content = await ipc.readFile(file);
+          const doc = parseMarkdownDocument(content);
+          return doc.tasks.map((t) => ({
+            ...t,
+            filePath: file,
+          }));
+        } catch (e) {
+          console.warn(`Failed to read markdown file in folder ${file}:`, e);
+          return [];
+        }
+      })
+    );
+    const allTasks: TaskItem[] = fileResults.flat();
+
+    set((prev) => ({
+      ...prev,
+      activeFolder: folderPath,
+      activeFile: null,
+      activeDocument: null,
+      activeTaskId: null,
+      activeView: 'list',
+      tasks: allTasks,
+      isLoading: false,
+    }));
+  } catch (err: any) {
+    set((prev) => ({
+      ...prev,
+      isLoading: false,
+      error: err?.message || err?.toString() || `Failed to select folder: ${folderPath}`,
+    }));
+  }
+}
+
 async function selectFile(filePath: string): Promise<void> {
-  set({ isLoading: true, error: null, activeFile: filePath });
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('quietflow-last-active-file', filePath);
+    localStorage.removeItem('quietflow-last-active-folder');
+  }
+  set({ isLoading: true, error: null, activeFile: filePath, activeFolder: null, activeDocument: null });
   try {
     const content = await ipc.readFile(filePath);
-    const doc = parseMarkdownDocument(content);
+    const doc = parseMarkdownDocument(content, filePath);
 
     // Attach filePath to tasks for convenience
     const tasksWithFile = doc.tasks.map((t) => ({
@@ -149,18 +329,75 @@ async function selectFile(filePath: string): Promise<void> {
       filePath,
     }));
 
-    set({
+    // Check for potential corruption: file is 0 bytes / empty but has previous snapshots
+    let corrupted = false;
+    if (content.trim() === '') {
+      try {
+        const snapList = await ipc.listSnapshots(getState().vaultPath || '', filePath);
+        if (snapList && snapList.length > 0) {
+          corrupted = true;
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
+    set((prev) => ({
+      ...prev,
       activeFile: filePath,
+      activeFolder: null,
       activeDocument: doc,
       tasks: tasksWithFile,
+      corruptedFileWarning: corrupted ? filePath : null,
       isLoading: false,
-    });
+    }));
   } catch (err: any) {
-    set({
+    set((prev) => ({
+      ...prev,
       isLoading: false,
       error: err?.message || err?.toString() || `Failed to read file: ${filePath}`,
-    });
+    }));
   }
+}
+
+async function loadSnapshotsForFile(filePath: string): Promise<SnapshotMetadata[]> {
+  const vaultPath = getState().vaultPath || '';
+  try {
+    const list = await ipc.listSnapshots(vaultPath, filePath);
+    set({ snapshots: list });
+    return list;
+  } catch (err) {
+    console.error('Failed to load snapshots:', err);
+    return [];
+  }
+}
+
+async function restoreSnapshotForFile(filePath: string, snapshotId: string): Promise<void> {
+  const vaultPath = getState().vaultPath || '';
+  try {
+    await ipc.restoreSnapshot(vaultPath, filePath, snapshotId);
+    set({ corruptedFileWarning: null });
+    await refreshActiveFile();
+    await loadSnapshotsForFile(filePath);
+  } catch (err) {
+    console.error('Failed to restore snapshot:', err);
+  }
+}
+
+async function createManualSnapshot(filePath: string): Promise<SnapshotMetadata | null> {
+  const vaultPath = getState().vaultPath || '';
+  try {
+    const snap = await ipc.createManualSnapshot(vaultPath, filePath);
+    await loadSnapshotsForFile(filePath);
+    return snap;
+  } catch (err) {
+    console.error('Failed to create manual snapshot:', err);
+    return null;
+  }
+}
+
+function dismissCorruptionWarning(): void {
+  set({ corruptedFileWarning: null });
 }
 
 async function refreshActiveFile(): Promise<void> {
@@ -489,6 +726,53 @@ function setSelectedPriority(selectedPriority: TaskPriority | null): void {
   set({ selectedPriority });
 }
 
+async function setFolderIcon(folderPath: string, iconDataOrEmoji: string): Promise<void> {
+  const { vaultPath, logoConfig } = getState();
+  
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(`folder-icon-${folderPath}`, iconDataOrEmoji);
+  }
+
+  if (!vaultPath) {
+    set({ logoConfig: { ...logoConfig, [folderPath]: iconDataOrEmoji } });
+    return;
+  }
+
+  const relPath = getFolderRelativePath(vaultPath, folderPath);
+  // Update state immediately with the active icon / dataUrl so UI renders instantly
+  set({ 
+    logoConfig: { 
+      ...logoConfig, 
+      [relPath]: iconDataOrEmoji,
+      [folderPath]: iconDataOrEmoji 
+    } 
+  });
+
+  if (iconDataOrEmoji.startsWith('data:') || iconDataOrEmoji.includes('<svg')) {
+    await persistFolderLogo(vaultPath, folderPath, iconDataOrEmoji);
+  } else {
+    await persistFolderEmoji(vaultPath, folderPath, iconDataOrEmoji);
+  }
+}
+
+function getFolderIcon(folderPath: string): string | null {
+  const { vaultPath, logoConfig } = getState();
+  if (typeof localStorage !== 'undefined') {
+    const cached = localStorage.getItem(`folder-icon-${folderPath}`);
+    if (cached) {
+      if (isValidRenderableIcon(cached)) return cached;
+      localStorage.removeItem(`folder-icon-${folderPath}`);
+    }
+  }
+  if (!vaultPath) {
+    const val = logoConfig[folderPath];
+    return val && isValidRenderableIcon(val) ? val : null;
+  }
+  const relPath = getFolderRelativePath(vaultPath, folderPath);
+  const val = logoConfig[relPath] || logoConfig[folderPath];
+  return val && isValidRenderableIcon(val) ? val : null;
+}
+
 function setError(error: string | null): void {
   set({ error });
 }
@@ -501,19 +785,99 @@ function reset(): void {
   set({ ...INITIAL_STATE });
 }
 
+function setLensViewMode(mode: LensViewMode, filePath?: string): void {
+  const targetPath = filePath || state.activeFile;
+  const nextDocState = { ...state.documentViewState };
+  if (targetPath) {
+    nextDocState[targetPath] = {
+      ...(nextDocState[targetPath] || { scrollY: 0 }),
+      lensMode: mode,
+    };
+  }
+  set({
+    lensViewMode: mode,
+    documentViewState: nextDocState,
+  });
+}
+
+function setDocumentScrollPosition(filePath: string, scrollY: number): void {
+  const nextDocState = { ...state.documentViewState };
+  nextDocState[filePath] = {
+    ...(nextDocState[filePath] || { lensMode: state.lensViewMode }),
+    scrollY,
+  };
+  set({ documentViewState: nextDocState });
+}
+
+function getDocumentViewState(filePath: string): DocumentViewState {
+  return state.documentViewState[filePath] || {
+    lensMode: state.lensViewMode,
+    scrollY: 0,
+  };
+}
+
+async function saveDocumentProse(filePath: string, newProse: string): Promise<void> {
+  const currentDoc = state.activeDocument;
+  let newContent = newProse;
+
+  // Preserve frontmatter block if present in current document
+  if (currentDoc && currentDoc.rawContent) {
+    const fmMatch = currentDoc.rawContent.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
+    if (fmMatch) {
+      const frontmatterBlock = fmMatch[0].trim();
+      newContent = `${frontmatterBlock}\n\n${newProse.trim()}\n`;
+    }
+  }
+
+  set({ isSaving: true });
+  try {
+    await writeVaultFile(filePath, newContent);
+    const parsed = parseMarkdownDocument(newContent, filePath);
+    set({
+      activeDocument: parsed,
+      tasks: state.activeFile === filePath ? parsed.tasks : state.tasks,
+      isSaving: false,
+    });
+  } catch (err: any) {
+    set({ error: err?.message || 'Failed to save document prose', isSaving: false });
+  }
+}
+
+async function flushActiveDocument(): Promise<void> {
+  if (state.activeFile && state.activeDocument) {
+    try {
+      await writeVaultFile(state.activeFile, state.activeDocument.rawContent);
+    } catch {
+      // Ignored
+    }
+  }
+}
+
 const actions = {
   loadVault,
   refreshVault,
   selectFile,
+  selectFolder,
   refreshActiveFile,
   createFile,
   deleteEntry,
+  setFolderIcon,
+  getFolderIcon,
+  loadSnapshotsForFile,
+  restoreSnapshotForFile,
+  createManualSnapshot,
+  dismissCorruptionWarning,
   setTasks,
   toggleTask,
   updateTask,
   addTask,
   deleteTask,
   moveTask,
+  setLensViewMode,
+  setDocumentScrollPosition,
+  getDocumentViewState,
+  saveDocumentProse,
+  flushActiveDocument,
   setActiveTaskId,
   setSearchQuery,
   setActiveView,
@@ -523,28 +887,16 @@ const actions = {
   reset,
 };
 
-// useSyncExternalStore re-renders only when the snapshot's identity changes, so the full-store
-// snapshot must be rebuilt exactly when `state` is replaced: a snapshot captured during render
-// would never change (stale UI), and a fresh object per call would loop forever.
-let snapshotState: VaultStoreState | null = null;
-let snapshot: VaultStore;
-
-function getFullStore(): VaultStore {
-  if (snapshotState !== state) {
-    snapshotState = state;
-    snapshot = { ...state, ...actions };
-  }
-  return snapshot;
+function getStoreSnapshot(): VaultStoreState {
+  return state;
 }
 
 export function useVaultStore(): VaultStore;
 export function useVaultStore<T>(selector: (state: VaultStore) => T): T;
 export function useVaultStore<T>(selector?: (state: VaultStore) => T) {
-  const getSnapshot = () => (selector ? selector(getFullStore()) : getFullStore());
-
-  const slice = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-
-  return slice;
+  const storeState = useSyncExternalStore(subscribe, getStoreSnapshot, getStoreSnapshot);
+  const fullStore: VaultStore = { ...storeState, ...actions };
+  return selector ? selector(fullStore) : fullStore;
 }
 
 useVaultStore.getState = (): VaultStore => ({

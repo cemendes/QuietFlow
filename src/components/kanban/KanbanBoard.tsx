@@ -3,8 +3,8 @@ import { useVaultStore } from '../../store';
 import { TaskStatus } from '../../store/types';
 import KanbanColumn from './KanbanColumn';
 import QuickAddBar from '../tasks/QuickAddBar';
-import ViewSwitcher from '../tasks/ViewSwitcher';
 import { useTranslation } from '../../i18n';
+import FocusHeader from '../tasks/FocusHeader';
 
 export interface KanbanBoardProps {
   title?: string;
@@ -29,24 +29,115 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   const updateTask = useVaultStore((state) => state.updateTask);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
+  const setSearchQuery = useVaultStore((state) => state.setSearchQuery);
   const setSelectedTag = useVaultStore((state) => state.setSelectedTag);
   const setSelectedPriority = useVaultStore((state) => state.setSelectedPriority);
-  const setSearchQuery = useVaultStore((state) => state.setSearchQuery);
   const { t } = useTranslation();
+  const activeFolder = useVaultStore((state) => state.activeFolder);
+  const vaultPath = useVaultStore((state) => state.vaultPath);
+  const logoConfig = useVaultStore((state) => state.logoConfig);
+  const getFolderIcon = useVaultStore((state) => state.getFolderIcon);
+
+  const [headerIcon, setHeaderIcon] = React.useState<string | null>(null);
+
+  // Compute target folder path for the current view
+  const currentFolderPath = useMemo(() => {
+    if (activeFolder) return activeFolder;
+    if (activeFile) {
+      const parent = activeFile.substring(0, activeFile.lastIndexOf('/'));
+      return parent || null;
+    }
+    return null;
+  }, [activeFile, activeFolder]);
+
+  // Synchronously compute initial icon and asynchronously resolve Tauri asset / base64 if needed
+  React.useEffect(() => {
+    let isMounted = true;
+    if (!currentFolderPath || currentFolderPath === vaultPath) {
+      setHeaderIcon(null);
+      return;
+    }
+
+    // Don't show folder icon for Inbox
+    if (activeFile?.toLowerCase().includes('inbox')) {
+      setHeaderIcon(null);
+      return;
+    }
+
+    // 1. Synchronous check
+    const syncIcon =
+      (getFolderIcon ? getFolderIcon(currentFolderPath) : null) ||
+      (typeof localStorage !== 'undefined' ? localStorage.getItem(`folder-icon-${currentFolderPath}`) : null);
+
+    if (syncIcon) {
+      setHeaderIcon(syncIcon);
+    }
+
+    // 2. Async resolution (for Tauri convertFileSrc / disk files)
+    if (vaultPath) {
+      import('../../services/logoService').then(({ resolveFolderIcon }) => {
+        resolveFolderIcon(vaultPath, currentFolderPath, logoConfig).then((resolved) => {
+          if (isMounted && resolved) {
+            setHeaderIcon(resolved);
+          }
+        });
+      });
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentFolderPath, vaultPath, logoConfig, getFolderIcon]);
 
   // Determine display title
   const computedTitle = useMemo(() => {
     if (title) return title;
     if (activeFile) {
       const fileName = activeFile.split('/').pop()?.replace(/\.md$/, '') || t('common.tasksFallback');
-      return fileName;
+      if (fileName.toLowerCase() === 'inbox') {
+        return t('tasks.inboxTitle');
+      }
+      if (fileName.toLowerCase() === 'today') {
+        return t('common.todaysFocus');
+      }
+      return fileName.charAt(0).toUpperCase() + fileName.slice(1);
+    }
+    if (activeFolder) {
+      if (activeFolder === vaultPath) {
+        return 'My Vault';
+      }
+      const folderName = activeFolder.split('/').pop() || 'Folder';
+      return folderName.charAt(0).toUpperCase() + folderName.slice(1);
     }
     return t('common.todaysFocus');
-  }, [title, activeFile, t]);
+  }, [title, activeFile, activeFolder, vaultPath, t]);
+
+  const [activeFocusBucket, setActiveFocusBucket] = React.useState<'all' | 'now' | 'not-now'>('all');
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
+      // Focus bucket filter
+      const todayStr = new Date().toISOString().split('T')[0];
+      const isDueToday = task.dueDate === todayStr;
+      const isOverdue = Boolean(task.dueDate && task.dueDate < todayStr);
+      const isFuture = Boolean(task.dueDate && task.dueDate > todayStr);
+
+      if (activeFocusBucket === 'now') {
+        // Now = Due today, overdue, high priority, or in-progress
+        const isHighPriority = task.priority === 'high';
+        const isInProgress = task.status === 'in-progress';
+        if (!isDueToday && !isOverdue && !isHighPriority && !isInProgress) {
+          return false;
+        }
+      } else if (activeFocusBucket === 'not-now') {
+        // Backlog / Not Now
+        const isBacklogStatus = task.status === 'backlog';
+        if (!isFuture && !isBacklogStatus) {
+          return false;
+        }
+      }
+
       // Search query filter
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
@@ -74,7 +165,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
       return true;
     });
-  }, [tasks, searchQuery, selectedTag, selectedPriority]);
+  }, [tasks, activeFocusBucket, searchQuery, selectedTag, selectedPriority]);
 
   // Task count summary
   const totalCount = filteredTasks.length;
@@ -87,32 +178,21 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   };
 
   return (
-    <div className={`flex flex-col h-full bg-sand-50 overflow-hidden ${className}`}>
+    <div data-testid="kanban-board" className={`flex flex-col h-full bg-sand-50 overflow-hidden ${className}`}>
       {/* Header & Controls */}
       <header
         data-tauri-drag-region
-        className="flex flex-col gap-3.5 p-6 pb-4 border-b border-sand-200 bg-sand-50/80 backdrop-blur-sm select-none"
+        className="flex flex-col gap-3.5 p-6 pb-3 border-b border-sand-200 bg-sand-50/80 backdrop-blur-sm select-none"
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-800">
-              {computedTitle}
-            </h1>
-            <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold text-forest-800 bg-forest-500/10 border border-forest-500/20 rounded-full">
-              {t('kanban.doneCount', { completed: completedCount, total: totalCount })}
-            </span>
-            {isSaving && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-amber-700 bg-amber-500/10 border border-amber-500/20 rounded-full animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
-                {t('common.saving')}
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <ViewSwitcher />
-          </div>
-        </div>
+        <FocusHeader
+          title={computedTitle}
+          icon={headerIcon}
+          completedCount={completedCount}
+          totalCount={totalCount}
+          activeFocusBucket={activeFocusBucket}
+          onFocusBucketChange={setActiveFocusBucket}
+          isSaving={isSaving}
+        />
 
         {/* Active Filters Pill Bar (if any filter is active) */}
         {(selectedTag || selectedPriority || searchQuery) && (

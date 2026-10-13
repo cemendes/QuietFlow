@@ -1,0 +1,104 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import {
+  loadLogoConfig,
+  saveLogoConfig,
+  getFolderRelativePath,
+  resolveFolderIcon,
+  persistFolderLogo,
+  persistFolderEmoji,
+  isValidRenderableIcon,
+} from './logoService';
+
+describe('logoService', () => {
+  const mockVault = '/MockVault';
+
+  beforeEach(() => {
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  it('getFolderRelativePath computes correct relative paths', () => {
+    expect(getFolderRelativePath(mockVault, '/MockVault/Alpha')).toBe('Alpha');
+    expect(getFolderRelativePath(mockVault, '/MockVault/Clients/Acme')).toBe('Clients/Acme');
+    expect(getFolderRelativePath(mockVault, '/MockVault')).toBe('');
+    expect(getFolderRelativePath(mockVault, 'Alpha')).toBe('Alpha');
+  });
+
+  it('loadLogoConfig returns empty object if file does not exist', async () => {
+    const config = await loadLogoConfig(mockVault);
+    expect(config).toEqual({});
+  });
+
+  it('saveLogoConfig and loadLogoConfig persist mapping to .logos/config.json', async () => {
+    const mockConfig = {
+      Alpha: 'alpha_icon.png',
+      Beta: 'beta_icon.png',
+    };
+
+    await saveLogoConfig(mockVault, mockConfig);
+    const loaded = await loadLogoConfig(mockVault);
+    expect(loaded).toEqual(mockConfig);
+  });
+
+  it('resolveFolderIcon resolves emoji directly from config', async () => {
+    const config = {
+      Projects: '🚀',
+    };
+    const icon = await resolveFolderIcon(mockVault, '/MockVault/Projects', config);
+    expect(icon).toBe('🚀');
+  });
+
+  it('resolveFolderIcon resolves data URL directly', async () => {
+    const config = {
+      Alpha: 'data:image/png;base64,mockdata',
+    };
+    const icon = await resolveFolderIcon(mockVault, '/MockVault/Alpha', config);
+    expect(icon).toBe('data:image/png;base64,mockdata');
+  });
+
+  it('resolveFolderIcon falls back to localStorage if not in config', async () => {
+    localStorage.setItem('folder-icon-/MockVault/Legacy', '💡');
+    const icon = await resolveFolderIcon(mockVault, '/MockVault/Legacy', {});
+    expect(icon).toBe('💡');
+  });
+
+  it('persistFolderLogo creates .logos directory, writes file, updates config and localStorage', async () => {
+    const mockDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    const res = await persistFolderLogo(mockVault, '/MockVault/CCO', mockDataUrl);
+
+    expect(res.fileName).toBe('CCO.png');
+    expect(res.iconUrl).toBe(mockDataUrl);
+
+    const config = await loadLogoConfig(mockVault);
+    expect(config['CCO']).toBe('CCO.png');
+    expect(localStorage.getItem('folder-icon-/MockVault/CCO')).toBe(mockDataUrl);
+  });
+
+  it('persistFolderEmoji updates config and localStorage', async () => {
+    await persistFolderEmoji(mockVault, '/MockVault/Notes', '📝');
+
+    const config = await loadLogoConfig(mockVault);
+    expect(config['Notes']).toBe('📝');
+    expect(localStorage.getItem('folder-icon-/MockVault/Notes')).toBe('📝');
+  });
+
+  it('isValidRenderableIcon validates data URLs, HTTP URLs, emojis, and rejects asset:// or raw filenames', () => {
+    expect(isValidRenderableIcon('data:image/png;base64,123')).toBe(true);
+    expect(isValidRenderableIcon('https://example.com/logo.png')).toBe(true);
+    expect(isValidRenderableIcon('💼')).toBe(true);
+    expect(isValidRenderableIcon('🚀')).toBe(true);
+    expect(isValidRenderableIcon('asset://localhost/path/to/logo.png')).toBe(false);
+    expect(isValidRenderableIcon('http://asset.localhost/logo.png')).toBe(false);
+    expect(isValidRenderableIcon('Project.png')).toBe(false);
+    expect(isValidRenderableIcon('folder/icon.svg')).toBe(false);
+    expect(isValidRenderableIcon('')).toBe(false);
+    expect(isValidRenderableIcon(null)).toBe(false);
+  });
+
+  it('resolveFolderIcon invalidates and cleans up stale asset:// cache in localStorage', async () => {
+    localStorage.setItem('folder-icon-/MockVault/Stale', 'asset://localhost/MockVault/.logos/Stale.png');
+    const icon = await resolveFolderIcon(mockVault, '/MockVault/Stale', {});
+    expect(icon).toBeNull();
+    expect(localStorage.getItem('folder-icon-/MockVault/Stale')).toBeNull();
+  });
+});

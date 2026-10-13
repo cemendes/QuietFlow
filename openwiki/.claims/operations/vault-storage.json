@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:7648aefced9f820ac8041fbe0c1a111fd2a85b7f660747b612af2bd7f44dbb19",
+  "claims": [
+    {
+      "id": "claim_180f2844366f4592a2dd775caa71bb81",
+      "statement": "Vault Directory Tree Scanning & Default Scaffolding: scan_directory_tree recursively scans directories, creates target folder and initial today.md if missing, ignores dot-prefixed hidden files, and sorts entries with directories first followed by files alphabetically.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/fs.rs#L20-L87",
+          "version": "repo-lines-v1:sha256:3f07a02f1273b4fe7376e69a6626c601589386b65f6830b5d891cd08c2bba9de:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkMTdiMTU1ZmVlNTlkNGNiMTAzOTJjNjZiNmMxMGIxZjczODIwYTU3MTM2ZTBhNWE2ZmY2MzQ5Y2U0NmFlYWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3ZTU0ZmI3NzhjMGZmYWZhZjVlYTFmZWY0M2JjOTRhMmI0MGQzNGY1ZjQ0MDA0YzY1NTdmODU3YjgwMWExZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzYWU1YjgyMzdlNDYzZjFiMTU3ZDIyMWM2NmI3MWViNmY1Y2Q0M2M4MjIyZmU4MmJiZThhOGE3ZDFjYzIzODgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cdabc6fd111a44d9b1abf0d5a6ac6220",
+      "statement": "Atomic File Writing & Pre-Write Snapshot Integration: write_file_atomic creates parent directories as needed, invokes pre-write snapshot creation for existing files, writes content to a temporary .<filename>.<uuid>.tmp file, flushes to disk via sync_all(), and atomically renames the temporary file over the target path.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/fs.rs#L98-L137",
+          "version": "repo-lines-v1:sha256:426097912b5b384ca5b504a1a5d6d0780037255a8701000ecbc70574c04c845d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmZmYyNGI4OGIyOWM3YTRiMTdjYWM0MDk2Mjk5ODg3MWEzZTc3NTY1MjZlODYyZTdmZWEwYjg3MjhjNzE5YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2YTNlNjMwYmY2ZjE1YmU4ZTY1MThmNTBkM2ZhYmMxZTI3ODA4OTM5MjFjMzczY2QxMzQ2Yzg5MWU0OGRhMGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2MzJiNWI5ZTU5YTAzNGM2ZTEwZjYzMmNiODE1ZDk3Y2M1MmM5Y2NiMWZjZjc1ODY4NzM3ODkwOWFkMWU5YmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c8de90e9e23543c78af399335a9cac35",
+      "statement": "Pre-Write Automatic Snapshotting & Task Counting: create_pre_write_snapshot_if_needed inspects modified files, skips empty or dot-hidden paths, enforces a 2-minute (120-second) per-file rate limit, counts Markdown task items, and writes a snapshot file under .quietflow/snapshots/<sanitized_path>/.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L56-L140",
+          "version": "repo-lines-v1:sha256:361c08a000c68db0dda05690f94e48bed28590ba57b3228911cee71ba73d288f:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MDMyYmVhOWUzOGFiMWJiNDhmMjk2YWRlYjYwM2ZkMjU2MmIzYzc5MGNiNjA0MmE5NDFkN2ZmZDM5ZWFlODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiMTJmNTZlODVlNjk4ZGI2NmEyNmRkYWU5YTUyMWQwMTlhOGJkMDk2OTVjMjg1MTZkNDMzYmMxNjI0Nzc4YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1ZjY1ZWU3MDgxM2QzNWE3M2I2YjM1ZmEyODEwNTllMTA2ODI0YjRjZjczOWQ4ZmMxNjQyMTdmNTYyMTU4NTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9af88248ac7644aa86c2b9210393235e",
+      "statement": "Snapshot Pruning Lifecycle & File Restoration: prune_file_snapshots purges snapshots older than 14 days or exceeding 20 snapshots per file, while restore_snapshot atomically restores selected snapshot content to target files.",
+      "evidence": [
+        {
+          "resource": "repo://src-tauri/src/vault/snapshots.rs#L180-L257",
+          "version": "repo-lines-v1:sha256:2a325ab46753abf080750ab162578cca7b182be15f6e0ba478538e702560cb1f:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwOGVjYmU0MjZkOTg0ZDBlOTgxNzBmYzA1MWExYmMzMWJlODI5Y2Q2ZGU0OWQ4MjVkN2M5ODc5YzYzOGU0MTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxNTZkNDk3NTA0ODNhZmJkNmZiMjk4NWNmOTEwNGM2MjgyY2FkM2IzZGRiODBkYWM3ZThjNTkyMWYwOTQyOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMWJiYzc5ZTFkNWM3NjUxNjliOWE4NmZmZGQyNTVhMzBiZDg4NWY1MWQzMzJjYjllMGExOTM2ZmFiYzVhNDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f81dc8a9a03d4f478ce3d695a8a16bdd",
+      "statement": "Custom Logo Configuration & Path Mapping: loadLogoConfig and saveLogoConfig manage .logos/config.json inside the vault directory to persist custom folder branding mappings between relative folder paths and image filenames or emojis.",
+      "evidence": [
+        {
+          "resource": "repo://src/services/logoService.ts#L13-L50",
+          "version": "repo-lines-v1:sha256:9e22d6113d7394232a752f17b67a1fb29817512897f79684e136411d20b132a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzNWUwYTYwZTIyZjBkOTJjYjNjNTYyMDRhY2UzNGJjNzk0YWJlMjRkNzE3ZjhjMmRiODViNmQxNzZiZjA0MWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5YTk0MmYzNThhNWI0MzQyYTM4MWRkZWE2MWRlZTI4NWZiYmZjM2I0NWJmNWUyMTA2YzFlN2YzYWU3ZmVjNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyMTMzMjUwMGU5ZTYzZDY5MWE4ZDU0YzE1NGM5MDg0ZWNiZmE3YWEzMjcyMTgwYTA1NTgxZmI4NGRkOWE2YzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_486c3569ec344265908480a33b1bc9fb",
+      "statement": "Custom Folder Logo & Emoji Persistence: persistFolderLogo saves image binary/SVG assets under .logos/, updates .logos/config.json, and caches asset URLs in localStorage, while persistFolderEmoji updates emoji mappings and cache.",
+      "evidence": [
+        {
+          "resource": "repo://src/services/logoService.ts#L126-L197",
+          "version": "repo-lines-v1:sha256:f833461d3c47f6ff6ef4a52e3ad0e965623df471f17e54829bbf7f10fd561f1f:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NGE0NmEyZmJhODhjNWZhMTBkOWEzOGQ1YjgwMjViZjU0NjYxODMwNmRjMzljODBlMWQ0Njc5ZjRmZWM0MzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4OTZmZjQ4OWNlMzJkZWQ0ODhkOTJkNzg5YWYwNzUzNzAyZTBjNTI3ZjNhZjQ0MzAwNzMxYmEwODY1YWI0YjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4a0bc781ffc0450ebb12b94af2205d7a",
+      "statement": "Multi-Tier Folder Icon Resolution: resolveFolderIcon resolves folder icons via a zero-latency localStorage cache check, followed by .logos/config.json mapping lookup, Tauri asset URL conversion (convertFileSrc), and SVG/PNG data URL fallbacks.",
+      "evidence": [
+        {
+          "resource": "repo://src/services/logoService.ts#L55-L121",
+          "version": "repo-lines-v1:sha256:d6b602ea7eba2e99dfcea0551d75fb092aa1b2dc4152b949dd6086a06cbee956:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxZDFjMjVhODc3OWMwZTIyNjA1Mjc4Y2NkODcxMjRlZTlkZTFjYTY5MTA2ZDg5NTcxYzc3MjI2NDZmYjQwODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjOGFmODVmMWYwZTFiM2EyZTJiOWQ3MGU5NzEwZGRlODg4YWVhMTc5M2MwNWJlZDNjMzUxNjIzMjA5NzRmZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU3MzJmZjczMDE4NzA1NGUwMjJiOTAxY2IwN2E2MmQxOGY1NGNmNjg0NzQ1YTQ1Mzc4MDljZDFmMDNmOTFhZmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6c75a486a60c42d9a518562700697612",
+      "statement": "Store State Integration for Instant Folder Branding: setFolderIcon in useVaultStore immediately updates frontend state and localStorage to eliminate render latency before asynchronously persisting logo assets or emojis to the vault filesystem.",
+      "evidence": [
+        {
+          "resource": "repo://src/store/vaultStore.ts#L665-L692",
+          "version": "repo-lines-v1:sha256:0935791323866b4d23e809fec1d99cfe6a481848f5a683311074eeae9070c917:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNTkyYTJmNTAxOGZmMTQ1YjczZTIzMWRlYWQ1YTdlYTJjY2NiZDYwZTNhMmQ5ODVkZjg3YWE1NDg4YmRiZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhNjJmZTZlZGFlODNmZjk4MjkwYzFhNTRmNDUxYTkyNmZhODIwOWQwNzE5NDAwZWMwNzIwNDllNDcxZDhmNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4NWUwOTQ2MDdiNWYyNDYyOGY3NTYyY2FhYzcyNzE1ZWE2YjBkMzFiMDE4NDQyMzFmODcyNzA4YmI0ZjIzZDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7d1a70a0577b4c2aba7bedeeed7378fc",
+      "statement": "Folder Context Menu & Image Optimization: FolderContextMenu provides operations for renaming, deletion, creation of notes or subfolders, preset emoji selection, and auto-downscaling/center-cropping uploaded company logos to 128x128 PNG squares via HTML5 Canvas.",
+      "evidence": [
+        {
+          "resource": "repo://src/components/sidebar/FolderContextMenu.tsx#L148-L267",
+          "version": "repo-lines-v1:sha256:3ef362953c4916c27a0f8038d4f56dd5e3ccef20badc20f31f3a0bc1eadfccbe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2MWVjM2FhMGFkZjhiZWVhNmE5OTJmZmZkODA3YTE1Yzk3M2VmYzUyZmNkNjUwNTlmZTViMzU1OGEwZGVjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlMDU2MzA0YjBlZWFiZDg4YWQ0Y2JkZDYwYmRmNDY2NTFhZDg1N2FkMWUwMTA0ZTQyYWJmZjZiMDQzYWU4ZWEwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxN2VhZTE3N2ZhMzA1YTQ0MWMzNGY2YmNhNTYzODMzMDQ2Zjg1N2Q2YzE0YTA4NTllMGI0ODNiMzBhZGVlM2M0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkZTU4MzQ0YzVhNjVhMzYzZjZjOWNmNmJjYTIzNWU5YWIyODFhNzUyOGZiZTVlMWNiY2U5NmM3ZWM1OGU2NGM1In0"
+        },
+        {
+          "resource": "repo://src/components/sidebar/FolderContextMenu.tsx#L64-L99",
+          "version": "repo-lines-v1:sha256:a791c48e8060be1430fe0ca267393589c2dab4972d2c818b546706bb32b3c0e5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjNWNjNjBiOWFmMjBjYTVhMWRhMjhiZTVkZjY2MzVjNDMzOTVlYTM1MmI4NzUxMDE0NzlkZDJmOGZlMmZjOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzNDY5ZDNiZGJkNjFmN2I5NDc4M2Q4MzYzMTU0Nzg5YTExYTgwNGU1NGQ1ODZkYTBiZWI4MzgxYTAzZWRhNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2MGVlOWViYmZlNTUyMGIwZTAyZmEwYWM0YmYwZjNhOWIyN2VhYTZiNjg4YmU0NjI0MmUxNDg3NzMzMzI2NGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_983c23cc63f74082a52ab7b8dc639aa5",
+      "statement": "Git Protection for Vault Metadata: .gitignore explicitly excludes .logos/ and **/.logos/ to prevent private branding assets and local metadata from being committed to Git repositories.",
+      "evidence": [
+        {
+          "resource": "repo://.gitignore#L52-L53",
+          "version": "repo-lines-v1:sha256:8bf8297fdb5f4d85983ef52f2360d26b7a4d55ee7755cc4cb88cf7ce71441e71:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjgwYjQ3OGUxZjUwODcwODYyNmQzMjI3YjE3ZGU2MWViN2QxOTBhZDgzZTUwZjdmMjg2OGIzN2Y2ZGZjZDJmNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTNlYmYwMmUwOTRmYWZlODZjODllNWFmNjk3MGJhMTkxODUyMzg5OWQzMjI1YWQwOGNjMzM3MTY0MmJiZmMzOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGRjMzY2MjRiZjJhYzZlZTAwNWI3OGQ5MjAyYzdlNmI2ZDM2NWIwNmFjYmExOTQ3MjkwYjBiNjVjMGViNjM3ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTE5M2U2NDYyY2I0Y2Y0Mjk3YjVlZTRhZjQ0NmQ5OTE5MjE3MGY5MWUxYmNiYWFlMmY3MzRhZDEzMDY5YzA2ZSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-31T14:53:08.961Z"
+  }
+}

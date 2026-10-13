@@ -1,0 +1,17 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capabilities for QuietFlow desktop",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-start-resize-dragging",
+    "shell:default",
+    "dialog:default",
+    "fs:default",
+    "global-shortcut:default",
+    "updater:default",
+    "process:default"
+  ]
+}
