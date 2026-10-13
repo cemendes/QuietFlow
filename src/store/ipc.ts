@@ -93,70 +93,58 @@ category: Customers
       fileCount: 0,
     };
 
-    // Group files into tree hierarchy
     const dirMap = new Map<string, VaultNode>();
     dirMap.set(rootPath, rootNode);
 
-    for (const [filePath] of this.files.entries()) {
-      if (!filePath.startsWith(rootPath)) continue;
-      const relative = filePath.slice(rootPath.length).replace(/^\//, '');
-      const parts = relative.split('/');
+    // Returns the node for a directory, creating it and any missing ancestors
+    const ensureDirectory = (dirPath: string): VaultNode => {
+      const existing = dirMap.get(dirPath);
+      if (existing) return existing;
+      const parentPath = dirPath.substring(0, dirPath.lastIndexOf('/'));
+      const dirNode: VaultNode = {
+        name: dirPath.split('/').pop() || '',
+        path: dirPath,
+        isDirectory: true,
+        children: [],
+        fileCount: 0,
+      };
+      dirMap.set(dirPath, dirNode);
+      ensureDirectory(parentPath).children.push(dirNode);
+      return dirNode;
+    };
 
-      if (parts.length === 1) {
-        // Root file
-        rootNode.children = rootNode.children || [];
-        rootNode.children.push({
-          name: parts[0],
-          path: filePath,
-          isDirectory: false,
-          children: [],
-          fileCount: 0,
-        });
-        rootNode.fileCount = (rootNode.fileCount || 0) + 1;
-      } else {
-        // Nested under folder
-        const folderName = parts[0];
-        const folderPath = `${rootPath}/${folderName}`;
-        if (!dirMap.has(folderPath)) {
-          const folderNode: VaultNode = {
-            name: folderName,
-            path: folderPath,
-            isDirectory: true,
-            children: [],
-            fileCount: 0,
-          };
-          dirMap.set(folderPath, folderNode);
-          rootNode.children = rootNode.children || [];
-          rootNode.children.push(folderNode);
-        }
-
-        const folderNode = dirMap.get(folderPath)!;
-        folderNode.children = folderNode.children || [];
-        folderNode.fileCount = (folderNode.fileCount || 0) + 1;
-        rootNode.fileCount = (rootNode.fileCount || 0) + 1;
-      }
+    for (const filePath of this.files.keys()) {
+      if (!filePath.startsWith(`${rootPath}/`)) continue;
+      const parentPath = filePath.substring(0, filePath.lastIndexOf('/'));
+      ensureDirectory(parentPath).children.push({
+        name: filePath.split('/').pop() || '',
+        path: filePath,
+        isDirectory: false,
+        children: [],
+        fileCount: 0,
+      });
     }
 
-    // Include explicitly created directories
+    // Include explicitly created (possibly empty) directories
     for (const dirPath of this.directories.values()) {
-      if (!dirPath.startsWith(rootPath) || dirPath === rootPath) continue;
-      const relative = dirPath.slice(rootPath.length).replace(/^\//, '');
-      const parts = relative.split('/');
-      const folderName = parts[0];
-      const folderPath = `${rootPath}/${folderName}`;
-      if (!dirMap.has(folderPath)) {
-        const folderNode: VaultNode = {
-          name: folderName,
-          path: folderPath,
-          isDirectory: true,
-          children: [],
-          fileCount: 0,
-        };
-        dirMap.set(folderPath, folderNode);
-        rootNode.children = rootNode.children || [];
-        rootNode.children.push(folderNode);
-      }
+      if (!dirPath.startsWith(`${rootPath}/`)) continue;
+      ensureDirectory(dirPath);
     }
+
+    // Mirror the Rust scanner: recursive file counts, directories first then alphabetical
+    const finalize = (node: VaultNode): number => {
+      let count = 0;
+      for (const child of node.children) {
+        count += child.isDirectory ? finalize(child) : 1;
+      }
+      node.children.sort((a, b) => {
+        if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
+        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+      });
+      node.fileCount = count;
+      return count;
+    };
+    finalize(rootNode);
 
     return rootNode;
   }
@@ -177,20 +165,35 @@ category: Customers
   }
 
   async deleteEntry(path: string): Promise<void> {
-    this.files.delete(path);
-    this.directories.delete(path);
+    // Deleting a directory removes everything beneath it
+    const isInside = (p: string) => p === path || p.startsWith(`${path}/`);
+    for (const filePath of [...this.files.keys()]) {
+      if (isInside(filePath)) this.files.delete(filePath);
+    }
+    for (const dirPath of [...this.directories]) {
+      if (isInside(dirPath)) this.directories.delete(dirPath);
+    }
   }
 
   async moveEntry(sourcePath: string, destinationPath: string): Promise<void> {
-    if (this.files.has(sourcePath)) {
-      const content = this.files.get(sourcePath)!;
-      this.files.delete(sourcePath);
-      this.files.set(destinationPath, content);
+    // Moving a directory carries everything beneath it
+    const isInside = (p: string) => p === sourcePath || p.startsWith(`${sourcePath}/`);
+    const relocate = (p: string) => destinationPath + p.slice(sourcePath.length);
+
+    let movedDirectory = this.directories.has(sourcePath);
+    for (const [filePath, content] of [...this.files.entries()]) {
+      if (!isInside(filePath)) continue;
+      if (filePath !== sourcePath) movedDirectory = true;
+      this.files.delete(filePath);
+      this.files.set(relocate(filePath), content);
     }
-    if (this.directories.has(sourcePath)) {
-      this.directories.delete(sourcePath);
-      this.directories.add(destinationPath);
+    for (const dirPath of [...this.directories]) {
+      if (!isInside(dirPath)) continue;
+      this.directories.delete(dirPath);
+      this.directories.add(relocate(dirPath));
     }
+    // Keep a directory that only existed implicitly (through its files) alive if it ends up empty
+    if (movedDirectory) this.directories.add(destinationPath);
   }
 
   async getDefaultVaultPath(): Promise<string> {
