@@ -115,7 +115,7 @@ Full width notes content here.
       expect(screen.getByTestId('bottom-notes-zone')).toBeDefined();
     });
 
-    it('renders viewport-filling notes canvas in Notes Only mode', () => {
+    it('renders a compact notes field that grows with its content instead of scrolling', () => {
       const doc = parseMarkdownDocument(sampleMarkdown, 'Strategy/Product.md');
       useVaultStore.setState({
         activeFile: 'Strategy/Product.md',
@@ -129,10 +129,14 @@ Full width notes content here.
       // Ensure top tasks zone is absent
       expect(screen.queryByTestId('top-tasks-zone')).toBeNull();
 
-      // Ensure bottom notes zone fills available space
+      // The notes zone sizes to its content; the page scrolls, never the field itself
       const notesZone = screen.getByTestId('bottom-notes-zone');
-      expect(notesZone.className).toContain('flex-1');
-      expect(notesZone.className).toContain('h-full');
+      expect(notesZone.className).not.toContain('h-full');
+      const contentArea = screen.getByTestId('tiptap-editor-content').parentElement!;
+      expect(contentArea.className).not.toContain('overflow-y-auto');
+      expect(contentArea.className).not.toContain('h-full');
+      fireEvent.click(screen.getByTestId('edit-note-btn'));
+      expect(screen.getByTestId('save-note-btn')).toBeInTheDocument();
 
       // Ensure WYSIWYG editor content is rendered
       const editorContent = screen.getByTestId('tiptap-editor-content');

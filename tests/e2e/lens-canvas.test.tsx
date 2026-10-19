@@ -87,4 +87,31 @@ DevDay presentation details.`;
 
     expect(screen.getByText('WellSky Workshop')).toBeDefined();
   });
+
+  it('opens a note read-only; Edit unlocks the editor and Save returns to reading', async () => {
+    render(<LensDocumentCanvas />);
+
+    // Read mode: content visible, nothing editable
+    expect(screen.getByText('Acme Corp Migration')).toBeDefined();
+    expect(screen.queryByTestId('markdown-action-toolbar')).toBeNull();
+    expect(screen.queryByTestId('save-note-btn')).toBeNull();
+    expect(screen.queryByTestId('note-title-input')).toBeNull();
+    await waitFor(() =>
+      expect(document.querySelector('.tiptap')?.getAttribute('contenteditable')).toBe('false'),
+    );
+
+    fireEvent.click(screen.getByTestId('edit-note-btn'));
+
+    expect(screen.getByTestId('markdown-action-toolbar')).toBeDefined();
+    expect(screen.getByDisplayValue('Acme Corp Migration')).toBeDefined();
+    await waitFor(() =>
+      expect(document.querySelector('.tiptap')?.getAttribute('contenteditable')).toBe('true'),
+    );
+
+    fireEvent.click(screen.getByTestId('save-note-btn'));
+
+    await waitFor(() => expect(screen.getByTestId('edit-note-btn')).toBeDefined());
+    expect(screen.getByTestId('note-saved-indicator')).toBeDefined();
+    expect(ipc.writeFileAtomic).toHaveBeenCalled();
+  });
 });

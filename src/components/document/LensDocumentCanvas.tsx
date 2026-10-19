@@ -4,11 +4,30 @@ import {
   Tag,
   BookOpen,
   AlertTriangle,
+  Check,
+  Pencil,
+  Save,
 } from 'lucide-react';
 import { useVaultStore } from '../../store/vaultStore';
 import { resolveFolderIcon } from '../../services/logoService';
 import { MarkdownEditor } from '../editor/MarkdownEditor';
 import { baseName } from '../../utils/paths';
+import { useTranslation } from '../../i18n';
+import type { VaultDocument } from '../../core/markdown/types';
+
+/** Title shown for a note: frontmatter title, else first `# heading`, else the file name. */
+function getNoteTitle(doc: VaultDocument, filePath: string): string {
+  const cleanFileName = (baseName(filePath) || filePath).replace(/\.md$/, '');
+  const rawTitle = doc.frontmatter?.title;
+  const isDateOrTimestamp =
+    (rawTitle as unknown) instanceof Date ||
+    (typeof rawTitle === 'string' && /^\d{4}-\d{2}-\d{2}/.test(rawTitle.trim()));
+  if (!isDateOrTimestamp && typeof rawTitle === 'string' && rawTitle.trim().length > 0) {
+    return rawTitle.trim();
+  }
+  const headingMatch = typeof doc.rawContent === 'string' ? doc.rawContent.match(/^#\s+(.+)$/m) : null;
+  return headingMatch ? headingMatch[1].trim() : cleanFileName;
+}
 
 export const LensDocumentCanvas: React.FC = () => {
   const activeFile = useVaultStore((state) => state.activeFile);
@@ -17,10 +36,48 @@ export const LensDocumentCanvas: React.FC = () => {
   const vaultPath = useVaultStore((state) => state.vaultPath);
   const logoConfig = useVaultStore((state) => state.logoConfig);
   const getStoreFolderIcon = useVaultStore((state) => state.getFolderIcon);
+  const renameNote = useVaultStore((state) => state.renameNote);
+  const { t } = useTranslation();
 
   const [localProse, setLocalProse] = useState<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastLoadedFileRef = useRef<string | null>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const [justSaved, setJustSaved] = useState(false);
+  // Notes open for reading; editing is an explicit choice (except a brand-new note)
+  const [isEditing, setIsEditing] = useState(false);
+  // A title rename moves the file (new activeFile) but must not drop out of edit mode
+  const keepEditingOnSwitchRef = useRef(false);
+  const justSavedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const noteTitle = activeDocument && activeFile ? getNoteTitle(activeDocument, activeFile) : '';
+  const [titleDraft, setTitleDraft] = useState(noteTitle);
+
+  // Keep the editable title in sync when the note (or its title on disk) changes
+  useEffect(() => {
+    setTitleDraft(noteTitle);
+  }, [noteTitle, activeFile]);
+
+  // Each note opens in read mode; a freshly created one opens in edit mode with its title selected
+  useEffect(() => {
+    if (!activeDocument || activeDocument.filePath !== activeFile) return;
+    if (keepEditingOnSwitchRef.current) {
+      keepEditingOnSwitchRef.current = false;
+      return;
+    }
+    const isBlankNewNote =
+      !(activeDocument.body || '').trim() && noteTitle.startsWith(t('app.newNoteName'));
+    setIsEditing(isBlankNewNote);
+    if (isBlankNewNote) {
+      // Next frame: the synced title value must be in the input before selecting it
+      requestAnimationFrame(() => {
+        titleInputRef.current?.focus();
+        titleInputRef.current?.select();
+      });
+    }
+    // Only on note switch, not on every keystroke
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFile, activeDocument?.filePath]);
 
   // Sync active document body into local edit state only on file transition
   useEffect(() => {
@@ -59,8 +116,44 @@ export const LensDocumentCanvas: React.FC = () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      if (justSavedTimeoutRef.current) {
+        clearTimeout(justSavedTimeoutRef.current);
+      }
     };
   }, []);
+
+  // Explicit save: writes immediately, returns to read mode and confirms with a short "saved" state
+  const handleSaveNow = async () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+    if (!activeFile) return;
+    await saveDocumentProse(activeFile, localProse);
+    setIsEditing(false);
+    setJustSaved(true);
+    if (justSavedTimeoutRef.current) clearTimeout(justSavedTimeoutRef.current);
+    justSavedTimeoutRef.current = setTimeout(() => setJustSaved(false), 2000);
+  };
+
+  const commitTitle = async () => {
+    const next = titleDraft.trim();
+    if (!activeFile || !next || next === noteTitle) {
+      setTitleDraft(noteTitle);
+      return;
+    }
+    // Flush pending prose first so the rename writes the latest body
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+    if (localProse !== (activeDocument?.body || '')) {
+      await saveDocumentProse(activeFile, localProse);
+    }
+    keepEditingOnSwitchRef.current = true;
+    const newPath = await renameNote(activeFile, next);
+    if (newPath === activeFile) keepEditingOnSwitchRef.current = false;
+  };
 
   const isLoading = useVaultStore((state) => state.isLoading);
   const error = useVaultStore((state) => state.error);
@@ -131,18 +224,6 @@ export const LensDocumentCanvas: React.FC = () => {
   // The vault root is an implementation detail: only real folders are shown.
   const folderName = folderPath && folderPath !== vaultPath ? baseName(folderPath) : '';
 
-  const rawTitle = activeDocument.frontmatter?.title;
-  const isDateOrTimestamp =
-    (rawTitle as unknown) instanceof Date ||
-    (typeof rawTitle === 'string' && /^\d{4}-\d{2}-\d{2}/.test(rawTitle.trim()));
-
-  const headingMatch = typeof activeDocument.rawContent === 'string' ? activeDocument.rawContent.match(/^#\s+(.+)$/m) : null;
-  const firstHeading = headingMatch ? headingMatch[1].trim() : null;
-
-  const frontmatterTitle =
-    (!isDateOrTimestamp && typeof rawTitle === 'string' && rawTitle.trim().length > 0)
-      ? rawTitle.trim()
-      : firstHeading || cleanFileName;
   const rawTags = activeDocument.frontmatter?.tags;
   const tags: string[] = Array.isArray(rawTags)
     ? rawTags.map(String)
@@ -182,7 +263,34 @@ export const LensDocumentCanvas: React.FC = () => {
             <span className="text-slate-800 font-semibold truncate">{cleanFileName}</span>
           </div>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <h1 className="text-base font-bold text-slate-900 truncate">{frontmatterTitle}</h1>
+            {!isEditing ? (
+              <h1 data-testid="note-title" className="text-base font-bold text-slate-900 truncate">
+                {noteTitle}
+              </h1>
+            ) : (
+            <h1 className="min-w-0 flex-1">
+              <input
+                ref={titleInputRef}
+                type="text"
+                data-testid="note-title-input"
+                aria-label={t('note.titleLabel')}
+                value={titleDraft}
+                onChange={(e) => setTitleDraft(e.target.value)}
+                onBlur={commitTitle}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.currentTarget.blur();
+                  } else if (e.key === 'Escape') {
+                    // Revert first, then leave the field without committing
+                    setTitleDraft(noteTitle);
+                    requestAnimationFrame(() => titleInputRef.current?.blur());
+                  }
+                }}
+                className="w-full text-base font-bold text-slate-900 bg-white rounded-md px-1 -mx-1 border border-sand-200 hover:border-sand-300 focus:border-forest-600 focus:outline-none transition-colors truncate"
+              />
+            </h1>
+            )}
             {tags.map((tag: string) => (
               <span
                 key={tag}
@@ -195,13 +303,32 @@ export const LensDocumentCanvas: React.FC = () => {
           </div>
         </div>
 
+        <div className="flex items-center gap-3 shrink-0">
+          {justSaved && (
+            <span data-testid="note-saved-indicator" className="inline-flex items-center gap-1 text-xs font-medium text-forest-700">
+              <Check className="w-3.5 h-3.5" />
+              {t('note.saved')}
+            </span>
+          )}
+          {!isEditing && (
+            <button
+              type="button"
+              data-testid="edit-note-btn"
+              onClick={() => setIsEditing(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-forest-800 bg-white border border-sand-200 hover:bg-sand-100 shadow-xs transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              {t('editor.edit')}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Main Fluid Canvas Area */}
-      <div className="w-full flex-1 flex flex-col p-4 md:p-6 lg:p-8 min-h-0">
+      <div className="w-full flex-1 flex flex-col min-h-0 overflow-y-auto p-4 md:p-6 lg:p-8">
         {/* NOTES ONLY MODE: Viewport-Filling Canvas */}
         {(
-          <section data-testid="bottom-notes-zone" className="flex-1 flex flex-col min-h-0 h-full space-y-3">
+          <section data-testid="bottom-notes-zone" className="flex flex-col space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 shrink-0">
               <h2 className="text-sm font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-emerald-600" />
@@ -214,13 +341,36 @@ export const LensDocumentCanvas: React.FC = () => {
               </div>
             </div>
 
-            <div onBlur={handleProseBlur} className="flex-1 flex flex-col min-h-0 h-full">
+            {!isEditing && !localProse.trim() && (
+              <p data-testid="note-empty-message" className="text-sm text-slate-400 italic px-1">
+                {t('editor.noNotes')}
+              </p>
+            )}
+            <div onBlur={handleProseBlur} className={`flex flex-col ${!isEditing && !localProse.trim() ? 'hidden' : ''}`}>
               <MarkdownEditor
                 key={activeFile}
                 value={localProse}
                 onChange={handleProseChange}
                 placeholder="Write meeting notes, architecture decisions, or press Cmd+Enter to hoist a task..."
-                className="flex-1 min-h-[350px] h-full bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs focus-within:border-emerald-400"
+                autoGrow
+                readOnly={!isEditing}
+                className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs focus-within:border-emerald-400"
+                footer={
+                  isEditing && (
+                  <div className="flex justify-end pt-3">
+                    <button
+                      type="button"
+                      data-testid="save-note-btn"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={handleSaveNow}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold shadow-xs transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600 bg-forest-700 text-white hover:bg-forest-800"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      {t('note.save')}
+                    </button>
+                  </div>
+                  )
+                }
               />
             </div>
           </section>

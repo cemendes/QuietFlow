@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useCallback, useState, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TaskList from '@tiptap/extension-task-list';
@@ -179,6 +179,12 @@ export interface MarkdownEditorProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  /** Start compact and grow with the content instead of scrolling inside a fixed box. */
+  autoGrow?: boolean;
+  /** Rendered at the end of the editing area (e.g. a save button). */
+  footer?: React.ReactNode;
+  /** Show the content only: no toolbar, no caret, nothing editable. */
+  readOnly?: boolean;
 }
 
 export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
@@ -186,6 +192,9 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   onChange,
   placeholder: placeholderProp,
   className = '',
+  autoGrow = false,
+  footer,
+  readOnly = false,
 }) => {
   const { t } = useTranslation();
   const placeholder = placeholderProp ?? t('editor.placeholder');
@@ -200,6 +209,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
   const editor = useEditor({
     shouldRerenderOnTransaction: true,
+    editable: !readOnly,
     extensions: [
       StarterKit.configure({
         link: {
@@ -224,7 +234,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     editorProps: {
       attributes: {
         class:
-          'tiptap prose prose-slate max-w-none focus:outline-none min-h-[300px] p-4 text-slate-800 text-sm leading-relaxed',
+          `tiptap prose prose-slate max-w-none focus:outline-none ${autoGrow ? 'min-h-[160px]' : 'min-h-[300px]'} p-4 text-slate-800 text-sm leading-relaxed`,
         'data-placeholder': placeholder,
       },
       handleKeyDown: (view, event) => {
@@ -331,6 +341,10 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   editorRef.current = editor;
 
   useEffect(() => {
+    editor?.setEditable(!readOnly);
+  }, [editor, readOnly]);
+
+  useEffect(() => {
     if (!isSourceModeRef.current && editor && editor.storage?.markdown) {
       const currentMarkdown = editor.storage.markdown.getMarkdown();
       const isDomFocused =
@@ -346,6 +360,14 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       sourceTextRef.current = value;
     }
   }, [value, editor]);
+
+  // In auto-grow mode the source textarea follows its content height, so it never scrolls
+  useLayoutEffect(() => {
+    const el = sourceTextareaRef.current;
+    if (!autoGrow || !isSourceMode || !el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [autoGrow, isSourceMode, sourceText]);
 
   const handleToggleSourceMode = useCallback(() => {
     if (isSourceModeRef.current) {
@@ -503,8 +525,10 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       tabIndex={-1}
       onKeyDown={handleKeyDown}
       data-testid="markdown-editor-container"
-      className={`flex flex-col flex-1 min-h-0 focus:outline-none ${className}`}
+      className={`flex flex-col ${autoGrow ? '' : 'flex-1 min-h-0'} focus:outline-none ${className}`}
     >
+      {!readOnly && (
+      <>
       {/* Editor Header */}
       <div className="flex items-center justify-between mb-2 shrink-0">
         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('editor.notes')}</span>
@@ -672,17 +696,25 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           </button>
         </div>
       </div>
+      </>
+      )}
 
       {/* Editor Content Area */}
-      <div className="flex-1 min-h-[140px] h-full bg-white border border-sand-200 rounded-xl overflow-y-auto flex flex-col">
-        {isSourceMode ? (
+      <div
+        className={`bg-white rounded-xl flex flex-col ${readOnly ? '[&_.tiptap]:min-h-0' : 'border border-sand-200'} ${
+          autoGrow ? '' : 'flex-1 min-h-[140px] h-full overflow-y-auto'
+        }`}
+      >
+        {isSourceMode && !readOnly ? (
           <textarea
             ref={sourceTextareaRef}
             data-testid="markdown-source-textarea"
             value={sourceText}
             onChange={handleSourceChange}
             placeholder={placeholder}
-            className="font-mono text-xs text-slate-800 p-4 w-full h-full min-h-[300px] flex-1 resize-none focus:outline-none bg-transparent"
+            className={`font-mono text-xs text-slate-800 p-4 w-full resize-none focus:outline-none bg-transparent ${
+              autoGrow ? 'min-h-[160px] overflow-hidden' : 'h-full min-h-[300px] flex-1'
+            }`}
             spellCheck={false}
           />
         ) : (
@@ -693,6 +725,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           />
         )}
       </div>
+      {footer}
     </div>
   );
 };

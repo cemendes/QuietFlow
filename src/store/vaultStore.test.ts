@@ -11,6 +11,7 @@ vi.mock('./ipc', () => ({
     writeFileAtomic: vi.fn(),
     createDirectory: vi.fn(),
     deleteEntry: vi.fn(),
+    moveEntry: vi.fn(),
     startWatchingVault: vi.fn(),
     listenVaultChanged: vi.fn().mockResolvedValue(() => {}),
     getSavedVaultPath: vi.fn().mockResolvedValue('/MockVault'),
@@ -433,5 +434,66 @@ title: Project Plan
 
     expect(ipc.writeFileAtomic).toHaveBeenCalledWith(sourceFile, expect.not.stringContaining('Task to move'));
     expect(ipc.writeFileAtomic).toHaveBeenCalledWith(destFile, expect.stringContaining('Task to move'));
+  });
+
+  it('renameNote updates the frontmatter title and renames the file, leaving the body untouched', async () => {
+    const raw = `---
+title: Nova anotação
+date: 2026-10-19
+---
+
+# Meeting
+
+- [ ] Follow up #work
+`;
+    const files: Record<string, string> = { '/vault/Nova anotação.md': raw, '/vault/Ideias.md': 'x' };
+    const tree = (): VaultNode => ({
+      name: 'vault', path: '/vault', isDirectory: true, fileCount: Object.keys(files).length,
+      children: Object.keys(files).map((p) => ({
+        name: p.slice('/vault/'.length), path: p, isDirectory: false, children: [], fileCount: 0,
+      })),
+    });
+    vi.mocked(ipc.initVault).mockImplementation(async () => tree());
+    vi.mocked(ipc.readFile).mockImplementation(async (p: string) => files[p]);
+    vi.mocked(ipc.writeFileAtomic).mockImplementation(async (p: string, c: string) => { files[p] = c; });
+    vi.mocked(ipc.moveEntry).mockImplementation(async (from: string, to: string) => {
+      files[to] = files[from];
+      delete files[from];
+    });
+    useVaultStore.setState({ vaultPath: '/vault', vaultTree: tree() });
+    await useVaultStore.getState().selectFile('/vault/Nova anotação.md');
+
+    // "Ideias" is taken, so the file gets a numbered name while the title stays as typed
+    const newPath = await useVaultStore.getState().renameNote('/vault/Nova anotação.md', 'Ideias');
+
+    expect(newPath).toBe('/vault/Ideias 2.md');
+    expect(files['/vault/Nova anotação.md']).toBeUndefined();
+    expect(files['/vault/Ideias 2.md']).toBe(raw.replace('title: Nova anotação', 'title: Ideias'));
+    expect(files['/vault/Ideias.md']).toBe('x');
+    expect(useVaultStore.getState().activeFile).toBe('/vault/Ideias 2.md');
+  });
+
+  it('renameNote keeps a note inside its folder on Windows paths with mixed separators', async () => {
+    // Real path shape from the native app: saved vault path uses "/", files inside use "\"
+    const vault = 'C:\\Users\\rgrsa/Documents/QuietFlowVault';
+    const oldPath = `${vault}\\Nova anotação.md`;
+    const files: Record<string, string> = { [oldPath]: '---\ntitle: Nova anotação\n---\n\n' };
+    vi.mocked(ipc.initVault).mockImplementation(async () => ({
+      name: 'QuietFlowVault', path: vault, isDirectory: true, fileCount: 1,
+      children: Object.keys(files).map((p) => ({ name: p.slice(vault.length + 1), path: p, isDirectory: false, children: [], fileCount: 0 })),
+    }));
+    vi.mocked(ipc.readFile).mockImplementation(async (p: string) => files[p]);
+    vi.mocked(ipc.writeFileAtomic).mockImplementation(async (p: string, c: string) => { files[p] = c; });
+    vi.mocked(ipc.moveEntry).mockImplementation(async (from: string, to: string) => {
+      files[to] = files[from];
+      delete files[from];
+    });
+    useVaultStore.setState({ vaultPath: vault, vaultTree: await ipc.initVault(vault) });
+    await useVaultStore.getState().selectFile(oldPath);
+
+    const newPath = await useVaultStore.getState().renameNote(oldPath, 'Reunião');
+
+    expect(newPath).toBe(`${vault}\\Reunião.md`);
+    expect(Object.keys(files)).toEqual([`${vault}\\Reunião.md`]);
   });
 });

@@ -17,6 +17,7 @@ import FolderContextMenu from './FolderContextMenu';
 import { useTranslation } from '../../i18n';
 import { NAV_ITEM_ACTIVE, NAV_ITEM_IDLE } from './navItemStyles';
 import { FileHistoryModal } from '../history/FileHistoryModal';
+import { dirName, lastSeparator } from '../../utils/paths';
 
 export interface FolderItemProps {
   node: VaultNode;
@@ -372,8 +373,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
               folderPath={node.path}
               isDirectory={true}
               onRename={async (newName) => {
-                const parentPath = node.path.substring(0, node.path.lastIndexOf('/'));
-                const newPath = `${parentPath}/${newName}`;
+                const newPath = `${dirName(node.path)}${lastSeparator(node.path)}${newName}`;
                 await ipc.moveEntry(node.path, newPath);
                 await refreshVault();
               }}
@@ -535,9 +535,9 @@ export const FolderItem: React.FC<FolderItemProps> = ({
           folderPath={node.path}
           isDirectory={false}
           onRename={async (newName) => {
-            const parentDir = node.path.substring(0, node.path.lastIndexOf('/'));
+            const parentDir = dirName(node.path);
             const safeName = newName.trim().endsWith('.md') ? newName.trim() : `${newName.trim()}.md`;
-            const newPath = parentDir ? `${parentDir}/${safeName}` : safeName;
+            const newPath = parentDir ? `${parentDir}${lastSeparator(node.path)}${safeName}` : safeName;
             try {
               await ipc.moveEntry(node.path, newPath);
               await refreshVault();

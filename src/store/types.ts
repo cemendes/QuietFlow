@@ -113,6 +113,7 @@ export interface VaultStoreActions {
   setDocumentScrollPosition: (filePath: string, scrollY: number) => void;
   getDocumentViewState: (filePath: string) => DocumentViewState;
   saveDocumentProse: (filePath: string, newProse: string) => Promise<void>;
+  renameNote: (filePath: string, newTitle: string) => Promise<string>;
   flushActiveDocument: () => Promise<void>;
 
   // UI state

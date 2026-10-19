@@ -5,6 +5,8 @@ import {
   parseMarkdownDocument,
   updateTaskInDocument,
 } from '../core/markdown';
+import { setFrontmatterTitle } from '../core/markdown/frontmatterTitle';
+import { dirName, lastSeparator } from '../utils/paths';
 import {
   loadLogoConfig,
   persistFolderEmoji,
@@ -871,6 +873,48 @@ async function saveDocumentProse(filePath: string, newProse: string): Promise<vo
   }
 }
 
+/**
+ * Rename a note: updates its frontmatter `title` and renames the `.md` file to match,
+ * so the sidebar shows the new name too. Returns the note's (possibly new) path.
+ */
+async function renameNote(filePath: string, newTitle: string): Promise<string> {
+  const title = newTitle.trim();
+  if (!title) return filePath;
+
+  // Stay in the note's own folder, reusing its separator (native Windows paths use "\")
+  const dir = dirName(filePath);
+  const sep = lastSeparator(filePath);
+  const safeName = title.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim() || 'note';
+
+  // Avoid overwriting another note that already has this name
+  const taken = new Set(
+    collectMarkdownFiles(state.vaultTree).map((p) => p.toLowerCase()),
+  );
+  taken.delete(filePath.toLowerCase());
+  let candidate = `${dir}${sep}${safeName}.md`;
+  for (let n = 2; taken.has(candidate.toLowerCase()); n++) {
+    candidate = `${dir}${sep}${safeName} ${n}.md`;
+  }
+
+  set({ isSaving: true, error: null });
+  try {
+    const raw = state.activeFile === filePath && state.activeDocument
+      ? state.activeDocument.rawContent
+      : await ipc.readFile(filePath);
+    await writeVaultFile(filePath, setFrontmatterTitle(raw, title));
+    if (candidate !== filePath) {
+      await ipc.moveEntry(filePath, candidate);
+    }
+    await refreshVault();
+    await selectFile(candidate);
+    set({ isSaving: false });
+    return candidate;
+  } catch (err: any) {
+    set({ error: err?.message || 'Failed to rename note', isSaving: false });
+    return filePath;
+  }
+}
+
 async function flushActiveDocument(): Promise<void> {
   if (state.activeFile && state.activeDocument) {
     try {
@@ -905,6 +949,7 @@ const actions = {
   setDocumentScrollPosition,
   getDocumentViewState,
   saveDocumentProse,
+  renameNote,
   flushActiveDocument,
   setActiveTaskId,
   setSearchQuery,
