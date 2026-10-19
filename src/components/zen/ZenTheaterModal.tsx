@@ -3,6 +3,7 @@ import { TaskItem } from '../../store/types';
 import { triggerCelebration } from '../../utils/celebrations';
 import { triggerCompletionFeedback } from '../../utils/feedback';
 import { useTranslation } from '../../i18n';
+import { baseName } from '../../utils/paths';
 
 export interface ZenTheaterModalProps {
   isOpen: boolean;
@@ -117,7 +118,7 @@ export const ZenTheaterModal: React.FC<ZenTheaterModalProps> = ({
           )}
           {task.filePath && (
             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 bg-emerald-100/60 px-2.5 py-0.5 rounded-full">
-              📄 {task.filePath.split('/').pop()?.replace(/\.md$/, '')}
+              📄 {baseName(task.filePath)?.replace(/\.md$/, '')}
             </span>
           )}
         </div>

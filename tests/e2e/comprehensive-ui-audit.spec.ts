@@ -82,18 +82,10 @@ test.describe('QuietFlow Comprehensive UI Audit & Bug Hunt', () => {
     // =========================================================================
     // SUITE 1: Sidebar & Vault Navigation
     // =========================================================================
-    await probe(page, 'Suite 1: Sidebar', 'Click "My Vault" root view', async () => {
-      const vaultBtn = page.locator('button[title="My Vault"]');
+    await probe(page, 'Suite 1: Sidebar', 'Click "Notes" root view', async () => {
+      const vaultBtn = page.locator('button[title="Notes"]');
       if (await vaultBtn.isVisible()) {
         await vaultBtn.click();
-        await page.waitForTimeout(200);
-      }
-    });
-
-    await probe(page, 'Suite 1: Sidebar', 'Click "Inbox" view', async () => {
-      const inboxBtn = page.locator('button[title="Inbox"]');
-      if (await inboxBtn.isVisible()) {
-        await inboxBtn.click();
         await page.waitForTimeout(200);
       }
     });

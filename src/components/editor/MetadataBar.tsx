@@ -30,7 +30,7 @@ export const MetadataBar: React.FC<MetadataBarProps> = ({
   // Format clean breadcrumb (e.g. CCO / 2026-08-28)
   const breadcrumb = React.useMemo(() => {
     if (!filePath) return null;
-    const parts = filePath.split('/').filter(Boolean);
+    const parts = filePath.split(/[\\/]+/).filter(Boolean);
     const fileName = parts.pop()?.replace(/\.md$/, '') || '';
     const parentFolder = parts.length > 0 ? parts.pop() : null;
     const isVaultRoot = !parentFolder || parentFolder === 'QuietFlowVault' || parentFolder === 'Documents';

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { History, X, RotateCcw, FileText, CheckCircle2, Clock, ShieldCheck } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { SnapshotMetadata } from '../../store/types';
+import { baseName } from '../../utils/paths';
 
 export interface FileHistoryModalProps {
   isOpen: boolean;
@@ -49,7 +50,7 @@ export const FileHistoryModal: React.FC<FileHistoryModalProps> = ({ isOpen, file
 
   if (!isOpen || !filePath) return null;
 
-  const fileName = filePath.split('/').pop() || 'note.md';
+  const fileName = baseName(filePath) || 'note.md';
 
   const handleRestore = async (id: string) => {
     if (!filePath) return;
