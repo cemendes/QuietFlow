@@ -41,50 +41,15 @@ Discussed $120k budget approval.
     });
   });
 
-  it('renders top action items and bottom notes in split view with 2/3 and 1/3 proportions', () => {
+  it('shows only the notes editor: no task cards, task zone or lens toggles', () => {
     render(<LensDocumentCanvas />);
 
-    expect(screen.getByTestId('document-task-card-task-deliver-sow')).toBeDefined();
-    expect(screen.getByTestId('document-task-card-task-initial-discovery-call')).toBeDefined();
-    
-    const notesZone = screen.getByTestId('bottom-notes-zone');
-    const tasksZone = screen.getByTestId('top-tasks-zone');
-    expect(notesZone).toBeDefined();
-    expect(tasksZone).toBeDefined();
-    expect(notesZone.className).toContain('lg:w-2/3');
-    expect(tasksZone.className).toContain('lg:w-1/3');
-  });
-
-  it('hides notes when Tasks Only lens is selected', () => {
-    render(<LensDocumentCanvas />);
-
-    const tasksOnlyBtn = screen.getByTestId('lens-tasks-only-btn');
-    fireEvent.click(tasksOnlyBtn);
-
-    expect(screen.getByTestId('top-tasks-zone')).toBeDefined();
-    expect(screen.queryByTestId('bottom-notes-zone')).toBeNull();
-  });
-
-  it('hides task cards when Notes Only lens is selected', () => {
-    render(<LensDocumentCanvas />);
-
-    const notesOnlyBtn = screen.getByTestId('lens-notes-only-btn');
-    fireEvent.click(notesOnlyBtn);
-
-    expect(screen.queryByTestId('top-tasks-zone')).toBeNull();
     expect(screen.getByTestId('bottom-notes-zone')).toBeDefined();
-  });
-
-  it('toggles task completion when clicking task card checkbox', async () => {
-    render(<LensDocumentCanvas />);
-
-    const taskCheckbox = screen.getByTestId('task-checkbox-task-deliver-sow');
-    fireEvent.click(taskCheckbox);
-
-    await waitFor(() => {
-      expect(ipc.writeFileAtomic).toHaveBeenCalled();
-      expect(useVaultStore.getState().tasks.find((t) => t.id === 'task-deliver-sow')?.status).toBe('done');
-    });
+    expect(screen.queryByTestId('top-tasks-zone')).toBeNull();
+    expect(screen.queryByTestId('document-task-card-task-deliver-sow')).toBeNull();
+    expect(screen.queryByTestId('lens-split-btn')).toBeNull();
+    expect(screen.queryByTestId('lens-tasks-only-btn')).toBeNull();
+    expect(screen.queryByTestId('lens-notes-only-btn')).toBeNull();
   });
 
   it('displays error notice when reading a document fails', () => {

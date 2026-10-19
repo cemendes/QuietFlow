@@ -5,6 +5,7 @@ import KanbanColumn from './KanbanColumn';
 import QuickAddBar from '../tasks/QuickAddBar';
 import { useTranslation } from '../../i18n';
 import FocusHeader from '../tasks/FocusHeader';
+import { baseName } from '../../utils/paths';
 
 export interface KanbanBoardProps {
   title?: string;
@@ -93,7 +94,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const computedTitle = useMemo(() => {
     if (title) return title;
     if (activeFile) {
-      const fileName = activeFile.split('/').pop()?.replace(/\.md$/, '') || t('common.tasksFallback');
+      const fileName = baseName(activeFile)?.replace(/\.md$/, '') || t('common.tasksFallback');
       if (fileName.toLowerCase() === 'inbox') {
         return t('tasks.inboxTitle');
       }
@@ -104,9 +105,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     }
     if (activeFolder) {
       if (activeFolder === vaultPath) {
-        return 'My Vault';
+        return t('sidebar.notes');
       }
-      const folderName = activeFolder.split('/').pop() || 'Folder';
+      const folderName = baseName(activeFolder) || 'Folder';
       return folderName.charAt(0).toUpperCase() + folderName.slice(1);
     }
     return t('common.todaysFocus');

@@ -15,6 +15,7 @@ import {
 import { useVaultStore } from '../../store';
 import { SubtaskItem, TaskComment, TaskPriority, TaskStatus } from '../../store/types';
 import MarkdownEditor from './MarkdownEditor';
+import { baseName } from '../../utils/paths';
 
 export interface TaskDetailPageProps {
   className?: string;
@@ -28,7 +29,6 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
   const activeTaskId = useVaultStore((state) => state.activeTaskId);
   const tasks = useVaultStore((state) => state.tasks);
   const activeView = useVaultStore((state) => state.activeView);
-  const activeFile = useVaultStore((state) => state.activeFile);
   const updateTask = useVaultStore((state) => state.updateTask);
   const deleteTask = useVaultStore((state) => state.deleteTask);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
@@ -59,8 +59,6 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
     setActiveTaskId(null);
     if (activeView === 'kanban') {
       setActiveView('kanban');
-    } else if (activeView === 'document' && activeFile) {
-      setActiveView('document');
     } else {
       if (vaultPath) {
         await selectFolder(vaultPath);
@@ -101,7 +99,7 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
   // Format breadcrumbs from filePath
   const breadcrumbs = () => {
     if (!activeTask.filePath) return null;
-    const parts = activeTask.filePath.split('/').filter(Boolean);
+    const parts = activeTask.filePath.split(/[\\/]+/).filter(Boolean);
     const fileName = parts.pop()?.replace(/\.md$/, '') || '';
     const parentFolder = parts.length > 0 ? parts.pop() : null;
     const isVaultRoot = !parentFolder || parentFolder === 'QuietFlowVault' || parentFolder === 'Documents';
@@ -256,34 +254,9 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>
-              {activeView === 'kanban'
-                ? 'Back to Kanban'
-                : activeView === 'document' && activeFile
-                ? 'Back to Note'
-                : 'Back to List'}
+              {activeView === 'kanban' ? 'Back to Kanban' : 'Back to List'}
             </span>
           </button>
-
-          {activeView === 'document' && activeFile && (
-            <button
-              type="button"
-              data-tauri-drag-region="false"
-              data-testid="all-tasks-nav-btn"
-              onClick={async () => {
-                setActiveTaskId(null);
-                if (vaultPath) {
-                  await selectFolder(vaultPath);
-                } else {
-                  setActiveView('list');
-                }
-                if (onBack) onBack();
-              }}
-              className="no-drag pointer-events-auto relative z-30 flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-stone-500 hover:text-stone-900 bg-sand-50 hover:bg-sand-200/60 rounded-lg transition-all cursor-pointer"
-              title="Go to all tasks in vault"
-            >
-              <span>Back to List</span>
-            </button>
-          )}
 
           {breadcrumbInfo && (
             <div className="flex items-center gap-1.5 text-xs text-stone-500 truncate">
@@ -554,7 +527,7 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
                       title={activeTask.filePath}
                       className="text-[11px] font-mono text-stone-600 bg-sand-100 px-2 py-0.5 rounded truncate max-w-[140px]"
                     >
-                      {activeTask.filePath.split('/').pop()}
+                      {baseName(activeTask.filePath)}
                     </span>
                   </div>
                 )}

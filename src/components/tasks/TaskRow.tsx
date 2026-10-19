@@ -6,6 +6,7 @@ import { triggerCelebration } from '../../utils/celebrations';
 import { sliceTask } from '../../utils/slicer';
 import { useVaultStore } from '../../store';
 import { Language, formatShortDate, useTranslation } from '../../i18n';
+import { baseName } from '../../utils/paths';
 
 export interface TaskRowProps {
   task: TaskItem;
@@ -204,16 +205,15 @@ export const TaskRow: React.FC<TaskRowProps> = ({
         <button
           type="button"
           data-testid={`note-backlink-${task.id}`}
-          title={`Open ${task.filePath.split('/').pop()}`}
+          title={`Open ${baseName(task.filePath)}`}
           onClick={(e) => {
             e.stopPropagation();
-            useVaultStore.getState().selectFile(task.filePath!);
-            useVaultStore.getState().setActiveView('document');
+            useVaultStore.getState().openNote(task.filePath!);
           }}
           className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/60 rounded-md transition-colors truncate max-w-[140px]"
         >
           <FileText className="w-3 h-3 text-emerald-600 shrink-0" />
-          <span className="truncate">{task.filePath.split('/').pop()?.replace(/\.md$/, '')}</span>
+          <span className="truncate">{baseName(task.filePath)?.replace(/\.md$/, '')}</span>
         </button>
       )}
 

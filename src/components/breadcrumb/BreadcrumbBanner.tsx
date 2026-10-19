@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X, ArrowRight, Compass } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { useTranslation } from '../../i18n';
+import { baseName } from '../../utils/paths';
 
 export interface BreadcrumbBannerProps {
   thresholdMinutes?: number;
@@ -11,7 +12,7 @@ export const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
   thresholdMinutes = 15,
 }) => {
   const activeFile = useVaultStore((state) => state.activeFile);
-  const selectFile = useVaultStore((state) => state.selectFile);
+  const openNote = useVaultStore((state) => state.openNote);
 
   const [showBanner, setShowBanner] = useState(false);
   const [breadcrumbFile, setBreadcrumbFile] = useState<string | null>(null);
@@ -50,10 +51,10 @@ export const BreadcrumbBanner: React.FC<BreadcrumbBannerProps> = ({
 
   if (!showBanner || !breadcrumbFile) return null;
 
-  const fileName = breadcrumbFile.split('/').pop()?.replace(/\.md$/, '') || t('breadcrumb.previousNotes');
+  const fileName = baseName(breadcrumbFile)?.replace(/\.md$/, '') || t('breadcrumb.previousNotes');
 
   const handleResume = async () => {
-    await selectFile(breadcrumbFile);
+    await openNote(breadcrumbFile);
     setShowBanner(false);
   };
 

@@ -22,6 +22,7 @@ describe('Note Creation and Fluid Canvas Integration Tests', () => {
     useVaultStore.getState().reset();
     useVaultStore.setState({
       vaultPath: '/vault',
+      section: 'notes',
     });
   });
 
@@ -98,29 +99,19 @@ title: Product Strategy
 Full width notes content here.
 `;
 
-    it('renders fluid layout without max-w-[850px] restriction in Split View', () => {
+    it('renders fluid layout without max-w-[850px] restriction in the notes editor', () => {
       const doc = parseMarkdownDocument(sampleMarkdown, 'Strategy/Product.md');
       useVaultStore.setState({
         activeFile: 'Strategy/Product.md',
         activeDocument: doc,
         tasks: doc.tasks,
-        lensViewMode: 'split',
       });
 
       const { container } = render(<LensDocumentCanvas />);
 
-      // Ensure max-w-[850px] restriction is removed
-      const constrainedContainer = container.querySelector('.max-w-\\[850px\\]');
-      expect(constrainedContainer).toBeNull();
-
-      // Ensure fluid full width container exists
-      const fluidContainer = container.querySelector('.w-full.flex-1.flex.flex-col');
-      expect(fluidContainer).not.toBeNull();
-
-      // Ensure side-by-side flex split layout is rendered
-      const splitFlex = container.querySelector('.lg\\:flex-row');
-      expect(splitFlex).not.toBeNull();
-      expect(screen.getByTestId('top-tasks-zone')).toBeDefined();
+      expect(container.querySelector('.max-w-\\[850px\\]')).toBeNull();
+      expect(container.querySelector('.w-full.flex-1.flex.flex-col')).not.toBeNull();
+      expect(screen.queryByTestId('top-tasks-zone')).toBeNull();
       expect(screen.getByTestId('bottom-notes-zone')).toBeDefined();
     });
 

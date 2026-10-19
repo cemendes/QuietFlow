@@ -104,6 +104,8 @@ export const FolderItem: React.FC<FolderItemProps> = ({
 
   const refreshVault = useVaultStore((state) => state.refreshVault);
   const createFile = useVaultStore((state) => state.createFile);
+  const openNote = useVaultStore((state) => state.openNote);
+  const section = useVaultStore((state) => state.section);
   const deleteEntry = useVaultStore((state) => state.deleteEntry);
 
   const handleCreateSubfolder = async () => {
@@ -119,34 +121,15 @@ export const FolderItem: React.FC<FolderItemProps> = ({
   };
 
   const formatDefaultNoteName = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const baseDate = `${year}-${month}-${day}`;
-
-    // If folder already has files, find next unique candidate name
-    if (!node.children || node.children.length === 0) {
-      return baseDate;
-    }
-
+    const baseName = t('app.newNoteName');
     const existingNames = new Set(
-      node.children.map((c) => c.name.replace(/\.md$/i, ''))
+      (node.children ?? []).map((c) => c.name.replace(/\.md$/i, '').toLowerCase()),
     );
-
-    if (!existingNames.has(baseDate)) {
-      return baseDate;
+    let candidate = baseName;
+    for (let n = 2; existingNames.has(candidate.toLowerCase()); n++) {
+      candidate = `${baseName} ${n}`;
     }
-
-    // Generate short random suffix (e.g. 2026-08-28-a3f9)
-    const generateRandomSuffix = () =>
-      Math.random().toString(36).substring(2, 6);
-
-    let randomCandidate = `${baseDate}-${generateRandomSuffix()}`;
-    while (existingNames.has(randomCandidate)) {
-      randomCandidate = `${baseDate}-${generateRandomSuffix()}`;
-    }
-    return randomCandidate;
+    return candidate;
   };
 
   const handleCreateFileInFolder = async (customName?: string) => {
@@ -156,8 +139,9 @@ export const FolderItem: React.FC<FolderItemProps> = ({
       ? nameToUse.trim()
       : `${nameToUse.trim()}.md`;
     const newFilePath = `${node.path}/${formattedName}`;
-    const initialContent = `---\ntitle: ${nameToUse.trim().replace(/\.md$/, '')}\n---\n\n# Tasks\n\n- [ ] `;
+    const initialContent = `---\ntitle: ${nameToUse.trim().replace(/\.md$/, '')}\n---\n\n`;
     await createFile(newFilePath, initialContent);
+    await openNote(newFilePath);
     setNewSubName('');
     setIsCreatingFile(false);
     if (!isExpanded) {
@@ -347,6 +331,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
             </button>
 
             {/* Quick Actions: Add subfolder / Add file */}
+            {section === 'notes' && (
             <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
               <button
                 type="button"
@@ -378,6 +363,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
                 <FolderPlus className="w-3 h-3" />
               </button>
             </div>
+            )}
           </div>
 
           {showContextMenu && (

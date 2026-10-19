@@ -70,16 +70,21 @@ describe('Sidebar Component', () => {
     });
   });
 
-  it('renders only Inbox in top navigation and removes Today and Starred', () => {
+  it('renders a single Notes entry (no separate Inbox or Vault) and removes Today and Starred', () => {
     render(<Sidebar />);
-    expect(screen.getByRole('button', { name: /inbox/i })).toBeInTheDocument();
+    expect(screen.getByTitle('Notes')).toBeInTheDocument();
+    expect(screen.queryByTitle('Inbox')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('My Vault')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^today$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^starred$/i })).not.toBeInTheDocument();
   });
 
-  it('renders QuietFlow branding and traffic lights', () => {
+  it('renders QuietFlow branding in the same row as the collapse button', () => {
     render(<Sidebar />);
-    expect(screen.getByText(/QuietFlow/i)).toBeInTheDocument();
+    const brand = screen.getByText('QuietFlow');
+    expect(brand).toBeInTheDocument();
+    const topBar = screen.getByTestId('sidebar-toggle-btn').parentElement!;
+    expect(topBar.contains(brand)).toBe(true);
   });
 
   it('renders nested folder tree with folders and files', () => {
@@ -140,16 +145,21 @@ describe('Sidebar Component', () => {
     expect(screen.getByText(/No folder open/i)).toBeInTheDocument();
   });
 
-  it('renders a labelled New note button above the Inbox and calls onNewNote', () => {
+  it('only offers New note in the Notes section, above the vault root, and calls onNewNote', () => {
     const handleNewNote = vi.fn();
+    const { unmount } = render(<Sidebar onNewNote={handleNewNote} />);
+    expect(screen.queryByTestId('new-note-btn')).toBeNull();
+    unmount();
+
+    act(() => useVaultStore.setState({ section: 'notes' }));
     render(<Sidebar onNewNote={handleNewNote} />);
 
     const newNoteBtn = screen.getByTestId('new-note-btn');
     expect(newNoteBtn).toHaveTextContent('New note');
 
-    const inboxBtn = screen.getByTitle('Inbox');
+    const notesBtn = screen.getByTestId('vault-root-btn');
     expect(
-      newNoteBtn.compareDocumentPosition(inboxBtn) & Node.DOCUMENT_POSITION_FOLLOWING
+      newNoteBtn.compareDocumentPosition(notesBtn) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
 
     fireEvent.click(newNoteBtn);
@@ -166,25 +176,21 @@ describe('Sidebar Component', () => {
       ],
     };
 
-    it('does not repeat the Inbox note inside the folder tree', () => {
+    it('shows an Inbox.md note as an ordinary note inside the tree', () => {
       useVaultStore.setState({ vaultTree: treeWithInbox });
       render(<Sidebar />);
-      expect(screen.getByTitle('Inbox')).toBeInTheDocument();
-      expect(screen.queryByTestId(`file-item-${inboxPath}`)).not.toBeInTheDocument();
-      // Other root notes are untouched
-      expect(screen.getByTestId('file-item-/path/to/vault/notes.md')).toBeInTheDocument();
+      expect(screen.getByTestId(`file-item-${inboxPath}`)).toBeInTheDocument();
     });
 
-    it('marks Inbox as the current location only when the Inbox note is open', () => {
-      useVaultStore.setState({ vaultTree: treeWithInbox });
+    it('marks the vault root as the current location only when it is selected', () => {
       render(<Sidebar />);
-      const inboxBtn = screen.getByTitle('Inbox');
-      expect(inboxBtn).toHaveAttribute('data-active', 'false');
-      expect(inboxBtn).not.toHaveAttribute('aria-current');
+      const notesBtn = screen.getByTestId('vault-root-btn');
+      expect(notesBtn).toHaveAttribute('data-active', 'false');
+      expect(notesBtn).not.toHaveAttribute('aria-current');
 
-      act(() => useVaultStore.setState({ activeFile: inboxPath }));
-      expect(inboxBtn).toHaveAttribute('data-active', 'true');
-      expect(inboxBtn).toHaveAttribute('aria-current', 'page');
+      act(() => useVaultStore.setState({ activeFolder: '/path/to/vault', vaultPath: '/path/to/vault' }));
+      expect(notesBtn).toHaveAttribute('data-active', 'true');
+      expect(notesBtn).toHaveAttribute('aria-current', 'page');
     });
 
     it('gives the active note a visible background and aria-current', () => {

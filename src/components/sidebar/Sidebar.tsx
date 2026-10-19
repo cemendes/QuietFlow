@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Inbox,
+  NotebookText,
   Settings,
   Archive,
   PanelLeftClose,
@@ -8,6 +8,7 @@ import {
   Plus,
   Folder,
   FolderPlus,
+  CheckSquare,
 } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { isTauriEnvironment, ipc } from '../../store/ipc';
@@ -36,7 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return saved ? parseInt(saved, 10) : 240;
   });
   const [isResizing, setIsResizing] = useState(false);
-  const [activeScope, setActiveScope] = useState<'today' | 'inbox' | 'vault' | 'starred' | null>('today');
+  const [activeScope, setActiveScope] = useState<'today' | 'vault' | null>('vault');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
@@ -45,10 +46,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const activeFile = useVaultStore((state) => state.activeFile);
   const activeFolder = useVaultStore((state) => state.activeFolder);
   const selectFile = useVaultStore((state) => state.selectFile);
+  const openNote = useVaultStore((state) => state.openNote);
+  const section = useVaultStore((state) => state.section);
+  const setSection = useVaultStore((state) => state.setSection);
+  const selectNoteFolder = useVaultStore((state) => state.selectNoteFolder);
   const selectFolder = useVaultStore((state) => state.selectFolder);
   const setActiveView = useVaultStore((state) => state.setActiveView);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
-  const tasks = useVaultStore((state) => state.tasks);
   const refreshVault = useVaultStore((state) => state.refreshVault);
   const getFolderIcon = useVaultStore((state) => state.getFolderIcon);
   const { t } = useTranslation();
@@ -57,9 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   useEffect(() => {
     if (activeFile) {
       const lower = activeFile.toLowerCase();
-      if (lower.endsWith('inbox.md')) {
-        setActiveScope('inbox');
-      } else if (lower.endsWith('today.md')) {
+      if (lower.endsWith('today.md')) {
         setActiveScope('today');
       } else {
         setActiveScope(null);
@@ -108,67 +110,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const folderPath = `${vaultPath}/${folderName}`;
     await ipc.createDirectory(folderPath);
 
-    // Auto-create standard initial note inside folder with clean ISO date (YYYY-MM-DD)
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
-    const initialNoteName = `${dateStr}.md`;
-    const primaryNotePath = `${folderPath}/${initialNoteName}`;
-    const initialContent = `---\ntitle: ${dateStr}\n---\n\n# Tasks\n\n- [ ] Initial action item\n`;
+    // Auto-create a standard initial note inside the new folder
+    const noteTitle = t('app.newNoteName');
+    const primaryNotePath = `${folderPath}/${noteTitle}.md`;
+    const initialContent = `---\ntitle: ${noteTitle}\n---\n\n`;
     await ipc.writeFileAtomic(primaryNotePath, initialContent);
 
     await refreshVault();
-    await selectFile(primaryNotePath);
+    await openNote(primaryNotePath);
 
     setNewFolderName('');
     setIsCreatingFolder(false);
   };
 
-  // Compute counts for Inbox badge
-  const inboxTasksCount = tasks.filter((t) => {
-    return t.filePath?.toLowerCase().includes('inbox') && t.status !== 'done';
-  }).length;
-
-  // The Inbox note lives at the vault root but is reached through its own nav button,
-  // so it is left out of the folder tree to avoid showing the same destination twice.
-  const inboxNode = useMemo(
-    () => vaultTree?.children?.find((c) => !c.isDirectory && c.name.toLowerCase().includes('inbox')),
-    [vaultTree]
-  );
-  const folderTree = useMemo(
-    () =>
-      vaultTree && inboxNode
-        ? { ...vaultTree, children: vaultTree.children?.filter((c) => c !== inboxNode) }
-        : vaultTree,
-    [vaultTree, inboxNode]
-  );
-  const isInboxActive = !!inboxNode && activeFile === inboxNode.path;
   const isVaultActive = activeScope === 'vault' || (!!vaultPath && activeFolder === vaultPath);
 
   const handleVaultClick = async () => {
     setActiveScope('vault');
     setActiveTaskId(null);
-    setActiveView('list');
     if (!vaultPath) return;
-    await selectFolder(vaultPath);
-  };
-
-  const handleInboxClick = async () => {
-    setActiveScope('inbox');
-    setActiveTaskId(null);
-    setActiveView('list');
-    if (!vaultPath) return;
-
-    if (!inboxNode) {
-      const inboxPath = `${vaultPath}/Inbox.md`;
-      const initialContent = `---\ntitle: Inbox\n---\n\n# Tasks\n`;
-      await ipc.writeFileAtomic(inboxPath, initialContent);
-      await refreshVault();
-      await selectFile(inboxPath);
+    if (section === 'notes') {
+      selectNoteFolder(vaultPath);
     } else {
-      await selectFile(inboxNode.path);
+      setActiveView('list');
+      await selectFolder(vaultPath);
     }
   };
 
@@ -200,22 +165,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      {/* Top Bar: Window Drag Region & macOS Inset */}
+      {/* Top Bar: Window Drag Region, branding and collapse toggle */}
+      {!isCollapsed && (
       <div
         data-tauri-drag-region
         className="flex items-center justify-between px-3 pt-3.5 pb-2 min-h-[38px] select-none"
       >
-        <div className="flex items-center gap-1.5 h-4">
+        <div className="flex items-center gap-2 min-w-0">
           {/* Only render simulated dots in browser mock mode, never in native Tauri window */}
-          {!isTauriEnvironment() && (
-            <>
+          {!isTauriEnvironment() && !isCollapsed && (
+            <div className="flex items-center gap-1.5 h-4 shrink-0">
               <div className="w-3 h-3 rounded-full bg-red-400/90 border border-red-500/20" />
               <div className="w-3 h-3 rounded-full bg-amber-400/90 border border-amber-500/20" />
               <div className="w-3 h-3 rounded-full bg-emerald-400/90 border border-emerald-500/20" />
-            </>
+            </div>
           )}
-          {isTauriEnvironment() && (
-            <div className="w-16 h-3" /> /* Preserves native macOS traffic light inset */
+          {isTauriEnvironment() && !isCollapsed && (
+            <div className="w-16 h-3 shrink-0" /> /* Preserves native macOS traffic light inset */
+          )}
+          {!isCollapsed && (
+            <div className="flex items-center gap-1.5 min-w-0">
+              <img
+                src="/favicon.png"
+                alt="QuietFlow"
+                className="w-5 h-5 rounded-md shadow-xs object-cover shrink-0"
+              />
+              <span className="text-sm font-semibold tracking-tight text-forest-800 truncate">
+                QuietFlow
+              </span>
+            </div>
           )}
         </div>
 
@@ -224,7 +202,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             type="button"
             data-testid="sidebar-toggle-btn"
             onClick={() => setIsCollapsed(true)}
-            className="p-1 rounded-md text-stone-400 hover:text-stone-700 hover:bg-sand-200/60 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600 z-10"
+            className="p-1 rounded-md text-stone-400 hover:text-stone-700 hover:bg-sand-200/60 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600 z-10 shrink-0"
             title={t('sidebar.collapse')}
             aria-label={t('sidebar.collapse')}
           >
@@ -232,10 +210,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         )}
       </div>
+      )}
 
-      {/* When collapsed, render toggle button in dedicated row cleanly centered below traffic lights */}
+      {/* When collapsed, toggle and logo stacked below the window controls */}
       {isCollapsed && (
-        <div className="flex items-center justify-center px-2 py-1 mb-2">
+        <div className="flex flex-col items-start gap-2 px-2 pt-2 mb-1">
           <button
             type="button"
             data-testid="sidebar-toggle-btn"
@@ -246,116 +225,111 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <PanelLeft className="w-4 h-4" />
           </button>
-        </div>
-      )}
-
-      {/* App Branding & Vault Title */}
-      {!isCollapsed ? (
-        <div className="flex items-center justify-between px-3.5 py-1 mb-2">
-          <div className="flex items-center gap-2">
-            <img
-              src="/favicon.png"
-              alt="QuietFlow"
-              className="w-6 h-6 rounded-md shadow-xs object-cover"
-            />
-            <span className="text-sm font-semibold tracking-tight text-forest-800">
-              QuietFlow
-            </span>
-          </div>
-        </div>
-      ) : (
-        <div className="flex justify-center py-2 mb-2">
           <img
             src="/favicon.png"
             alt="QuietFlow"
-            className="w-7 h-7 rounded-md shadow-xs object-cover"
+            className="w-7 h-7 rounded-md shadow-xs object-cover ml-px"
           />
         </div>
       )}
 
-      {/* System Views Navigation */}
+      {/* Section switch: Tasks and Notes are separate areas with their own screens */}
+      <div className="px-2 pt-1 pb-1">
+        <div
+          role="tablist"
+          className={`flex ${isCollapsed ? 'flex-col' : ''} gap-1 p-1 bg-sand-200/60 rounded-lg`}
+        >
+          {([
+            { id: 'tasks', label: t('nav.tasks'), Icon: CheckSquare },
+            { id: 'notes', label: t('sidebar.notes'), Icon: NotebookText },
+          ] as const).map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              data-testid={`section-tab-${id}`}
+              aria-selected={section === id}
+              title={label}
+              onClick={() => setSection(id)}
+              className={`flex flex-1 items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                section === id
+                  ? 'bg-white text-forest-800 shadow-xs'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5 shrink-0" />
+              {!isCollapsed && <span className="truncate">{label}</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="px-2 py-1 space-y-0.5">
-        {onNewNote && (
+        {section === 'notes' && onNewNote && (
           <button
             type="button"
             data-testid="new-note-btn"
             onClick={onNewNote}
             title={t('sidebar.newNote')}
             aria-label={t('sidebar.newNoteLabel')}
-            className={`flex w-full items-center gap-2 px-2 py-1.5 mb-1.5 rounded-md text-xs font-semibold text-white bg-forest-700 hover:bg-forest-800 shadow-xs transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600 ${
-              isCollapsed ? 'justify-center' : ''
-            }`}
+            className="flex w-full items-center gap-2 px-2 py-1.5 mb-1.5 rounded-md text-xs font-semibold text-white bg-forest-700 hover:bg-forest-800 shadow-xs transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600"
           >
             <Plus className="w-4 h-4 shrink-0" />
             {!isCollapsed && <span className="truncate">{t('sidebar.newNoteLabel')}</span>}
           </button>
         )}
 
-        {/* My Vault — loads all tasks across entire vault */}
-        <button
-          type="button"
-          onClick={handleVaultClick}
-          title={t('sidebar.myVault')}
-          data-active={isVaultActive ? 'true' : 'false'}
-          aria-current={isVaultActive ? 'page' : undefined}
-          className={`flex w-full items-center px-2 py-1.5 rounded-md text-xs transition-colors ${
-            isVaultActive ? NAV_ITEM_ACTIVE : `${NAV_ITEM_IDLE} font-medium`
-          }`}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-xs leading-none shrink-0 w-4 text-center">🗄️</span>
-            {!isCollapsed && <span className="truncate">{t('sidebar.myVault')}</span>}
-          </div>
-        </button>
-
-        {/* Inbox */}
-        <button
-          type="button"
-          onClick={handleInboxClick}
-          title={t('sidebar.inbox')}
-          data-active={isInboxActive ? 'true' : 'false'}
-          aria-current={isInboxActive ? 'page' : undefined}
-          className={`flex w-full items-center justify-between px-2 py-1.5 rounded-md text-xs transition-colors ${
-            isInboxActive ? NAV_ITEM_ACTIVE : `${NAV_ITEM_IDLE} font-medium`
-          }`}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <Inbox
-              className={`w-4 h-4 shrink-0 ${isInboxActive ? 'text-forest-600' : 'text-stone-400'}`}
-            />
-            {!isCollapsed && <span className="truncate">{t('sidebar.inbox')}</span>}
-          </div>
-          {!isCollapsed && inboxTasksCount > 0 && (
-            <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-forest-100 text-forest-700">
-              {inboxTasksCount}
-            </span>
+        {/* Root of the vault for the current section */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={handleVaultClick}
+            data-testid="vault-root-btn"
+            title={section === 'notes' ? t('sidebar.notes') : t('focus.all')}
+            data-active={isVaultActive ? 'true' : 'false'}
+            aria-current={isVaultActive ? 'page' : undefined}
+            className={`flex flex-1 min-w-0 items-center px-2 py-1.5 rounded-md text-xs transition-colors ${
+              isVaultActive ? NAV_ITEM_ACTIVE : `${NAV_ITEM_IDLE} font-medium`
+            }`}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              {section === 'notes' ? (
+                <NotebookText
+                  className={`w-4 h-4 shrink-0 ${isVaultActive ? 'text-forest-600' : 'text-stone-400'}`}
+                />
+              ) : (
+                <CheckSquare
+                  className={`w-4 h-4 shrink-0 ${isVaultActive ? 'text-forest-600' : 'text-stone-400'}`}
+                />
+              )}
+              {!isCollapsed && (
+                <span className="truncate">
+                  {section === 'notes' ? t('sidebar.notes') : t('focus.all')}
+                </span>
+              )}
+            </div>
+          </button>
+          {!isCollapsed && section === 'notes' && (
+            <button
+              type="button"
+              data-testid="add-folder-btn"
+              onClick={() => setIsCreatingFolder(!isCreatingFolder)}
+              title={t('sidebar.newFolder')}
+              aria-label={t('sidebar.newFolder')}
+              className="p-1.5 text-stone-400 hover:text-forest-700 hover:bg-sand-200/60 rounded transition-colors shrink-0"
+            >
+              <FolderPlus className="w-3.5 h-3.5" />
+            </button>
           )}
-        </button>
+        </div>
       </div>
 
-      {/* Divider */}
-      <div className="my-2 border-t border-sand-200 mx-3" />
+      <div className="h-1" />
 
       {/* Nested Folder Tree Section */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-2">
         {!isCollapsed ? (
           <>
-            <div className="flex items-center justify-between px-2 py-1 mb-1">
-              <span className="text-[10px] font-bold tracking-wider text-stone-400 uppercase">
-                {t('sidebar.folders')}
-              </span>
-              <button
-                type="button"
-                data-testid="add-folder-btn"
-                onClick={() => setIsCreatingFolder(!isCreatingFolder)}
-                title={t('sidebar.newFolder')}
-                aria-label={t('sidebar.newFolder')}
-                className="p-1 text-stone-400 hover:text-forest-700 hover:bg-sand-200/60 rounded transition-colors"
-              >
-                <FolderPlus className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
             {isCreatingFolder && (
               <div className="flex items-center gap-1.5 px-2 py-1 mb-1.5 bg-white border border-sand-200 rounded-lg shadow-2xs">
                 <input
@@ -387,20 +361,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
 
             <FolderTree
-              tree={folderTree}
+              tree={vaultTree}
               activeFile={activeFile}
               activeFolder={activeFolder}
               onSelectFile={handleFileSelect}
               onSelectFolder={async (path) => {
                 setActiveScope(null);
                 setActiveTaskId(null);
-                setActiveView('list');
-                await selectFolder(path);
+                if (section === 'notes') {
+                  selectNoteFolder(path);
+                } else {
+                  setActiveView('list');
+                  await selectFolder(path);
+                }
               }}
             />
           </>
         ) : (
-          <div className="flex flex-col items-center py-2 space-y-2">
+          <div className="flex flex-col items-start py-1 space-y-1">
             {vaultTree?.children
               ?.filter((c) => c.isDirectory)
               .map((folder) => {

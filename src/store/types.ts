@@ -32,6 +32,14 @@ export type VaultTree = VaultNode;
 
 export type ViewMode = 'list' | 'kanban' | 'document';
 
+/** Top-level area of the app. Tasks and Notes never share a screen. */
+export type AppSection = 'tasks' | 'notes';
+
+export interface SectionSelection {
+  file: string | null;
+  folder: string | null;
+}
+
 export interface SnapshotMetadata {
   id: string;
   timestamp: string;
@@ -60,6 +68,8 @@ export interface VaultStoreState {
   activeTaskId: string | null;
   searchQuery: string;
   activeView: ViewMode;
+  section: AppSection;
+  sectionSelection: Record<AppSection, SectionSelection>;
   lensViewMode: LensViewMode;
   documentViewState: Record<string, DocumentViewState>;
   selectedTag: string | null;
@@ -109,6 +119,9 @@ export interface VaultStoreActions {
   setActiveTaskId: (taskId: string | null) => void;
   setSearchQuery: (query: string) => void;
   setActiveView: (view: ViewMode) => void;
+  setSection: (section: AppSection) => Promise<void>;
+  openNote: (filePath: string) => Promise<void>;
+  selectNoteFolder: (folderPath: string | null) => void;
   setSelectedTag: (tag: string | null) => void;
   setSelectedPriority: (priority: TaskPriority | null) => void;
   setError: (error: string | null) => void;

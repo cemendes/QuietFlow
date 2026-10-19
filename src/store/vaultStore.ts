@@ -24,6 +24,8 @@ import {
   VaultStore,
   VaultStoreState,
   ViewMode,
+  AppSection,
+  SectionSelection,
 } from './types';
 
 const INITIAL_STATE: VaultStoreState = {
@@ -36,6 +38,11 @@ const INITIAL_STATE: VaultStoreState = {
   activeTaskId: null,
   searchQuery: '',
   activeView: 'list',
+  section: 'tasks',
+  sectionSelection: {
+    tasks: { file: null, folder: null },
+    notes: { file: null, folder: null },
+  },
   lensViewMode: 'split',
   documentViewState: {},
   selectedTag: null,
@@ -114,56 +121,25 @@ async function loadVault(vaultPath: string): Promise<void> {
       isLoading: false,
     }));
 
-    // 1. Try to restore saved active file or folder from previous session
-    let restored = false;
-    if (typeof localStorage !== 'undefined') {
-      const savedFile = localStorage.getItem('quietflow-last-active-file');
-      if (savedFile) {
-        const fileNode = findNodeByPath(tree, savedFile);
-        if (fileNode && !fileNode.isDirectory) {
-          await selectFile(savedFile);
-          restored = true;
-        }
-      }
-      if (!restored) {
-        const savedFolder = localStorage.getItem('quietflow-last-active-folder');
-        if (savedFolder) {
-          const folderNode = findNodeByPath(tree, savedFolder);
-          if (folderNode && folderNode.isDirectory) {
-            await selectFolder(savedFolder);
-            restored = true;
-          }
-        }
-      }
-    }
+    // Always open on the Inbox note (created if missing), not the last session's location.
+    if (!getState().activeFile && !getState().activeFolder) {
+      let inboxNode = tree.children?.find((c) => !c.isDirectory && c.name.toLowerCase() === 'inbox.md');
 
-    // 2. Auto-select today.md or first note only if no saved state was restored
-    if (!restored && !getState().activeFile && !getState().activeFolder) {
-      let targetNode =
-        tree.children?.find((c) => !c.isDirectory && c.name.toLowerCase() === 'today.md') ||
-        tree.children?.find((c) => !c.isDirectory && c.name.endsWith('.md'));
-
-      if (!targetNode && vaultPath) {
-        // Auto-create today.md if none exists in this vault
+      if (!inboxNode && vaultPath) {
         try {
-          const todayPath = `${vaultPath}/today.md`;
-          const initialContent = `---\ntitle: Today's Focus\n---\n\n# Tasks\n`;
-          await writeVaultFile(todayPath, initialContent);
+          const inboxPath = `${vaultPath}/Inbox.md`;
+          await writeVaultFile(inboxPath, `---\ntitle: Inbox\n---\n\n# Inbox\n`);
           await refreshVault();
-          targetNode = {
-            name: 'today.md',
-            path: todayPath,
-            isDirectory: false,
-            children: [],
-            fileCount: 0,
-          };
+          inboxNode = { name: 'Inbox.md', path: inboxPath, isDirectory: false, children: [], fileCount: 0 };
         } catch {
           // Safe fallback in mock/read-only vaults
+          inboxNode = tree.children?.find((c) => !c.isDirectory && c.name.endsWith('.md'));
         }
       }
 
-      if (targetNode && !getState().activeFile) {
-        await selectFile(targetNode.path);
+      if (inboxNode) {
+        await selectFile(inboxNode.path);
+        setActiveView('list');
       }
     }
 
@@ -718,6 +694,58 @@ function setActiveView(activeView: ViewMode): void {
   set({ activeView });
 }
 
+/** Remembers what each section had selected so switching back restores it. */
+function rememberSelection(): Record<AppSection, SectionSelection> {
+  const s = getState();
+  return {
+    ...s.sectionSelection,
+    [s.section]: { file: s.activeFile, folder: s.activeFolder },
+  };
+}
+
+async function setSection(next: AppSection): Promise<void> {
+  const s = getState();
+  if (s.section === next) return;
+  const memory = rememberSelection();
+  set({
+    section: next,
+    sectionSelection: memory,
+    activeTaskId: null,
+    activeView: next === 'notes' ? 'document' : 'list',
+  });
+  const target = memory[next];
+  if (next === 'notes') {
+    if (target.file) await selectFile(target.file);
+    else selectNoteFolder(target.folder ?? s.vaultPath);
+    return;
+  }
+  if (target.file) await selectFile(target.file);
+  else if (target.folder) await selectFolder(target.folder);
+  else if (s.vaultPath) await selectFolder(s.vaultPath);
+}
+
+async function openNote(filePath: string): Promise<void> {
+  const s = getState();
+  set({
+    section: 'notes',
+    sectionSelection: s.section === 'notes' ? s.sectionSelection : rememberSelection(),
+    activeTaskId: null,
+    activeView: 'document',
+  });
+  await selectFile(filePath);
+}
+
+/** Notes-section folder navigation: no tasks are loaded, only the folder is focused. */
+function selectNoteFolder(folderPath: string | null): void {
+  set({
+    activeFolder: folderPath,
+    activeFile: null,
+    activeDocument: null,
+    activeTaskId: null,
+    tasks: [],
+  });
+}
+
 function setSelectedTag(selectedTag: string | null): void {
   set({ selectedTag });
 }
@@ -881,6 +909,9 @@ const actions = {
   setActiveTaskId,
   setSearchQuery,
   setActiveView,
+  setSection,
+  openNote,
+  selectNoteFolder,
   setSelectedTag,
   setSelectedPriority,
   setError,
