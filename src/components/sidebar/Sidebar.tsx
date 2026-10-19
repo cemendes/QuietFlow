@@ -214,7 +214,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* When collapsed, toggle and logo stacked below the window controls */}
       {isCollapsed && (
-        <div className="flex flex-col items-start gap-2 px-2 pt-2 mb-1">
+        <div className="flex flex-col items-center gap-2 px-2 pt-2 mb-1">
           <button
             type="button"
             data-testid="sidebar-toggle-btn"
@@ -228,7 +228,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <img
             src="/favicon.png"
             alt="QuietFlow"
-            className="w-7 h-7 rounded-md shadow-xs object-cover ml-px"
+            className="w-7 h-7 rounded-md shadow-xs object-cover"
           />
         </div>
       )}
@@ -240,8 +240,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className={`flex ${isCollapsed ? 'flex-col' : ''} gap-1 p-1 bg-sand-200/60 rounded-lg`}
         >
           {([
-            { id: 'tasks', label: t('nav.tasks'), Icon: CheckSquare },
             { id: 'notes', label: t('sidebar.notes'), Icon: NotebookText },
+            { id: 'tasks', label: t('nav.tasks'), Icon: CheckSquare },
           ] as const).map(({ id, label, Icon }) => (
             <button
               key={id}
@@ -272,7 +272,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={onNewNote}
             title={t('sidebar.newNote')}
             aria-label={t('sidebar.newNoteLabel')}
-            className="flex w-full items-center gap-2 px-2 py-1.5 mb-1.5 rounded-md text-xs font-semibold text-white bg-forest-700 hover:bg-forest-800 shadow-xs transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600"
+            className={`flex w-full items-center ${isCollapsed ? 'justify-center' : 'gap-2'} px-2 py-1.5 mb-1.5 rounded-md text-xs font-semibold text-white bg-forest-700 hover:bg-forest-800 shadow-xs transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600`}
           >
             <Plus className="w-4 h-4 shrink-0" />
             {!isCollapsed && <span className="truncate">{t('sidebar.newNoteLabel')}</span>}
@@ -288,11 +288,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             title={section === 'notes' ? t('sidebar.notes') : t('focus.all')}
             data-active={isVaultActive ? 'true' : 'false'}
             aria-current={isVaultActive ? 'page' : undefined}
-            className={`flex flex-1 min-w-0 items-center px-2 py-1.5 rounded-md text-xs transition-colors ${
+            className={`flex flex-1 min-w-0 items-center ${isCollapsed ? 'justify-center' : ''} px-2 py-1.5 rounded-md text-xs transition-colors ${
               isVaultActive ? NAV_ITEM_ACTIVE : `${NAV_ITEM_IDLE} font-medium`
             }`}
           >
-            <div className="flex items-center gap-2 min-w-0">
+            <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2 min-w-0'}`}>
               {section === 'notes' ? (
                 <NotebookText
                   className={`w-4 h-4 shrink-0 ${isVaultActive ? 'text-forest-600' : 'text-stone-400'}`}
@@ -378,7 +378,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           </>
         ) : (
-          <div className="flex flex-col items-start py-1 space-y-1">
+          <div className="flex flex-col items-center py-1 space-y-1">
             {vaultTree?.children
               ?.filter((c) => c.isDirectory)
               .map((folder) => {
@@ -441,7 +441,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={onOpenArchive}
           title={t('sidebar.archive')}
           aria-label={t('sidebar.archive')}
-          className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-stone-600 hover:bg-sand-200 hover:text-stone-900 transition-colors"
+          className={`flex w-full items-center ${isCollapsed ? 'justify-center' : 'gap-2'} px-2 py-1.5 rounded-md text-xs font-medium text-stone-600 hover:bg-sand-200 hover:text-stone-900 transition-colors`}
         >
           <Archive className="w-4 h-4 text-stone-400 shrink-0" />
           {!isCollapsed && <span>{t('sidebar.archive')}</span>}
@@ -452,7 +452,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={onOpenSettings}
           title={t('sidebar.settings')}
           aria-label={t('sidebar.settings')}
-          className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-stone-600 hover:bg-sand-200 hover:text-stone-900 transition-colors"
+          className={`flex w-full items-center ${isCollapsed ? 'justify-center' : 'gap-2'} px-2 py-1.5 rounded-md text-xs font-medium text-stone-600 hover:bg-sand-200 hover:text-stone-900 transition-colors`}
         >
           <Settings className="w-4 h-4 text-stone-400 shrink-0" />
           {!isCollapsed && <span>{t('sidebar.settings')}</span>}
