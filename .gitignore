@@ -46,7 +46,7 @@ app_output.log
 .trigger_tests
 
 # Local User Vaults & Personal Notes
-notes/
+/notes/
 *.vault/
 local_vault/
 .logos/
