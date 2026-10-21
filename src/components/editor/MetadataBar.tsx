@@ -1,6 +1,8 @@
 import React from 'react';
 import { TaskPriority, TaskStatus } from '../../store/types';
 import { Calendar, Tag, Folder, FileText, ChevronRight } from 'lucide-react';
+import { formatDateName, useTranslation } from '../../i18n';
+import { DateInput } from '../common/DateInput';
 
 export interface MetadataBarProps {
   status: TaskStatus;
@@ -25,19 +27,20 @@ export const MetadataBar: React.FC<MetadataBarProps> = ({
   onDueDateChange,
   className = '',
 }) => {
+  const { t, language } = useTranslation();
   // Format clean breadcrumb (e.g. CCO / 2026-08-28)
   const breadcrumb = React.useMemo(() => {
     if (!filePath) return null;
-    const parts = filePath.split('/').filter(Boolean);
+    const parts = filePath.split(/[\\/]+/).filter(Boolean);
     const fileName = parts.pop()?.replace(/\.md$/, '') || '';
     const parentFolder = parts.length > 0 ? parts.pop() : null;
     const isVaultRoot = !parentFolder || parentFolder === 'QuietFlowVault' || parentFolder === 'Documents';
 
     return {
       folder: isVaultRoot ? null : parentFolder,
-      file: fileName,
+      file: formatDateName(fileName, language),
     };
-  }, [filePath]);
+  }, [filePath, language]);
 
   return (
     <div className={`flex flex-col gap-3 py-3 border-y border-sand-200 text-xs text-slate-600 ${className}`}>
@@ -65,7 +68,7 @@ export const MetadataBar: React.FC<MetadataBarProps> = ({
         {/* Status */}
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-            Status
+            {t('meta.status')}
           </label>
           <select
             data-testid="status-select"
@@ -73,17 +76,17 @@ export const MetadataBar: React.FC<MetadataBarProps> = ({
             onChange={(e) => onStatusChange(e.target.value as TaskStatus)}
             className="w-full px-2.5 py-1.5 bg-white border border-sand-200 rounded-lg text-slate-700 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-forest-500 hover:border-sand-300 transition-colors"
           >
-            <option value="todo">To Do</option>
-            <option value="in-progress">In Progress</option>
-            <option value="done">Done</option>
-            <option value="backlog">Backlog</option>
+            <option value="todo">{t('status.todo')}</option>
+            <option value="in-progress">{t('status.in-progress')}</option>
+            <option value="done">{t('status.done')}</option>
+            <option value="backlog">{t('status.backlog')}</option>
           </select>
         </div>
 
         {/* Priority */}
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-            Priority
+            {t('meta.priority')}
           </label>
           <select
             data-testid="priority-select"
@@ -93,10 +96,10 @@ export const MetadataBar: React.FC<MetadataBarProps> = ({
             }
             className="w-full px-2.5 py-1.5 bg-white border border-sand-200 rounded-lg text-slate-700 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-forest-500 hover:border-sand-300 transition-colors"
           >
-            <option value="">None</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
+            <option value="">{t('priority.none')}</option>
+            <option value="low">{t('priority.low')}</option>
+            <option value="medium">{t('priority.medium')}</option>
+            <option value="high">{t('priority.high')}</option>
           </select>
         </div>
 
@@ -104,13 +107,13 @@ export const MetadataBar: React.FC<MetadataBarProps> = ({
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1">
             <Calendar className="w-3 h-3 text-slate-400" />
-            Due Date
+            {t('meta.dueDate')}
           </label>
-          <input
-            type="date"
+          <DateInput
             data-testid="due-date-input"
-            value={dueDate || ''}
-            onChange={(e) => onDueDateChange(e.target.value || undefined)}
+            aria-label={t('meta.dueDate')}
+            value={dueDate}
+            onChange={onDueDateChange}
             className="w-full px-2.5 py-1.5 bg-white border border-sand-200 rounded-lg text-slate-700 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-forest-500 hover:border-sand-300 transition-colors"
           />
         </div>
@@ -119,7 +122,7 @@ export const MetadataBar: React.FC<MetadataBarProps> = ({
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1">
             <Tag className="w-3 h-3 text-slate-400" />
-            Tags
+            {t('meta.tags')}
           </label>
           <div className="flex flex-wrap gap-1 min-h-[30px] items-center">
             {tags.length > 0 ? (
@@ -132,7 +135,7 @@ export const MetadataBar: React.FC<MetadataBarProps> = ({
                 </span>
               ))
             ) : (
-              <span className="text-slate-400 text-[11px] italic">No tags</span>
+              <span className="text-slate-400 text-[11px] italic">{t('meta.noTags')}</span>
             )}
           </div>
         </div>

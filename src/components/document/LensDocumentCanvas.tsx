@@ -1,42 +1,83 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   FileText,
-  CheckCircle2,
-  Columns,
-  Plus,
-  ChevronDown,
-  ChevronUp,
   Tag,
   BookOpen,
   AlertTriangle,
+  Check,
+  Pencil,
+  Save,
 } from 'lucide-react';
 import { useVaultStore } from '../../store/vaultStore';
-import { LensViewMode, TaskItem } from '../../store/types';
 import { resolveFolderIcon } from '../../services/logoService';
-import { DocumentTaskCard } from './DocumentTaskCard';
 import { MarkdownEditor } from '../editor/MarkdownEditor';
-import ViewSwitcher from '../tasks/ViewSwitcher';
+import { baseName } from '../../utils/paths';
+import { useTranslation } from '../../i18n';
+import type { VaultDocument } from '../../core/markdown/types';
+
+/** Title shown for a note: frontmatter title, else first `# heading`, else the file name. */
+function getNoteTitle(doc: VaultDocument, filePath: string): string {
+  const cleanFileName = (baseName(filePath) || filePath).replace(/\.md$/, '');
+  const rawTitle = doc.frontmatter?.title;
+  const isDateOrTimestamp =
+    (rawTitle as unknown) instanceof Date ||
+    (typeof rawTitle === 'string' && /^\d{4}-\d{2}-\d{2}/.test(rawTitle.trim()));
+  if (!isDateOrTimestamp && typeof rawTitle === 'string' && rawTitle.trim().length > 0) {
+    return rawTitle.trim();
+  }
+  const headingMatch = typeof doc.rawContent === 'string' ? doc.rawContent.match(/^#\s+(.+)$/m) : null;
+  return headingMatch ? headingMatch[1].trim() : cleanFileName;
+}
 
 export const LensDocumentCanvas: React.FC = () => {
   const activeFile = useVaultStore((state) => state.activeFile);
   const activeDocument = useVaultStore((state) => state.activeDocument);
-  const lensViewMode = useVaultStore((state) => state.lensViewMode);
-  const setLensViewMode = useVaultStore((state) => state.setLensViewMode);
-  const toggleTask = useVaultStore((state) => state.toggleTask);
-  const addTask = useVaultStore((state) => state.addTask);
   const saveDocumentProse = useVaultStore((state) => state.saveDocumentProse);
-  const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
   const vaultPath = useVaultStore((state) => state.vaultPath);
   const logoConfig = useVaultStore((state) => state.logoConfig);
   const getStoreFolderIcon = useVaultStore((state) => state.getFolderIcon);
-  const setActiveView = useVaultStore((state) => state.setActiveView);
+  const renameNote = useVaultStore((state) => state.renameNote);
+  const { t } = useTranslation();
 
-  const documentViewState = useVaultStore((state) => state.documentViewState);
   const [localProse, setLocalProse] = useState<string>('');
-  const [newTaskTitle, setNewTaskTitle] = useState<string>('');
-  const [isTasksCollapsed, setIsTasksCollapsed] = useState<boolean>(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastLoadedFileRef = useRef<string | null>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const [justSaved, setJustSaved] = useState(false);
+  // Notes open for reading; editing is an explicit choice (except a brand-new note)
+  const [isEditing, setIsEditing] = useState(false);
+  // A title rename moves the file (new activeFile) but must not drop out of edit mode
+  const keepEditingOnSwitchRef = useRef(false);
+  const justSavedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const noteTitle = activeDocument && activeFile ? getNoteTitle(activeDocument, activeFile) : '';
+  const [titleDraft, setTitleDraft] = useState(noteTitle);
+
+  // Keep the editable title in sync when the note (or its title on disk) changes
+  useEffect(() => {
+    setTitleDraft(noteTitle);
+  }, [noteTitle, activeFile]);
+
+  // Each note opens in read mode; a freshly created one opens in edit mode with its title selected
+  useEffect(() => {
+    if (!activeDocument || activeDocument.filePath !== activeFile) return;
+    if (keepEditingOnSwitchRef.current) {
+      keepEditingOnSwitchRef.current = false;
+      return;
+    }
+    const isBlankNewNote =
+      !(activeDocument.body || '').trim() && noteTitle.startsWith(t('app.newNoteName'));
+    setIsEditing(isBlankNewNote);
+    if (isBlankNewNote) {
+      // Next frame: the synced title value must be in the input before selecting it
+      requestAnimationFrame(() => {
+        titleInputRef.current?.focus();
+        titleInputRef.current?.select();
+      });
+    }
+    // Only on note switch, not on every keystroke
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFile, activeDocument?.filePath]);
 
   // Sync active document body into local edit state only on file transition
   useEffect(() => {
@@ -45,18 +86,6 @@ export const LensDocumentCanvas: React.FC = () => {
       setLocalProse(activeDocument.body || '');
     }
   }, [activeFile, activeDocument]);
-
-  // Compute active lens mode reactively (with auto-adaptation for 0-task / 0-prose files)
-  const explicitMode = activeFile ? documentViewState[activeFile]?.lensMode : null;
-  const validTasks = (Array.isArray(activeDocument?.tasks) ? activeDocument.tasks : []).filter(
-    (t) => t && typeof t.title === 'string' && t.title.trim().length > 0
-  );
-  const taskCount = validTasks.length;
-  const hasProse = (activeDocument?.body || '').trim().length > 0;
-
-  const currentLensMode: LensViewMode = explicitMode || (
-    taskCount === 0 ? 'notes' : taskCount > 0 && !hasProse ? 'tasks' : lensViewMode || 'split'
-  );
 
   // Debounced auto-save for prose
   const handleProseChange = (text: string) => {
@@ -87,14 +116,50 @@ export const LensDocumentCanvas: React.FC = () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      if (justSavedTimeoutRef.current) {
+        clearTimeout(justSavedTimeoutRef.current);
+      }
     };
   }, []);
+
+  // Explicit save: writes immediately, returns to read mode and confirms with a short "saved" state
+  const handleSaveNow = async () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+    if (!activeFile) return;
+    await saveDocumentProse(activeFile, localProse);
+    setIsEditing(false);
+    setJustSaved(true);
+    if (justSavedTimeoutRef.current) clearTimeout(justSavedTimeoutRef.current);
+    justSavedTimeoutRef.current = setTimeout(() => setJustSaved(false), 2000);
+  };
+
+  const commitTitle = async () => {
+    const next = titleDraft.trim();
+    if (!activeFile || !next || next === noteTitle) {
+      setTitleDraft(noteTitle);
+      return;
+    }
+    // Flush pending prose first so the rename writes the latest body
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+    if (localProse !== (activeDocument?.body || '')) {
+      await saveDocumentProse(activeFile, localProse);
+    }
+    keepEditingOnSwitchRef.current = true;
+    const newPath = await renameNote(activeFile, next);
+    if (newPath === activeFile) keepEditingOnSwitchRef.current = false;
+  };
 
   const isLoading = useVaultStore((state) => state.isLoading);
   const error = useVaultStore((state) => state.error);
 
-  const folderPath = typeof activeFile === 'string' && activeFile.includes('/')
-    ? activeFile.slice(0, activeFile.lastIndexOf('/'))
+  const folderPath = typeof activeFile === 'string' && /[\\/]/.test(activeFile)
+    ? activeFile.slice(0, Math.max(activeFile.lastIndexOf('/'), activeFile.lastIndexOf('\\')))
     : '';
 
   const [folderIcon, setFolderIcon] = useState<string | null>(null);
@@ -148,57 +213,23 @@ export const LensDocumentCanvas: React.FC = () => {
             <p className="text-sm mt-1 text-slate-500">
               Select a customer note from the sidebar or press <kbd className="px-1.5 py-0.5 rounded bg-slate-200 text-xs font-semibold">Cmd+O</kbd> to search.
             </p>
-            <button
-              type="button"
-              data-testid="view-tasks-fallback-btn"
-              onClick={() => setActiveView('list')}
-              className="mt-4 px-4 py-2 rounded-lg bg-sand-200 hover:bg-sand-300 text-stone-700 text-xs font-semibold transition-all cursor-pointer"
-            >
-              View Task List
-            </button>
           </>
         )}
       </div>
     );
   }
 
-  const tasks: TaskItem[] = (Array.isArray(activeDocument.tasks) ? activeDocument.tasks : []).filter(
-    (t) => t && typeof t.title === 'string' && t.title.trim().length > 0
-  );
-  const completedTasks = tasks.filter((t) => t && t.status === 'done');
-  const pendingTasks = tasks.filter((t) => t && t.status !== 'done');
-  const fileName = typeof activeFile === 'string' && activeFile.includes('/') ? activeFile.split('/').pop() || activeFile : String(activeFile);
+  const fileName = baseName(String(activeFile)) || String(activeFile);
   const cleanFileName = fileName.replace(/\.md$/, '');
-  const folderName = folderPath.includes('/') ? folderPath.split('/').pop() || folderPath : folderPath;
+  // The vault root is an implementation detail: only real folders are shown.
+  const folderName = folderPath && folderPath !== vaultPath ? baseName(folderPath) : '';
 
-  const rawTitle = activeDocument.frontmatter?.title;
-  const isDateOrTimestamp =
-    (rawTitle as unknown) instanceof Date ||
-    (typeof rawTitle === 'string' && /^\d{4}-\d{2}-\d{2}/.test(rawTitle.trim()));
-
-  const headingMatch = typeof activeDocument.rawContent === 'string' ? activeDocument.rawContent.match(/^#\s+(.+)$/m) : null;
-  const firstHeading = headingMatch ? headingMatch[1].trim() : null;
-
-  const frontmatterTitle =
-    (!isDateOrTimestamp && typeof rawTitle === 'string' && rawTitle.trim().length > 0)
-      ? rawTitle.trim()
-      : firstHeading || cleanFileName;
   const rawTags = activeDocument.frontmatter?.tags;
   const tags: string[] = Array.isArray(rawTags)
     ? rawTags.map(String)
     : typeof rawTags === 'string'
     ? [rawTags]
     : [];
-
-  const handleQuickAddTask = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTaskTitle.trim()) return;
-    addTask({
-      title: newTaskTitle.trim(),
-      status: 'todo',
-    });
-    setNewTaskTitle('');
-  };
 
   return (
     <div className="flex-1 flex flex-col h-full bg-sand-50/30 overflow-hidden min-h-0">
@@ -232,7 +263,34 @@ export const LensDocumentCanvas: React.FC = () => {
             <span className="text-slate-800 font-semibold truncate">{cleanFileName}</span>
           </div>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <h1 className="text-base font-bold text-slate-900 truncate">{frontmatterTitle}</h1>
+            {!isEditing ? (
+              <h1 data-testid="note-title" className="text-base font-bold text-slate-900 truncate">
+                {noteTitle}
+              </h1>
+            ) : (
+            <h1 className="min-w-0 flex-1">
+              <input
+                ref={titleInputRef}
+                type="text"
+                data-testid="note-title-input"
+                aria-label={t('note.titleLabel')}
+                value={titleDraft}
+                onChange={(e) => setTitleDraft(e.target.value)}
+                onBlur={commitTitle}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.currentTarget.blur();
+                  } else if (e.key === 'Escape') {
+                    // Revert first, then leave the field without committing
+                    setTitleDraft(noteTitle);
+                    requestAnimationFrame(() => titleInputRef.current?.blur());
+                  }
+                }}
+                className="w-full text-base font-bold text-slate-900 bg-white rounded-md px-1 -mx-1 border border-sand-200 hover:border-sand-300 focus:border-forest-600 focus:outline-none transition-colors truncate"
+              />
+            </h1>
+            )}
             {tags.map((tag: string) => (
               <span
                 key={tag}
@@ -245,221 +303,32 @@ export const LensDocumentCanvas: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Header Controls: Lens Mode Pills & ViewSwitcher */}
-        <div className="flex items-center gap-2">
-          {/* 3-Way Lens Toggle Pills */}
-          <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 shadow-2xs">
+        <div className="flex items-center gap-3 shrink-0">
+          {justSaved && (
+            <span data-testid="note-saved-indicator" className="inline-flex items-center gap-1 text-xs font-medium text-forest-700">
+              <Check className="w-3.5 h-3.5" />
+              {t('note.saved')}
+            </span>
+          )}
+          {!isEditing && (
             <button
               type="button"
-              data-testid="lens-split-btn"
-              onClick={() => setLensViewMode('split', activeFile)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                currentLensMode === 'split'
-                  ? 'bg-white text-emerald-800 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-              }`}
+              data-testid="edit-note-btn"
+              onClick={() => setIsEditing(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-forest-800 bg-white border border-sand-200 hover:bg-sand-100 shadow-xs transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600"
             >
-              <Columns className="w-3.5 h-3.5" />
-              <span>Split View</span>
+              <Pencil className="w-3.5 h-3.5" />
+              {t('editor.edit')}
             </button>
-
-            <button
-              type="button"
-              data-testid="lens-tasks-only-btn"
-              onClick={() => setLensViewMode('tasks', activeFile)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                currentLensMode === 'tasks'
-                  ? 'bg-white text-emerald-800 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-              }`}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Tasks Only</span>
-              {pendingTasks.length > 0 && (
-                <span className="ml-1 px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 text-[10px]">
-                  {pendingTasks.length}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              data-testid="lens-notes-only-btn"
-              onClick={() => setLensViewMode('notes', activeFile)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                currentLensMode === 'notes'
-                  ? 'bg-white text-emerald-800 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-              }`}
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>Notes Only</span>
-            </button>
-          </div>
-
-          <ViewSwitcher />
+          )}
         </div>
       </div>
 
       {/* Main Fluid Canvas Area */}
-      <div className="w-full flex-1 flex flex-col p-4 md:p-6 lg:p-8 min-h-0">
-        {/* SPLIT VIEW MODE: Notes (2/3 Left) and Action Items (1/3 Right) */}
-        {currentLensMode === 'split' && (
-          <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 h-full">
-            {/* Left Column: Documentation & Notes (2/3 width) */}
-            <section
-              data-testid="bottom-notes-zone"
-              className="w-full lg:w-2/3 flex-1 flex flex-col min-h-0 h-full space-y-3"
-            >
-              <div className="flex items-center justify-between pb-2 border-b border-slate-200 shrink-0">
-                <h2 className="text-sm font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-emerald-600" />
-                  Documentation & Notes
-                </h2>
-                <div className="text-xs text-slate-400 flex items-center gap-3">
-                  <span>{activeDocument.wordCount || 0} words</span>
-                  <span>•</span>
-                  <span>{activeDocument.readingTimeMinutes || 1} min read</span>
-                </div>
-              </div>
-
-              <div onBlur={handleProseBlur} className="flex-1 flex flex-col min-h-0 h-full">
-                <MarkdownEditor
-                  key={activeFile}
-                  value={localProse}
-                  onChange={handleProseChange}
-                  placeholder="Write meeting notes, architecture decisions, or press Cmd+Enter to hoist a task..."
-                  className="flex-1 min-h-[350px] h-full bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs focus-within:border-emerald-400"
-                />
-              </div>
-            </section>
-
-            {/* Right Column: Action Items (1/3 width) */}
-            <section
-              data-testid="top-tasks-zone"
-              className="w-full lg:w-1/3 flex flex-col min-h-0 space-y-3"
-            >
-              <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-200/80 shrink-0">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <h2 className="text-sm font-bold tracking-tight text-slate-800 uppercase">
-                    Action Items
-                  </h2>
-                  <span className="text-xs text-slate-500 font-medium">
-                    ({pendingTasks.length} remaining, {completedTasks.length} done)
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setIsTasksCollapsed(!isTasksCollapsed)}
-                  className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1 px-2 py-1 rounded-md hover:bg-slate-100"
-                >
-                  {isTasksCollapsed ? (
-                    <>
-                      <span>Expand</span>
-                      <ChevronDown className="w-3.5 h-3.5" />
-                    </>
-                  ) : (
-                    <>
-                      <span>Collapse</span>
-                      <ChevronUp className="w-3.5 h-3.5" />
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {!isTasksCollapsed && (
-                <div className="flex-1 flex flex-col min-h-0 space-y-2.5">
-                  <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
-                    {tasks.length === 0 ? (
-                      <div className="p-4 rounded-xl border border-dashed border-slate-200 text-center text-xs text-slate-400">
-                        No action items in this note. Add one below or type <code className="bg-slate-100 px-1 py-0.5 rounded">- [ ]</code> in the notes.
-                      </div>
-                    ) : (
-                      tasks.map((task) => (
-                        <DocumentTaskCard
-                          key={task.id}
-                          task={task}
-                          onToggle={toggleTask}
-                          onSelect={setActiveTaskId}
-                        />
-                      ))
-                    )}
-                  </div>
-
-                  {/* Quick Task Input */}
-                  <form onSubmit={handleQuickAddTask} className="pt-2 shrink-0">
-                    <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200 px-3 py-2 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all shadow-2xs">
-                      <Plus className="w-4 h-4 text-emerald-600" />
-                      <input
-                        type="text"
-                        value={newTaskTitle}
-                        onChange={(e) => setNewTaskTitle(e.target.value)}
-                        placeholder="Add an action item for this document... (Press Enter)"
-                        className="w-full text-xs text-slate-800 placeholder-slate-400 bg-transparent border-none outline-none focus:outline-none"
-                      />
-                    </div>
-                  </form>
-                </div>
-              )}
-            </section>
-          </div>
-        )}
-
-        {/* TASKS ONLY MODE: Full Fluid Width & Height */}
-        {currentLensMode === 'tasks' && (
-          <section data-testid="top-tasks-zone" className="flex-1 flex flex-col min-h-0 space-y-4">
-            <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-200/80 shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <h2 className="text-sm font-bold tracking-tight text-slate-800 uppercase">
-                  Action Items
-                </h2>
-                <span className="text-xs text-slate-500 font-medium">
-                  ({pendingTasks.length} remaining, {completedTasks.length} done)
-                </span>
-              </div>
-            </div>
-
-            <div className="flex-1 flex flex-col min-h-0 space-y-2.5">
-              <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
-                {tasks.length === 0 ? (
-                  <div className="p-8 rounded-xl border border-dashed border-slate-200 text-center text-xs text-slate-400">
-                    No action items in this note. Add one below or switch to Notes view to write tasks.
-                  </div>
-                ) : (
-                  tasks.map((task) => (
-                    <DocumentTaskCard
-                      key={task.id}
-                      task={task}
-                      onToggle={toggleTask}
-                      onSelect={setActiveTaskId}
-                    />
-                  ))
-                )}
-              </div>
-
-              {/* Quick Task Input */}
-              <form onSubmit={handleQuickAddTask} className="pt-2 shrink-0">
-                <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200 px-3 py-2 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all shadow-2xs">
-                  <Plus className="w-4 h-4 text-emerald-600" />
-                  <input
-                    type="text"
-                    value={newTaskTitle}
-                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                    placeholder="Add an action item for this document... (Press Enter)"
-                    className="w-full text-xs text-slate-800 placeholder-slate-400 bg-transparent border-none outline-none focus:outline-none"
-                  />
-                </div>
-              </form>
-            </div>
-          </section>
-        )}
-
+      <div className="w-full flex-1 flex flex-col min-h-0 overflow-y-auto p-4 md:p-6 lg:p-8">
         {/* NOTES ONLY MODE: Viewport-Filling Canvas */}
-        {currentLensMode === 'notes' && (
-          <section data-testid="bottom-notes-zone" className="flex-1 flex flex-col min-h-0 h-full space-y-3">
+        {(
+          <section data-testid="bottom-notes-zone" className="flex flex-col space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 shrink-0">
               <h2 className="text-sm font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-emerald-600" />
@@ -472,13 +341,36 @@ export const LensDocumentCanvas: React.FC = () => {
               </div>
             </div>
 
-            <div onBlur={handleProseBlur} className="flex-1 flex flex-col min-h-0 h-full">
+            {!isEditing && !localProse.trim() && (
+              <p data-testid="note-empty-message" className="text-sm text-slate-400 italic px-1">
+                {t('editor.noNotes')}
+              </p>
+            )}
+            <div onBlur={handleProseBlur} className={`flex flex-col ${!isEditing && !localProse.trim() ? 'hidden' : ''}`}>
               <MarkdownEditor
                 key={activeFile}
                 value={localProse}
                 onChange={handleProseChange}
                 placeholder="Write meeting notes, architecture decisions, or press Cmd+Enter to hoist a task..."
-                className="flex-1 min-h-[350px] h-full bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs focus-within:border-emerald-400"
+                autoGrow
+                readOnly={!isEditing}
+                className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs focus-within:border-emerald-400"
+                footer={
+                  isEditing && (
+                  <div className="flex justify-end pt-3">
+                    <button
+                      type="button"
+                      data-testid="save-note-btn"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={handleSaveNow}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold shadow-xs transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600 bg-forest-700 text-white hover:bg-forest-800"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      {t('note.save')}
+                    </button>
+                  </div>
+                  )
+                }
               />
             </div>
           </section>

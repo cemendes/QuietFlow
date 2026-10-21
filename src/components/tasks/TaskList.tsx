@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { CheckSquare, FileText, Folder } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { NewTaskInput, TaskItem } from '../../store/types';
 import TaskRow from './TaskRow';
 import QuickAddBar from './QuickAddBar';
 import FocusHeader from './FocusHeader';
 import ZenTheaterModal from '../zen/ZenTheaterModal';
+import { useTranslation } from '../../i18n';
+import { baseName } from '../../utils/paths';
 
 export interface TaskListProps {
   title?: string;
@@ -34,40 +35,14 @@ export const TaskList: React.FC<TaskListProps> = ({
   const setSelectedTag = useVaultStore((state) => state.setSelectedTag);
   const setSelectedPriority = useVaultStore((state) => state.setSelectedPriority);
   const setSearchQuery = useVaultStore((state) => state.setSearchQuery);
+  const { t } = useTranslation();
 
   const activeFolder = useVaultStore((state) => state.activeFolder);
   const vaultPath = useVaultStore((state) => state.vaultPath);
-  const vaultTree = useVaultStore((state) => state.vaultTree);
-  const selectFile = useVaultStore((state) => state.selectFile);
-  const setActiveView = useVaultStore((state) => state.setActiveView);
   const logoConfig = useVaultStore((state) => state.logoConfig);
   const getFolderIcon = useVaultStore((state) => state.getFolderIcon);
 
   const [headerIcon, setHeaderIcon] = useState<string | null>(null);
-  const [vaultTab, setVaultTab] = useState<'tasks' | 'notes'>('tasks');
-
-  // Extract all notes across the vault
-  const allVaultNotes = useMemo(() => {
-    if (!vaultTree) return [];
-    const list: { name: string; path: string; folder: string }[] = [];
-    const traverse = (node: any, currentFolder = '') => {
-      if (!node.isDirectory && (node.name.endsWith('.md') || !node.name.includes('.'))) {
-        list.push({
-          name: node.name.replace(/\.md$/, ''),
-          path: node.path,
-          folder: currentFolder || 'Vault Root',
-        });
-      }
-      if (node.children) {
-        for (const child of node.children) {
-          traverse(child, node.isDirectory && node.path !== vaultPath ? node.name : currentFolder);
-        }
-      }
-    };
-    traverse(vaultTree);
-    return list;
-  }, [vaultTree, vaultPath]);
-
   // Compute target folder path for the current view
   const currentFolderPath = useMemo(() => {
     if (activeFolder) return activeFolder;
@@ -124,22 +99,22 @@ export const TaskList: React.FC<TaskListProps> = ({
       return 'My Vault';
     }
     if (activeFile) {
-      const fileName = activeFile.split('/').pop()?.replace(/\.md$/, '') || 'Tasks';
+      const fileName = baseName(activeFile)?.replace(/\.md$/, '') || t('common.tasksFallback');
       if (fileName.toLowerCase() === 'inbox') {
-        return 'Inbox';
+        return t('tasks.inboxTitle');
       }
       if (fileName.toLowerCase() === 'today') {
-        return "Today's Focus";
+        return t('common.todaysFocus');
       }
       // Capitalize first letter
       return fileName.charAt(0).toUpperCase() + fileName.slice(1);
     }
     if (activeFolder) {
-      const folderName = activeFolder.split('/').pop() || 'Folder';
+      const folderName = baseName(activeFolder) || 'Folder';
       return folderName.charAt(0).toUpperCase() + folderName.slice(1);
     }
-    return "Today's Focus";
-  }, [title, activeFile, activeFolder, vaultPath]);
+    return t('common.todaysFocus');
+  }, [title, activeFile, activeFolder, vaultPath, t]);
 
   const [activeFocusBucket, setActiveFocusBucket] = React.useState<'all' | 'now' | 'not-now'>('all');
 
@@ -212,7 +187,7 @@ export const TaskList: React.FC<TaskListProps> = ({
         className="flex flex-col p-6 pb-3 border-b border-sand-200 bg-sand-50/80 backdrop-blur-sm select-none"
       >
         <FocusHeader
-          title={computedTitle}
+          title={computedTitle === 'My Vault' ? t('sidebar.notes') : computedTitle}
           icon={headerIcon}
           completedCount={completedCount}
           totalCount={totalCount}
@@ -225,11 +200,11 @@ export const TaskList: React.FC<TaskListProps> = ({
         {/* Active Filters Pill Bar (if any filter is active) */}
         {(selectedTag || selectedPriority || searchQuery) && (
           <div data-testid="active-filters-bar" className="flex items-center flex-wrap gap-2 pt-1 text-xs">
-            <span className="text-slate-400 font-medium">Filtered by:</span>
+            <span className="text-slate-400 font-medium">{t('filters.filteredBy')}</span>
 
             {searchQuery && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-sand-200 rounded-md text-slate-700">
-                Search: &quot;{searchQuery}&quot;
+                {t('filters.search', { query: searchQuery })}
                 <button
                   onClick={() => setSearchQuery('')}
                   className="hover:text-terracotta-600 font-bold ml-1"
@@ -253,7 +228,7 @@ export const TaskList: React.FC<TaskListProps> = ({
 
             {selectedPriority && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-terracotta-500/10 border border-terracotta-500/20 rounded-md text-terracotta-700 font-medium">
-                Priority: {selectedPriority}
+                {t('filters.priority', { priority: t(`priorityTag.${selectedPriority}`) })}
                 <button
                   onClick={() => setSelectedPriority(null)}
                   className="hover:text-terracotta-600 font-bold ml-1"
@@ -271,7 +246,7 @@ export const TaskList: React.FC<TaskListProps> = ({
               }}
               className="text-[11px] text-slate-400 hover:text-slate-600 underline ml-1"
             >
-              Clear all
+              {t('filters.clearAll')}
             </button>
           </div>
         )}
@@ -281,75 +256,11 @@ export const TaskList: React.FC<TaskListProps> = ({
           <QuickAddBar defaultSection={defaultSection} onAddTask={onAddTask} />
         </div>
 
-        {/* Vault Overview Tabs: Tasks vs Notes */}
-        {computedTitle === 'My Vault' && (
-          <div className="flex items-center gap-1.5 pt-2">
-            <button
-              type="button"
-              data-testid="vault-tab-tasks"
-              onClick={() => setVaultTab('tasks')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                vaultTab === 'tasks'
-                  ? 'bg-forest-800 text-white shadow-xs'
-                  : 'bg-sand-100 text-stone-600 hover:text-stone-900 hover:bg-sand-200/80'
-              }`}
-            >
-              <CheckSquare className="w-3.5 h-3.5" />
-              <span>All Tasks ({tasks.length})</span>
-            </button>
-            <button
-              type="button"
-              data-testid="vault-tab-notes"
-              onClick={() => setVaultTab('notes')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                vaultTab === 'notes'
-                  ? 'bg-forest-800 text-white shadow-xs'
-                  : 'bg-sand-100 text-stone-600 hover:text-stone-900 hover:bg-sand-200/80'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>All Notes ({allVaultNotes.length})</span>
-            </button>
-          </div>
-        )}
       </header>
 
-      {/* Task / Notes List Body */}
+      {/* Task List Body */}
       <main className="flex-1 overflow-y-auto p-6 space-y-2">
-        {computedTitle === 'My Vault' && vaultTab === 'notes' ? (
-          allVaultNotes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 text-center p-6 border-2 border-dashed border-sand-200 rounded-2xl bg-white/40">
-              <FileText className="w-10 h-10 text-slate-300 mb-2" />
-              <p className="text-sm font-medium text-slate-600">No notes found in vault</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3" data-testid="vault-notes-grid">
-              {allVaultNotes.map((note) => (
-                <button
-                  key={note.path}
-                  type="button"
-                  data-testid="vault-note-card"
-                  onClick={async () => {
-                    await selectFile(note.path);
-                    setActiveView('document');
-                  }}
-                  className="flex flex-col text-left p-3.5 bg-white border border-sand-200 hover:border-forest-500 hover:shadow-xs rounded-xl transition-all cursor-pointer group"
-                >
-                  <div className="flex items-center justify-between gap-2 w-full mb-1">
-                    <span className="font-semibold text-stone-800 group-hover:text-forest-700 text-sm truncate">
-                      {note.name}
-                    </span>
-                    <FileText className="w-4 h-4 text-stone-400 group-hover:text-forest-600 shrink-0" />
-                  </div>
-                  <div className="flex items-center gap-1 text-[11px] text-stone-400 truncate">
-                    <Folder className="w-3 h-3 text-stone-400 shrink-0" />
-                    <span>{note.folder}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )
-        ) : filteredTasks.length === 0 ? (
+        {filteredTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-center p-6 border-2 border-dashed border-sand-200 rounded-2xl bg-white/40">
             <svg
               className="w-10 h-10 text-slate-300 mb-2"
@@ -364,11 +275,11 @@ export const TaskList: React.FC<TaskListProps> = ({
                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
               />
             </svg>
-            <p className="text-sm font-medium text-slate-600">No tasks found</p>
+            <p className="text-sm font-medium text-slate-600">{t('tasks.noneFound')}</p>
             <p className="text-xs text-slate-400 mt-1 max-w-sm">
               {searchQuery || selectedTag || selectedPriority
-                ? 'Try adjusting your search query or clearing active filters.'
-                : 'All clear! Press ⌘N or use the input above to capture a new task.'}
+                ? t('tasks.emptyFiltered')
+                : t('tasks.emptyAllClear')}
             </p>
           </div>
         ) : (

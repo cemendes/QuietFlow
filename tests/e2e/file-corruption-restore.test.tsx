@@ -75,6 +75,7 @@ title: Work Projects
     // 1. Initial vault load with healthy note
     await act(async () => {
       await useVaultStore.getState().loadVault(mockVaultPath);
+      await useVaultStore.getState().setSection('tasks'); // the app opens on Notes
       await useVaultStore.getState().selectFile(workFilePath);
     });
 

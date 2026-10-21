@@ -5,6 +5,8 @@ import {
   parseMarkdownDocument,
   updateTaskInDocument,
 } from '../core/markdown';
+import { setFrontmatterTitle } from '../core/markdown/frontmatterTitle';
+import { dirName, lastSeparator } from '../utils/paths';
 import {
   loadLogoConfig,
   persistFolderEmoji,
@@ -24,6 +26,8 @@ import {
   VaultStore,
   VaultStoreState,
   ViewMode,
+  AppSection,
+  SectionSelection,
 } from './types';
 
 const INITIAL_STATE: VaultStoreState = {
@@ -36,6 +40,11 @@ const INITIAL_STATE: VaultStoreState = {
   activeTaskId: null,
   searchQuery: '',
   activeView: 'list',
+  section: 'notes',
+  sectionSelection: {
+    tasks: { file: null, folder: null },
+    notes: { file: null, folder: null },
+  },
   lensViewMode: 'split',
   documentViewState: {},
   selectedTag: null,
@@ -114,57 +123,32 @@ async function loadVault(vaultPath: string): Promise<void> {
       isLoading: false,
     }));
 
-    // 1. Try to restore saved active file or folder from previous session
-    let restored = false;
-    if (typeof localStorage !== 'undefined') {
-      const savedFile = localStorage.getItem('quietflow-last-active-file');
-      if (savedFile) {
-        const fileNode = findNodeByPath(tree, savedFile);
-        if (fileNode && !fileNode.isDirectory) {
-          await selectFile(savedFile);
-          restored = true;
-        }
-      }
-      if (!restored) {
-        const savedFolder = localStorage.getItem('quietflow-last-active-folder');
-        if (savedFolder) {
-          const folderNode = findNodeByPath(tree, savedFolder);
-          if (folderNode && folderNode.isDirectory) {
-            await selectFolder(savedFolder);
-            restored = true;
-          }
-        }
-      }
-    }
+    // Always open on the Notes section, listing every note in the vault. The Inbox note (created
+    // if missing) is remembered as the Tasks section's starting point for when the user switches.
+    if (!getState().activeFile && !getState().activeFolder) {
+      let inboxNode = tree.children?.find((c) => !c.isDirectory && c.name.toLowerCase() === 'inbox.md');
 
-    // 2. Auto-select today.md or first note only if no saved state was restored
-    if (!restored && !getState().activeFile && !getState().activeFolder) {
-      let targetNode =
-        tree.children?.find((c) => !c.isDirectory && c.name.toLowerCase() === 'today.md') ||
-        tree.children?.find((c) => !c.isDirectory && c.name.endsWith('.md'));
-
-      if (!targetNode && vaultPath) {
-        // Auto-create today.md if none exists in this vault
+      if (!inboxNode && vaultPath) {
         try {
-          const todayPath = `${vaultPath}/today.md`;
-          const initialContent = `---\ntitle: Today's Focus\n---\n\n# Tasks\n`;
-          await writeVaultFile(todayPath, initialContent);
+          const inboxPath = `${vaultPath}/Inbox.md`;
+          await writeVaultFile(inboxPath, `---\ntitle: Inbox\n---\n\n# Inbox\n`);
           await refreshVault();
-          targetNode = {
-            name: 'today.md',
-            path: todayPath,
-            isDirectory: false,
-            children: [],
-            fileCount: 0,
-          };
+          inboxNode = { name: 'Inbox.md', path: inboxPath, isDirectory: false, children: [], fileCount: 0 };
         } catch {
           // Safe fallback in mock/read-only vaults
+          inboxNode = tree.children?.find((c) => !c.isDirectory && c.name.endsWith('.md'));
         }
       }
 
-      if (targetNode && !getState().activeFile) {
-        await selectFile(targetNode.path);
-      }
+      set({
+        section: 'notes',
+        activeView: 'document',
+        sectionSelection: {
+          tasks: { file: inboxNode?.path ?? null, folder: inboxNode ? null : vaultPath },
+          notes: { file: null, folder: vaultPath },
+        },
+      });
+      selectNoteFolder(vaultPath);
     }
 
     // Clean up any existing listener
@@ -718,6 +702,58 @@ function setActiveView(activeView: ViewMode): void {
   set({ activeView });
 }
 
+/** Remembers what each section had selected so switching back restores it. */
+function rememberSelection(): Record<AppSection, SectionSelection> {
+  const s = getState();
+  return {
+    ...s.sectionSelection,
+    [s.section]: { file: s.activeFile, folder: s.activeFolder },
+  };
+}
+
+async function setSection(next: AppSection): Promise<void> {
+  const s = getState();
+  if (s.section === next) return;
+  const memory = rememberSelection();
+  set({
+    section: next,
+    sectionSelection: memory,
+    activeTaskId: null,
+    activeView: next === 'notes' ? 'document' : 'list',
+  });
+  const target = memory[next];
+  if (next === 'notes') {
+    if (target.file) await selectFile(target.file);
+    else selectNoteFolder(target.folder ?? s.vaultPath);
+    return;
+  }
+  if (target.file) await selectFile(target.file);
+  else if (target.folder) await selectFolder(target.folder);
+  else if (s.vaultPath) await selectFolder(s.vaultPath);
+}
+
+async function openNote(filePath: string): Promise<void> {
+  const s = getState();
+  set({
+    section: 'notes',
+    sectionSelection: s.section === 'notes' ? s.sectionSelection : rememberSelection(),
+    activeTaskId: null,
+    activeView: 'document',
+  });
+  await selectFile(filePath);
+}
+
+/** Notes-section folder navigation: no tasks are loaded, only the folder is focused. */
+function selectNoteFolder(folderPath: string | null): void {
+  set({
+    activeFolder: folderPath,
+    activeFile: null,
+    activeDocument: null,
+    activeTaskId: null,
+    tasks: [],
+  });
+}
+
 function setSelectedTag(selectedTag: string | null): void {
   set({ selectedTag });
 }
@@ -843,6 +879,48 @@ async function saveDocumentProse(filePath: string, newProse: string): Promise<vo
   }
 }
 
+/**
+ * Rename a note: updates its frontmatter `title` and renames the `.md` file to match,
+ * so the sidebar shows the new name too. Returns the note's (possibly new) path.
+ */
+async function renameNote(filePath: string, newTitle: string): Promise<string> {
+  const title = newTitle.trim();
+  if (!title) return filePath;
+
+  // Stay in the note's own folder, reusing its separator (native Windows paths use "\")
+  const dir = dirName(filePath);
+  const sep = lastSeparator(filePath);
+  const safeName = title.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim() || 'note';
+
+  // Avoid overwriting another note that already has this name
+  const taken = new Set(
+    collectMarkdownFiles(state.vaultTree).map((p) => p.toLowerCase()),
+  );
+  taken.delete(filePath.toLowerCase());
+  let candidate = `${dir}${sep}${safeName}.md`;
+  for (let n = 2; taken.has(candidate.toLowerCase()); n++) {
+    candidate = `${dir}${sep}${safeName} ${n}.md`;
+  }
+
+  set({ isSaving: true, error: null });
+  try {
+    const raw = state.activeFile === filePath && state.activeDocument
+      ? state.activeDocument.rawContent
+      : await ipc.readFile(filePath);
+    await writeVaultFile(filePath, setFrontmatterTitle(raw, title));
+    if (candidate !== filePath) {
+      await ipc.moveEntry(filePath, candidate);
+    }
+    await refreshVault();
+    await selectFile(candidate);
+    set({ isSaving: false });
+    return candidate;
+  } catch (err: any) {
+    set({ error: err?.message || 'Failed to rename note', isSaving: false });
+    return filePath;
+  }
+}
+
 async function flushActiveDocument(): Promise<void> {
   if (state.activeFile && state.activeDocument) {
     try {
@@ -877,10 +955,14 @@ const actions = {
   setDocumentScrollPosition,
   getDocumentViewState,
   saveDocumentProse,
+  renameNote,
   flushActiveDocument,
   setActiveTaskId,
   setSearchQuery,
   setActiveView,
+  setSection,
+  openNote,
+  selectNoteFolder,
   setSelectedTag,
   setSelectedPriority,
   setError,

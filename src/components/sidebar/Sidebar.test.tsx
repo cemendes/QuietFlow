@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import Sidebar from './Sidebar';
 import { useVaultStore } from '../../store';
@@ -62,7 +62,9 @@ describe('Sidebar Component', () => {
     if (typeof localStorage !== 'undefined') {
       localStorage.clear();
     }
+    // These cases describe the Tasks section; the app itself starts on Notes.
     useVaultStore.setState({
+      section: 'tasks',
       vaultTree: mockVaultTree,
       activeFile: '/path/to/vault/Customers/Acme Corp.md',
       isLoading: false,
@@ -70,16 +72,21 @@ describe('Sidebar Component', () => {
     });
   });
 
-  it('renders only Inbox in top navigation and removes Today and Starred', () => {
+  it('renders a single Notes entry (no separate Inbox or Vault) and removes Today and Starred', () => {
     render(<Sidebar />);
-    expect(screen.getByRole('button', { name: /inbox/i })).toBeInTheDocument();
+    expect(screen.getByTitle('Notes')).toBeInTheDocument();
+    expect(screen.queryByTitle('Inbox')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('My Vault')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^today$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^starred$/i })).not.toBeInTheDocument();
   });
 
-  it('renders QuietFlow branding and traffic lights', () => {
+  it('renders QuietFlow branding in the same row as the collapse button', () => {
     render(<Sidebar />);
-    expect(screen.getByText(/QuietFlow/i)).toBeInTheDocument();
+    const brand = screen.getByText('QuietFlow');
+    expect(brand).toBeInTheDocument();
+    const topBar = screen.getByTestId('sidebar-toggle-btn').parentElement!;
+    expect(topBar.contains(brand)).toBe(true);
   });
 
   it('renders nested folder tree with folders and files', () => {
@@ -138,6 +145,74 @@ describe('Sidebar Component', () => {
     useVaultStore.setState({ vaultTree: null });
     render(<Sidebar />);
     expect(screen.getByText(/No folder open/i)).toBeInTheDocument();
+  });
+
+  it('only offers New note in the Notes section, above the vault root, and calls onNewNote', () => {
+    const handleNewNote = vi.fn();
+    const { unmount } = render(<Sidebar onNewNote={handleNewNote} />);
+    expect(screen.queryByTestId('new-note-btn')).toBeNull();
+    unmount();
+
+    act(() => useVaultStore.setState({ section: 'notes' }));
+    render(<Sidebar onNewNote={handleNewNote} />);
+
+    const newNoteBtn = screen.getByTestId('new-note-btn');
+    expect(newNoteBtn).toHaveTextContent('New note');
+
+    const notesBtn = screen.getByTestId('vault-root-btn');
+    expect(
+      newNoteBtn.compareDocumentPosition(notesBtn) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
+    fireEvent.click(newNoteBtn);
+    expect(handleNewNote).toHaveBeenCalledTimes(1);
+  });
+
+  describe('location cues', () => {
+    const inboxPath = '/path/to/vault/Inbox.md';
+    const treeWithInbox: VaultNode = {
+      ...mockVaultTree,
+      children: [
+        ...mockVaultTree.children!,
+        { name: 'Inbox.md', path: inboxPath, isDirectory: false, fileCount: 0, children: [] },
+      ],
+    };
+
+    it('shows an Inbox.md note as an ordinary note inside the tree', () => {
+      useVaultStore.setState({ vaultTree: treeWithInbox });
+      render(<Sidebar />);
+      expect(screen.getByTestId(`file-item-${inboxPath}`)).toBeInTheDocument();
+    });
+
+    it('marks the vault root as the current location only when it is selected', () => {
+      render(<Sidebar />);
+      const notesBtn = screen.getByTestId('vault-root-btn');
+      expect(notesBtn).toHaveAttribute('data-active', 'false');
+      expect(notesBtn).not.toHaveAttribute('aria-current');
+
+      act(() => useVaultStore.setState({ activeFolder: '/path/to/vault', vaultPath: '/path/to/vault' }));
+      expect(notesBtn).toHaveAttribute('data-active', 'true');
+      expect(notesBtn).toHaveAttribute('aria-current', 'page');
+    });
+
+    it('gives the active note a visible background and aria-current', () => {
+      render(<Sidebar />);
+      const acmeFile = screen.getByTestId('file-item-/path/to/vault/Customers/Acme Corp.md');
+      expect(acmeFile).toHaveAttribute('aria-current', 'page');
+      expect(acmeFile.className).toContain('bg-[var(--bg-surface)]');
+    });
+
+    it('flags the folder that contains the active note', () => {
+      render(<Sidebar />);
+      expect(screen.getByTestId('folder-row-/path/to/vault/Customers')).toHaveAttribute(
+        'data-contains-active',
+        'true'
+      );
+      expect(screen.getByTestId('folder-row-/path/to/vault/Internal')).toHaveAttribute(
+        'data-contains-active',
+        'false'
+      );
+    });
   });
 
   it('handles sidebar collapse and expand toggle', () => {

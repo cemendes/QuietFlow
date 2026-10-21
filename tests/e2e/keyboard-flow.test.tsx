@@ -82,21 +82,4 @@ describe('Contextual Keyboard Navigation & QuickFileSwitcher', () => {
     expect(screen.getByText('Acme Corp.md')).toBeDefined();
     expect(screen.queryByText('Stripe.md')).toBeNull();
   });
-
-  it('cycles lens mode on Cmd+E shortcut', () => {
-    render(<App />);
-    expect(useVaultStore.getState().lensViewMode).toBe('split');
-
-    // Press Cmd+E -> tasks
-    fireEvent.keyDown(window, { key: 'e', metaKey: true });
-    expect(useVaultStore.getState().lensViewMode).toBe('tasks');
-
-    // Press Cmd+E -> notes
-    fireEvent.keyDown(window, { key: 'e', metaKey: true });
-    expect(useVaultStore.getState().lensViewMode).toBe('notes');
-
-    // Press Cmd+E -> split
-    fireEvent.keyDown(window, { key: 'e', metaKey: true });
-    expect(useVaultStore.getState().lensViewMode).toBe('split');
-  });
 });

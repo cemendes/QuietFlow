@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { TaskItem } from '../../store/types';
 import { triggerCelebration } from '../../utils/celebrations';
 import { triggerCompletionFeedback } from '../../utils/feedback';
+import { useTranslation } from '../../i18n';
+import { baseName } from '../../utils/paths';
 
 export interface ZenTheaterModalProps {
   isOpen: boolean;
@@ -19,6 +21,7 @@ export const ZenTheaterModal: React.FC<ZenTheaterModalProps> = ({
   onCompleteTask,
 }) => {
   const [secondsElapsed, setSecondsElapsed] = useState(0);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!isOpen) {
@@ -62,7 +65,7 @@ export const ZenTheaterModal: React.FC<ZenTheaterModalProps> = ({
   return (
     <div
       role="dialog"
-      aria-label="Zen Theater"
+      aria-label={t('zen.label')}
       aria-modal="true"
       data-testid="zen-theater-modal"
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#FAF9F6] animate-in fade-in duration-300 select-none p-6"
@@ -103,7 +106,7 @@ export const ZenTheaterModal: React.FC<ZenTheaterModalProps> = ({
         {/* Seamless Task Content (No White Container) */}
         <div className="absolute inset-8 flex flex-col items-center justify-center text-center p-6 space-y-3 z-10">
           <span className="text-[11px] font-bold tracking-widest text-forest-700 uppercase">
-            Current Focus
+            {t('zen.currentFocus')}
           </span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-forest-900 tracking-tight leading-snug max-w-[280px]">
             {task.title}
@@ -115,7 +118,7 @@ export const ZenTheaterModal: React.FC<ZenTheaterModalProps> = ({
           )}
           {task.filePath && (
             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 bg-emerald-100/60 px-2.5 py-0.5 rounded-full">
-              📄 {task.filePath.split('/').pop()?.replace(/\.md$/, '')}
+              📄 {baseName(task.filePath)?.replace(/\.md$/, '')}
             </span>
           )}
         </div>
@@ -128,14 +131,14 @@ export const ZenTheaterModal: React.FC<ZenTheaterModalProps> = ({
           onClick={handleComplete}
           className="px-6 py-2.5 bg-forest-700 hover:bg-forest-800 text-white text-xs font-bold rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
         >
-          ✓ Complete Task
+          {t('zen.complete')}
         </button>
         <button
           type="button"
           onClick={onClose}
           className="px-4 py-2.5 bg-stone-200/70 hover:bg-stone-300/80 text-stone-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
         >
-          Exit Zen (Esc)
+          {t('zen.exit')}
         </button>
       </div>
     </div>

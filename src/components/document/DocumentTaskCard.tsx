@@ -1,6 +1,7 @@
 import React from 'react';
 import { Check, Calendar, Tag, MessageSquare, AlertCircle } from 'lucide-react';
 import { TaskItem, TaskPriority } from '../../store/types';
+import { formatIsoDate, useTranslation } from '../../i18n';
 
 interface DocumentTaskCardProps {
   task: TaskItem;
@@ -48,6 +49,7 @@ export const DocumentTaskCard: React.FC<DocumentTaskCardProps> = ({
   onToggle,
   onSelect,
 }) => {
+  const { language } = useTranslation();
   const isDone = task.status === 'done';
   const isInProgress = task.status === 'in-progress';
 
@@ -124,7 +126,7 @@ export const DocumentTaskCard: React.FC<DocumentTaskCardProps> = ({
             {task.dueDate && (
               <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
                 <Calendar className="w-3 h-3" />
-                {task.dueDate}
+                {formatIsoDate(task.dueDate, language)}
               </span>
             )}
           </div>

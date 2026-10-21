@@ -38,24 +38,17 @@ describe('Vault Store Lens & Cognitive Re-entry State', () => {
     expect(localStorage.getItem('quietflow-last-active-file')).toBeNull();
   });
 
-  it('restores last active file on loadVault when present in tree', async () => {
+  it('always opens on the Notes overview on loadVault, ignoring the last session location', async () => {
     const { ipc } = await import('../../src/store/ipc');
+    await ipc.writeFileAtomic('/MockVault/Inbox.md', '# Inbox\n');
     await ipc.writeFileAtomic('/MockVault/Notes/Important.md', '# Important Note\n');
     localStorage.setItem('quietflow-last-active-file', '/MockVault/Notes/Important.md');
 
-    const store = useVaultStore.getState();
-    await store.loadVault('/MockVault');
-    expect(useVaultStore.getState().activeFile).toBe('/MockVault/Notes/Important.md');
-  });
-
-  it('restores last active folder on loadVault when present in tree', async () => {
-    const { ipc } = await import('../../src/store/ipc');
-    await ipc.createDirectory('/MockVault/Projects');
-    await ipc.writeFileAtomic('/MockVault/Projects/Sprint.md', '# Sprint\n- [ ] Task 1\n');
-    localStorage.setItem('quietflow-last-active-folder', '/MockVault/Projects');
-
-    const store = useVaultStore.getState();
-    await store.loadVault('/MockVault');
-    expect(useVaultStore.getState().activeFolder).toBe('/MockVault/Projects');
+    await useVaultStore.getState().loadVault('/MockVault');
+    expect(useVaultStore.getState().section).toBe('notes');
+    expect(useVaultStore.getState().activeFile).toBeNull();
+    expect(useVaultStore.getState().activeFolder).toBe('/MockVault');
+    // Inbox stays the Tasks section's landing note
+    expect(useVaultStore.getState().sectionSelection.tasks.file).toBe('/MockVault/Inbox.md');
   });
 });

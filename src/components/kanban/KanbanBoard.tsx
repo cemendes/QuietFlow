@@ -3,7 +3,9 @@ import { useVaultStore } from '../../store';
 import { TaskStatus } from '../../store/types';
 import KanbanColumn from './KanbanColumn';
 import QuickAddBar from '../tasks/QuickAddBar';
+import { useTranslation } from '../../i18n';
 import FocusHeader from '../tasks/FocusHeader';
+import { baseName } from '../../utils/paths';
 
 export interface KanbanBoardProps {
   title?: string;
@@ -11,12 +13,7 @@ export interface KanbanBoardProps {
   defaultSection?: string;
 }
 
-const STAGE_COLUMNS: { id: TaskStatus; title: string }[] = [
-  { id: 'backlog', title: 'Backlog' },
-  { id: 'todo', title: 'To Do' },
-  { id: 'in-progress', title: 'In Progress' },
-  { id: 'done', title: 'Done' },
-];
+const STAGE_COLUMNS: TaskStatus[] = ['backlog', 'todo', 'in-progress', 'done'];
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   title,
@@ -36,6 +33,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const setSearchQuery = useVaultStore((state) => state.setSearchQuery);
   const setSelectedTag = useVaultStore((state) => state.setSelectedTag);
   const setSelectedPriority = useVaultStore((state) => state.setSelectedPriority);
+  const { t } = useTranslation();
   const activeFolder = useVaultStore((state) => state.activeFolder);
   const vaultPath = useVaultStore((state) => state.vaultPath);
   const logoConfig = useVaultStore((state) => state.logoConfig);
@@ -96,24 +94,24 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const computedTitle = useMemo(() => {
     if (title) return title;
     if (activeFile) {
-      const fileName = activeFile.split('/').pop()?.replace(/\.md$/, '') || 'Tasks';
+      const fileName = baseName(activeFile)?.replace(/\.md$/, '') || t('common.tasksFallback');
       if (fileName.toLowerCase() === 'inbox') {
-        return 'Inbox';
+        return t('tasks.inboxTitle');
       }
       if (fileName.toLowerCase() === 'today') {
-        return "Today's Focus";
+        return t('common.todaysFocus');
       }
       return fileName.charAt(0).toUpperCase() + fileName.slice(1);
     }
     if (activeFolder) {
       if (activeFolder === vaultPath) {
-        return 'My Vault';
+        return t('sidebar.notes');
       }
-      const folderName = activeFolder.split('/').pop() || 'Folder';
+      const folderName = baseName(activeFolder) || 'Folder';
       return folderName.charAt(0).toUpperCase() + folderName.slice(1);
     }
-    return "Today's Focus";
-  }, [title, activeFile, activeFolder]);
+    return t('common.todaysFocus');
+  }, [title, activeFile, activeFolder, vaultPath, t]);
 
   const [activeFocusBucket, setActiveFocusBucket] = React.useState<'all' | 'now' | 'not-now'>('all');
 
@@ -200,11 +198,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         {/* Active Filters Pill Bar (if any filter is active) */}
         {(selectedTag || selectedPriority || searchQuery) && (
           <div data-testid="active-filters-bar" className="flex items-center flex-wrap gap-2 pt-1 text-xs">
-            <span className="text-slate-400 font-medium">Filtered by:</span>
+            <span className="text-slate-400 font-medium">{t('filters.filteredBy')}</span>
 
             {searchQuery && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-sand-200 rounded-md text-slate-700">
-                Search: &quot;{searchQuery}&quot;
+                {t('filters.search', { query: searchQuery })}
                 <button
                   onClick={() => setSearchQuery('')}
                   className="hover:text-terracotta-600 font-bold ml-1"
@@ -228,7 +226,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
             {selectedPriority && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-terracotta-500/10 border border-terracotta-500/20 rounded-md text-terracotta-700 font-medium">
-                Priority: {selectedPriority}
+                {t('filters.priority', { priority: t(`priorityTag.${selectedPriority}`) })}
                 <button
                   onClick={() => setSelectedPriority(null)}
                   className="hover:text-terracotta-600 font-bold ml-1"
@@ -246,7 +244,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               }}
               className="text-[11px] text-slate-400 hover:text-slate-600 underline ml-1"
             >
-              Clear all
+              {t('filters.clearAll')}
             </button>
           </div>
         )}
@@ -260,13 +258,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       {/* Kanban Board 4-Column Canvas */}
       <main className="flex-1 overflow-x-auto overflow-y-hidden px-6 py-4 flex flex-col min-h-0">
         <div className="flex flex-row items-stretch gap-4 h-full w-full min-w-max pb-1">
-          {STAGE_COLUMNS.map((column) => {
-            const columnTasks = filteredTasks.filter((t) => t.status === column.id);
+          {STAGE_COLUMNS.map((status) => {
+            const columnTasks = filteredTasks.filter((task) => task.status === status);
             return (
               <KanbanColumn
-                key={column.id}
-                id={column.id}
-                title={column.title}
+                key={status}
+                id={status}
+                title={t(`status.${status}`)}
                 tasks={columnTasks}
                 activeTaskId={activeTaskId}
                 onSelectTask={(id) => setActiveTaskId(id)}
@@ -275,7 +273,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   setSelectedPriority(selectedPriority === pri ? null : pri)
                 }
                 onTagClick={(tag) => setSelectedTag(selectedTag === tag ? null : tag)}
-                maxWip={column.id === 'in-progress' ? 3 : undefined}
+                maxWip={status === 'in-progress' ? 3 : undefined}
               />
             );
           })}
