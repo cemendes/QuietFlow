@@ -5,6 +5,9 @@ import {
   detectLanguage,
   initialLanguage,
   formatShortDate,
+  formatIsoDate,
+  formatDateTime,
+  formatDateName,
   getLanguage,
   resolveLanguage,
   setLanguage,
@@ -78,6 +81,23 @@ describe('i18n', () => {
   it('formats short dates per language', () => {
     const date = new Date(2026, 8, 5);
     expect(formatShortDate(date, 'en')).toBe('Sep 5');
-    expect(formatShortDate(date, 'pt-BR')).toBe('5 set');
+    expect(formatShortDate(date, 'pt-BR')).toBe('05/09/2026');
+  });
+
+  it('formats ISO date strings as DD/MM/YYYY in Brazilian Portuguese', () => {
+    expect(formatIsoDate('2026-09-05', 'pt-BR')).toBe('05/09/2026');
+    expect(formatIsoDate('2026-09-05', 'en')).toBe('2026-09-05');
+    expect(formatIsoDate('2026-08-29 07:15', 'pt-BR')).toBe('29/08/2026 07:15');
+    expect(formatIsoDate('not a date', 'pt-BR')).toBe('not a date');
+  });
+
+  it('formats date-times with the DD/MM/YYYY day first in Brazilian Portuguese', () => {
+    const date = new Date(2026, 8, 5, 14, 7, 3);
+    expect(formatDateTime(date, 'pt-BR')).toBe('05/09/2026 14:07');
+  });
+
+  it('formats a bare ISO date name for display, leaving other names alone', () => {
+    expect(formatDateName('2026-10-18', 'pt-BR')).toBe('18/10/2026');
+    expect(formatDateName('Nova anotação', 'pt-BR')).toBe('Nova anotação');
   });
 });

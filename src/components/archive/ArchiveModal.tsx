@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Archive, X, RotateCcw, Search, CheckCircle2, Calendar } from 'lucide-react';
 import { useVaultStore } from '../../store';
-import { useTranslation } from '../../i18n';
+import { formatIsoDate, useTranslation } from '../../i18n';
 
 export interface ArchiveModalProps {
   isOpen: boolean;
@@ -12,7 +12,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({ isOpen, onClose }) =
   const [searchQuery, setSearchQuery] = useState('');
   const tasks = useVaultStore((state) => state.tasks);
   const toggleTask = useVaultStore((state) => state.toggleTask);
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   // Keyboard shortcut listener for Esc key
   React.useEffect(() => {
@@ -110,7 +110,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({ isOpen, onClose }) =
                     <p className="text-xs font-medium text-slate-700 line-through truncate">{task.title}</p>
                     {task.completedDate && (
                       <span className="flex items-center gap-1 text-[10px] text-slate-400 mt-0.5">
-                        <Calendar className="w-2.5 h-2.5" /> {t('archive.completedOn', { date: task.completedDate })}
+                        <Calendar className="w-2.5 h-2.5" /> {t('archive.completedOn', { date: formatIsoDate(task.completedDate, language) })}
                       </span>
                     )}
                   </div>

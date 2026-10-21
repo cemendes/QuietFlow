@@ -44,8 +44,8 @@ describe('Tasks and Notes are separate sections', () => {
     useVaultStore.setState({ vaultPath: '/vault', vaultTree: tree, activeFolder: '/vault' });
   });
 
-  it('starts in the Tasks section', () => {
-    expect(useVaultStore.getState().section).toBe('tasks');
+  it('starts in the Notes section', () => {
+    expect(useVaultStore.getState().section).toBe('notes');
   });
 
   it('the task list never renders notes or a Notes tab', () => {
@@ -71,7 +71,7 @@ describe('Tasks and Notes are separate sections', () => {
     expect(screen.getByText('Kickoff')).toBeInTheDocument();
     expect(screen.getByText('Ideas')).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByTestId('vault-note-card')[0]);
+    fireEvent.click(screen.getByText('Kickoff'));
 
     await waitFor(() => {
       expect(useVaultStore.getState().section).toBe('notes');
@@ -88,6 +88,7 @@ describe('Tasks and Notes are separate sections', () => {
   });
 
   it('remembers each section\'s own selection when switching', async () => {
+    useVaultStore.setState({ section: 'tasks' });
     await act(async () => {
       await useVaultStore.getState().selectFile('/vault/Ideas.md');
     });

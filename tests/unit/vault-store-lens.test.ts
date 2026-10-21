@@ -38,14 +38,17 @@ describe('Vault Store Lens & Cognitive Re-entry State', () => {
     expect(localStorage.getItem('quietflow-last-active-file')).toBeNull();
   });
 
-  it('always opens on Inbox.md on loadVault, ignoring the last session location', async () => {
+  it('always opens on the Notes overview on loadVault, ignoring the last session location', async () => {
     const { ipc } = await import('../../src/store/ipc');
     await ipc.writeFileAtomic('/MockVault/Inbox.md', '# Inbox\n');
     await ipc.writeFileAtomic('/MockVault/Notes/Important.md', '# Important Note\n');
     localStorage.setItem('quietflow-last-active-file', '/MockVault/Notes/Important.md');
 
     await useVaultStore.getState().loadVault('/MockVault');
-    expect(useVaultStore.getState().activeFile).toBe('/MockVault/Inbox.md');
-    expect(useVaultStore.getState().activeFolder).toBeNull();
+    expect(useVaultStore.getState().section).toBe('notes');
+    expect(useVaultStore.getState().activeFile).toBeNull();
+    expect(useVaultStore.getState().activeFolder).toBe('/MockVault');
+    // Inbox stays the Tasks section's landing note
+    expect(useVaultStore.getState().sectionSelection.tasks.file).toBe('/MockVault/Inbox.md');
   });
 });

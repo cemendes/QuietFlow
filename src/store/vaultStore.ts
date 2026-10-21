@@ -40,7 +40,7 @@ const INITIAL_STATE: VaultStoreState = {
   activeTaskId: null,
   searchQuery: '',
   activeView: 'list',
-  section: 'tasks',
+  section: 'notes',
   sectionSelection: {
     tasks: { file: null, folder: null },
     notes: { file: null, folder: null },
@@ -123,7 +123,8 @@ async function loadVault(vaultPath: string): Promise<void> {
       isLoading: false,
     }));
 
-    // Always open on the Inbox note (created if missing), not the last session's location.
+    // Always open on the Notes section, listing every note in the vault. The Inbox note (created
+    // if missing) is remembered as the Tasks section's starting point for when the user switches.
     if (!getState().activeFile && !getState().activeFolder) {
       let inboxNode = tree.children?.find((c) => !c.isDirectory && c.name.toLowerCase() === 'inbox.md');
 
@@ -139,10 +140,15 @@ async function loadVault(vaultPath: string): Promise<void> {
         }
       }
 
-      if (inboxNode) {
-        await selectFile(inboxNode.path);
-        setActiveView('list');
-      }
+      set({
+        section: 'notes',
+        activeView: 'document',
+        sectionSelection: {
+          tasks: { file: inboxNode?.path ?? null, folder: inboxNode ? null : vaultPath },
+          notes: { file: null, folder: vaultPath },
+        },
+      });
+      selectNoteFolder(vaultPath);
     }
 
     // Clean up any existing listener

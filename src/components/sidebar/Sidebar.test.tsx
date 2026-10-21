@@ -62,7 +62,9 @@ describe('Sidebar Component', () => {
     if (typeof localStorage !== 'undefined') {
       localStorage.clear();
     }
+    // These cases describe the Tasks section; the app itself starts on Notes.
     useVaultStore.setState({
+      section: 'tasks',
       vaultTree: mockVaultTree,
       activeFile: '/path/to/vault/Customers/Acme Corp.md',
       isLoading: false,

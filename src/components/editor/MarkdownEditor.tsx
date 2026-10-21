@@ -20,7 +20,8 @@ import {
   Quote,
   CalendarPlus,
 } from 'lucide-react';
-import { useTranslation } from '../../i18n';
+import { formatIsoDate, useTranslation } from '../../i18n';
+import { normalizeLinkUrl, openExternalUrl } from '../../utils/links';
 
 declare module '@tiptap/core' {
   interface Storage {
@@ -196,7 +197,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   footer,
   readOnly = false,
 }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const placeholder = placeholderProp ?? t('editor.placeholder');
   const [isSourceMode, setIsSourceMode] = useState(false);
   const [sourceText, setSourceText] = useState(value);
@@ -206,6 +207,10 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   sourceTextRef.current = sourceText;
   const sourceTextareaRef = useRef<HTMLTextAreaElement>(null);
   const editorRef = useRef<any>(null);
+  // Inline "insert link" form; remembers the selection it applies to, since focus moves to its inputs.
+  const [linkForm, setLinkForm] = useState<
+    { from: number; to: number; hasSelection: boolean; url: string; text: string } | null
+  >(null);
 
   const editor = useEditor({
     shouldRerenderOnTransaction: true,
@@ -403,25 +408,63 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const handleToggleLink = useCallback(() => {
     if (!editor || isSourceMode) return;
     if (editor.isActive('link')) {
-      editor.chain().focus().unsetLink().run();
-      return;
-    }
-    const previousUrl = (editor.getAttributes('link').href as string) || '';
-    const url = window.prompt('URL', previousUrl);
-    if (url === null) return;
-    if (url === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
       return;
     }
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    const { from, to, empty } = editor.state.selection;
+    setLinkForm({ from, to, hasSelection: !empty, url: '', text: '' });
   }, [editor, isSourceMode]);
+
+  const closeLinkForm = useCallback(() => {
+    setLinkForm(null);
+    editor?.commands.focus();
+  }, [editor]);
+
+  const handleApplyLink = useCallback(
+    (e?: React.FormEvent) => {
+      e?.preventDefault();
+      if (!editor || !linkForm) return;
+      const href = normalizeLinkUrl(linkForm.url);
+      if (!href) {
+        closeLinkForm();
+        return;
+      }
+      const chain = editor.chain().focus().setTextSelection({ from: linkForm.from, to: linkForm.to });
+      if (linkForm.hasSelection) {
+        chain.setLink({ href }).run();
+      } else {
+        // Nothing selected: insert the link text itself, then stop the link mark so typing continues as plain text.
+        const text = linkForm.text.trim() || linkForm.url.trim();
+        chain
+          .insertContent({ type: 'text', text, marks: [{ type: 'link', attrs: { href } }] })
+          .unsetMark('link')
+          .run();
+      }
+      setLinkForm(null);
+    },
+    [editor, linkForm, closeLinkForm]
+  );
+
+  // Links can't be followed by a plain click while editing (that places the cursor), so they open
+  // in the system browser on click in read mode, or Ctrl/Cmd+click while editing.
+  const handleContentClick = useCallback(
+    (e: React.MouseEvent) => {
+      const anchor = (e.target as HTMLElement).closest?.('a[href]');
+      if (!anchor) return;
+      e.preventDefault();
+      if (readOnly || e.metaKey || e.ctrlKey) {
+        void openExternalUrl(anchor.getAttribute('href')!);
+      }
+    },
+    [readOnly]
+  );
 
   const handleAddDateSection = useCallback(() => {
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
-    const dateText = `${yyyy}-${mm}-${dd}`;
+    const dateText = formatIsoDate(`${yyyy}-${mm}-${dd}`, language);
     const dateHeading = `## ${dateText}`;
 
     if (isSourceModeRef.current) {
@@ -498,7 +541,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         onChange(newMarkdown);
       }
     }
-  }, [editor, onChange]);
+  }, [editor, onChange, language]);
 
   const handleConvertOrToggleList = useCallback(
     (targetType: 'bulletList' | 'orderedList' | 'taskList') => {
@@ -600,7 +643,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
         <button
           type="button"
-          title="Add section for today's date (## YYYY-MM-DD)"
+          title={`Add section for today's date (## ${language === 'pt-BR' ? 'DD/MM/YYYY' : 'YYYY-MM-DD'})`}
           data-testid="toolbar-date-btn"
           onMouseDown={(e) => e.preventDefault()}
           onClick={handleAddDateSection}
@@ -696,11 +739,66 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           </button>
         </div>
       </div>
+
+      {linkForm && (
+        <form
+          data-testid="link-form"
+          onSubmit={handleApplyLink}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              closeLinkForm();
+            }
+          }}
+          className="flex items-center gap-1.5 p-1.5 mb-1.5 bg-white border border-forest-500 rounded-lg flex-wrap shrink-0"
+        >
+          <Link2 className="w-3.5 h-3.5 text-forest-700 ml-1 shrink-0" />
+          <input
+            autoFocus
+            type="text"
+            inputMode="url"
+            data-testid="link-url-input"
+            aria-label="URL"
+            placeholder={t('link.urlPlaceholder')}
+            value={linkForm.url}
+            onChange={(e) => setLinkForm({ ...linkForm, url: e.target.value })}
+            className="flex-1 min-w-[160px] px-2 py-1 text-xs text-slate-800 bg-sand-50 border border-sand-200 rounded-md focus:outline-none focus:ring-1 focus:ring-forest-500"
+          />
+          {!linkForm.hasSelection && (
+            <input
+              type="text"
+              data-testid="link-text-input"
+              aria-label={t('link.textPlaceholder')}
+              placeholder={t('link.textPlaceholder')}
+              value={linkForm.text}
+              onChange={(e) => setLinkForm({ ...linkForm, text: e.target.value })}
+              className="flex-1 min-w-[140px] px-2 py-1 text-xs text-slate-800 bg-sand-50 border border-sand-200 rounded-md focus:outline-none focus:ring-1 focus:ring-forest-500"
+            />
+          )}
+          <button
+            type="submit"
+            data-testid="link-apply-btn"
+            disabled={!linkForm.url.trim()}
+            className="px-2.5 py-1 text-xs font-semibold text-white bg-forest-700 hover:bg-forest-800 disabled:opacity-40 rounded-md cursor-pointer disabled:cursor-default"
+          >
+            {t('link.apply')}
+          </button>
+          <button
+            type="button"
+            onClick={closeLinkForm}
+            className="px-2 py-1 text-xs font-medium text-slate-600 hover:bg-sand-100 rounded-md cursor-pointer"
+          >
+            {t('common.cancel')}
+          </button>
+        </form>
+      )}
       </>
       )}
 
       {/* Editor Content Area */}
       <div
+        onClick={handleContentClick}
         className={`bg-white rounded-xl flex flex-col ${readOnly ? '[&_.tiptap]:min-h-0' : 'border border-sand-200'} ${
           autoGrow ? '' : 'flex-1 min-h-[140px] h-full overflow-y-auto'
         }`}

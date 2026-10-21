@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
-import { FileText, Folder } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { FileText, Folder, Trash2 } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import type { VaultNode } from '../../store/types';
-import { useTranslation } from '../../i18n';
+import { formatDateName, useTranslation } from '../../i18n';
 import { baseName } from '../../utils/paths';
 
 interface NoteEntry {
@@ -32,11 +32,14 @@ function findNode(node: VaultNode, path: string): VaultNode | null {
 
 /** Notes section landing page: the notes of the selected folder (or of the whole vault). */
 export const NotesHome: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const vaultTree = useVaultStore((state) => state.vaultTree);
   const vaultPath = useVaultStore((state) => state.vaultPath);
   const activeFolder = useVaultStore((state) => state.activeFolder);
   const openNote = useVaultStore((state) => state.openNote);
+  const deleteEntry = useVaultStore((state) => state.deleteEntry);
+  // Path of the note whose trash icon was clicked and is waiting for confirmation.
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
 
   const scopeNode = useMemo(() => {
     if (!vaultTree) return null;
@@ -49,7 +52,7 @@ export const NotesHome: React.FC = () => {
   );
 
   const title =
-    scopeNode && scopeNode.path !== vaultPath ? baseName(scopeNode.path) : t('sidebar.notes');
+    scopeNode && scopeNode.path !== vaultPath ? baseName(scopeNode.path) : t('notes.allNotes');
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden" data-testid="notes-home">
@@ -66,28 +69,78 @@ export const NotesHome: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3" data-testid="vault-notes-grid">
-            {notes.map((note) => (
-              <button
-                key={note.path}
-                type="button"
-                data-testid="vault-note-card"
-                onClick={() => openNote(note.path)}
-                className="flex flex-col text-left p-3.5 bg-white border border-sand-200 hover:border-forest-500 hover:shadow-xs rounded-xl transition-all cursor-pointer group"
-              >
-                <div className="flex items-center justify-between gap-2 w-full mb-1">
-                  <span className="font-semibold text-stone-800 group-hover:text-forest-700 text-sm truncate">
-                    {note.name}
-                  </span>
-                  <FileText className="w-4 h-4 text-stone-400 group-hover:text-forest-600 shrink-0" />
+            {notes.map((note) => {
+              const displayName = formatDateName(note.name, language);
+              const isConfirming = confirmingDelete === note.path;
+              return (
+                <div
+                  key={note.path}
+                  data-testid="vault-note-card"
+                  className={`relative flex flex-col p-3.5 bg-white border rounded-xl transition-all group ${
+                    isConfirming
+                      ? 'border-terracotta-500'
+                      : 'border-sand-200 hover:border-forest-500 hover:shadow-xs'
+                  }`}
+                >
+                  {isConfirming ? (
+                    <div className="flex items-center justify-between gap-2 w-full min-h-[20px]">
+                      <span className="text-sm text-stone-700 truncate">{t('notes.deleteConfirm')}</span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingDelete(null)}
+                          className="px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-sand-100 rounded-md cursor-pointer"
+                        >
+                          {t('common.cancel')}
+                        </button>
+                        <button
+                          type="button"
+                          data-testid="confirm-delete-note-btn"
+                          onClick={async () => {
+                            setConfirmingDelete(null);
+                            await deleteEntry(note.path);
+                          }}
+                          className="px-2.5 py-1 text-xs font-semibold text-white bg-terracotta-600 hover:bg-terracotta-700 rounded-md cursor-pointer"
+                        >
+                          {t('common.delete')}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => openNote(note.path)}
+                        className="flex flex-col text-left w-full pr-14 cursor-pointer focus:outline-none after:absolute after:inset-0 after:rounded-xl"
+                      >
+                        <span className="font-semibold text-stone-800 group-hover:text-forest-700 text-sm truncate w-full mb-1">
+                          {displayName}
+                        </span>
+                        {note.folder && (
+                          <span className="flex items-center gap-1 text-[11px] text-stone-400 truncate">
+                            <Folder className="w-3 h-3 text-stone-400 shrink-0" />
+                            <span>{note.folder}</span>
+                          </span>
+                        )}
+                      </button>
+                      <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          aria-label={t('notes.deleteNote', { name: displayName })}
+                          title={t('common.delete')}
+                          data-testid="delete-note-btn"
+                          onClick={() => setConfirmingDelete(note.path)}
+                          className="relative z-10 p-1 -m-1 rounded-md text-stone-400 hover:text-terracotta-600 hover:bg-sand-100 cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <FileText className="w-4 h-4 text-stone-400 group-hover:text-forest-600 shrink-0" />
+                      </div>
+                    </>
+                  )}
                 </div>
-                {note.folder && (
-                  <div className="flex items-center gap-1 text-[11px] text-stone-400 truncate">
-                    <Folder className="w-3 h-3 text-stone-400 shrink-0" />
-                    <span>{note.folder}</span>
-                  </div>
-                )}
-              </button>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>

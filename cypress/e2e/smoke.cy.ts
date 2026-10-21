@@ -1,6 +1,8 @@
 describe('QuietFlow smoke test', () => {
   beforeEach(() => {
     cy.visit('/');
+    // The app opens on the Notes section; these checks are about the task list.
+    cy.get('[data-testid="section-tab-tasks"]').click();
   });
 
   it('loads the app shell', () => {

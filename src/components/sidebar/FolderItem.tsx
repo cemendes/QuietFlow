@@ -14,7 +14,7 @@ import { ipc } from '../../store/ipc';
 import { useVaultStore } from '../../store';
 import { resolveFolderIcon } from '../../services/logoService';
 import FolderContextMenu from './FolderContextMenu';
-import { useTranslation } from '../../i18n';
+import { formatDateName, useTranslation } from '../../i18n';
 import { NAV_ITEM_ACTIVE, NAV_ITEM_IDLE } from './navItemStyles';
 import { FileHistoryModal } from '../history/FileHistoryModal';
 import { dirName, lastSeparator } from '../../utils/paths';
@@ -41,7 +41,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
   onSelectFolder,
 }) => {
   const isExpanded = expandedPaths.has(node.path);
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [isCreatingSubfolder, setIsCreatingSubfolder] = useState(false);
   const [isCreatingFile, setIsCreatingFile] = useState(false);
   const [newSubName, setNewSubName] = useState('');
@@ -509,7 +509,7 @@ export const FolderItem: React.FC<FolderItemProps> = ({
               }`}
             />
           )}
-          <span className="truncate flex-1 min-w-0">{displayName}</span>
+          <span className="truncate flex-1 min-w-0">{formatDateName(displayName, language)}</span>
         </div>
 
         <div className="flex items-center gap-0.5 shrink-0">

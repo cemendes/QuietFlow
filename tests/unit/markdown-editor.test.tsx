@@ -108,43 +108,83 @@ code block
     expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('Second Note');
   });
 
-  it('handles link toolbar button with prompt input', () => {
-    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('https://quietflow.app');
+  const getEditor = () => (screen.getByTestId('markdown-editor-container') as any).__tiptap_editor;
+
+  it('inserts a link with its own text when nothing is selected', () => {
     const onChange = vi.fn();
+    render(<MarkdownEditor value="Veja" onChange={onChange} />);
+    act(() => {
+      getEditor().commands.setTextSelection(getEditor().state.doc.content.size - 1);
+    });
 
-    render(<MarkdownEditor value="Visit website" onChange={onChange} />);
+    fireEvent.click(screen.getByTestId('toolbar-link-btn'));
+    fireEvent.change(screen.getByTestId('link-url-input'), { target: { value: 'quietflow.app' } });
+    fireEvent.change(screen.getByTestId('link-text-input'), { target: { value: 'o site' } });
+    act(() => {
+      fireEvent.submit(screen.getByTestId('link-form'));
+    });
 
-    const linkBtn = screen.getByTestId('toolbar-link-btn');
-    fireEvent.click(linkBtn);
-
-    expect(promptSpy).toHaveBeenCalledWith('URL', '');
-    promptSpy.mockRestore();
+    expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('[o site](https://quietflow.app)'));
+    expect(screen.queryByTestId('link-form')).toBeNull();
   });
 
-  it('handles cancelling link prompt gracefully', () => {
-    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue(null);
+  it('uses the URL itself as the text when no text is given', () => {
     const onChange = vi.fn();
+    render(<MarkdownEditor value="Veja" onChange={onChange} />);
+    act(() => {
+      getEditor().commands.setTextSelection(getEditor().state.doc.content.size - 1);
+    });
 
-    render(<MarkdownEditor value="Visit website" onChange={onChange} />);
+    fireEvent.click(screen.getByTestId('toolbar-link-btn'));
+    fireEvent.change(screen.getByTestId('link-url-input'), { target: { value: 'https://quietflow.app' } });
+    act(() => {
+      fireEvent.submit(screen.getByTestId('link-form'));
+    });
 
-    const linkBtn = screen.getByTestId('toolbar-link-btn');
-    fireEvent.click(linkBtn);
-
-    expect(promptSpy).toHaveBeenCalledWith('URL', '');
-    promptSpy.mockRestore();
+    expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('https://quietflow.app'));
+    expect(getEditor().getHTML()).toContain('href="https://quietflow.app"');
   });
 
-  it('unsets link if prompt returns empty string', () => {
-    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('');
+  it('links the selected text, without asking for text again', () => {
     const onChange = vi.fn();
+    render(<MarkdownEditor value="Visit website" onChange={onChange} />);
+    act(() => {
+      getEditor().commands.selectAll();
+    });
 
+    fireEvent.click(screen.getByTestId('toolbar-link-btn'));
+    expect(screen.queryByTestId('link-text-input')).toBeNull();
+    fireEvent.change(screen.getByTestId('link-url-input'), { target: { value: 'example.com' } });
+    act(() => {
+      fireEvent.submit(screen.getByTestId('link-form'));
+    });
+
+    expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('[Visit website](https://example.com)'));
+  });
+
+  it('closes the link form on Escape without changing the note', () => {
+    const onChange = vi.fn();
+    render(<MarkdownEditor value="Visit website" onChange={onChange} />);
+
+    fireEvent.click(screen.getByTestId('toolbar-link-btn'));
+    fireEvent.keyDown(screen.getByTestId('link-url-input'), { key: 'Escape' });
+
+    expect(screen.queryByTestId('link-form')).toBeNull();
+    for (const [markdown] of onChange.mock.calls) expect(markdown).toBe('Visit website');
+    expect(getEditor().getHTML()).not.toContain('<a ');
+  });
+
+  it('removes an existing link when the cursor is on it', () => {
+    const onChange = vi.fn();
     render(<MarkdownEditor value="Visit [website](https://example.com)" onChange={onChange} />);
+    act(() => {
+      getEditor().commands.setTextSelection(9);
+    });
 
-    const linkBtn = screen.getByTestId('toolbar-link-btn');
-    fireEvent.click(linkBtn);
+    fireEvent.click(screen.getByTestId('toolbar-link-btn'));
 
-    expect(promptSpy).toHaveBeenCalled();
-    promptSpy.mockRestore();
+    expect(screen.queryByTestId('link-form')).toBeNull();
+    expect(getEditor().getHTML()).not.toContain('<a ');
   });
 
   it('toggles between WYSIWYG and Raw Markdown source view via button and Cmd+/', () => {

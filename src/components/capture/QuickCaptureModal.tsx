@@ -13,7 +13,7 @@ import { useVaultStore } from '../../store';
 import { VaultNode, TaskPriority, NewTaskInput } from '../../store/types';
 import { addTaskToDocument } from '../../core/markdown';
 import { ipc } from '../../store/ipc';
-import { useTranslation } from '../../i18n';
+import { formatDateTime, formatIsoDate, useTranslation } from '../../i18n';
 
 export type CaptureType = 'task' | 'note';
 
@@ -119,7 +119,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
   const activeFile = useVaultStore((state) => state.activeFile);
   const storeAddTask = useVaultStore((state) => state.addTask);
   const refreshActiveFile = useVaultStore((state) => state.refreshActiveFile);
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const [inputVal, setInputVal] = useState('');
   const [captureType, setCaptureType] = useState<CaptureType>('task');
@@ -225,7 +225,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
           // Quick note: append to target document
           if (targetFilePath) {
             const currentContent = await ipc.readFile(targetFilePath);
-            const noteBlock = `\n\n### Note (${new Date().toLocaleString()})\n${inputVal.trim()}\n`;
+            const noteBlock = `\n\n### Note (${formatDateTime(new Date(), language)})\n${inputVal.trim()}\n`;
             await ipc.writeFileAtomic(targetFilePath, currentContent + noteBlock);
             if (targetFilePath === activeFile) {
               await refreshActiveFile();
@@ -379,7 +379,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
               {parsed.dueDate && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-50 text-sky-700 border border-sky-200/60">
                   <Calendar className="w-3 h-3 text-sky-500" />
-                  {parsed.dueDate}
+                  {formatIsoDate(parsed.dueDate, language)}
                 </span>
               )}
             </div>

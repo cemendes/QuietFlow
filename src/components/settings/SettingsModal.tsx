@@ -22,7 +22,7 @@ import {
   safeRelaunchApp,
   UpdateInfo,
 } from '../../utils/updater';
-import { LANGUAGES, useTranslation } from '../../i18n';
+import { LANGUAGES, Language, formatDateTime, useTranslation } from '../../i18n';
 
 export interface SettingsModalProps {
   isOpen: boolean;
@@ -31,31 +31,24 @@ export interface SettingsModalProps {
 
 type TabType = 'vault' | 'ai' | 'snapshots' | 'theme' | 'language' | 'shortcuts' | 'about';
 
-const formattedBuildTime = (() => {
+/** Build timestamp shown in About, in the current language's date format. */
+function formatBuildTime(lang: Language): string | null {
   try {
     if (typeof __BUILD_TIME__ !== 'undefined' && __BUILD_TIME__) {
       const d = new Date(__BUILD_TIME__);
-      if (!isNaN(d.getTime())) {
-        return d.toLocaleString(undefined, {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-        });
-      }
+      if (!isNaN(d.getTime())) return formatDateTime(d, lang);
     }
   } catch {
     // fallback
   }
   return null;
-})();
+}
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const vaultPath = useVaultStore((state) => state.vaultPath);
   const loadVault = useVaultStore((state) => state.loadVault);
   const { t, language, setLanguage } = useTranslation();
+  const formattedBuildTime = formatBuildTime(language);
 
   const [activeTab, setActiveTab] = useState<TabType>('vault');
   const [tempVaultPath, setTempVaultPath] = useState(vaultPath || '');

@@ -102,10 +102,41 @@ export function translate(key: TranslationKey, params?: TranslationParams): stri
   return translateIn(language, key, params);
 }
 
-/** "Sep 5" in English, "5 set" in Brazilian Portuguese. */
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+/** An ISO date optionally followed by a time, e.g. `2026-08-29 07:15`. */
+const ISO_DATE_PREFIX = /^(\d{4})-(\d{2})-(\d{2})(\s.*)?$/;
+
+/** "05/09/2026" (Brazilian DD/MM/YYYY). */
+function formatBrDate(date: Date): string {
+  return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
+}
+
+/** "Sep 5" in English, "05/09/2026" in Brazilian Portuguese. */
 export function formatShortDate(date: Date, lang: Language = language): string {
-  const month = SHORT_MONTHS[lang][date.getMonth()];
-  return lang === 'pt-BR' ? `${date.getDate()} ${month}` : `${month} ${date.getDate()}`;
+  if (lang === 'pt-BR') return formatBrDate(date);
+  return `${SHORT_MONTHS[lang][date.getMonth()]} ${date.getDate()}`;
+}
+
+/**
+ * Display form of a stored `YYYY-MM-DD` date (optionally followed by a time): DD/MM/YYYY in Brazilian Portuguese, unchanged in English.
+ * Anything that isn't an ISO date is returned as-is.
+ */
+export function formatIsoDate(iso: string, lang: Language = language): string {
+  const match = ISO_DATE_PREFIX.exec(iso.trim());
+  if (!match || lang !== 'pt-BR') return iso;
+  return `${match[3]}/${match[2]}/${match[1]}${match[4] ?? ''}`;
+}
+
+/** Shows a note/file name that is just an ISO date (e.g. `2026-10-18`) in the language's date format. */
+export function formatDateName(name: string, lang: Language = language): string {
+  return ISO_DATE.test(name) ? formatIsoDate(name, lang) : name;
+}
+
+/** "05/09/2026 14:07" in Brazilian Portuguese, the browser's locale format otherwise. */
+export function formatDateTime(date: Date, lang: Language = language): string {
+  if (lang === 'pt-BR') return `${formatBrDate(date)} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+  return date.toLocaleString('en-US');
 }
 
 /** Subscribes the component to language changes and returns a `t` bound to the current language. */

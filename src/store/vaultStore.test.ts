@@ -173,6 +173,35 @@ title: Test Note
     expect(ipc.startWatchingVault).toHaveBeenCalledWith('/vault');
   });
 
+  it('starts on the Notes section listing every note, with Inbox kept for the Tasks section', async () => {
+    const mockTree: VaultNode = {
+      name: 'MyVault',
+      path: '/vault',
+      isDirectory: true,
+      children: [
+        { name: 'Inbox.md', path: '/vault/Inbox.md', isDirectory: false, children: [], fileCount: 0 },
+      ],
+      fileCount: 1,
+    };
+    vi.mocked(ipc.initVault).mockResolvedValue(mockTree);
+    vi.mocked(ipc.startWatchingVault).mockResolvedValue(undefined);
+    vi.mocked(ipc.readFile).mockResolvedValue('# Inbox\n- [ ] First task\n');
+    useVaultStore.getState().reset();
+
+    await useVaultStore.getState().loadVault('/vault');
+
+    let state = useVaultStore.getState();
+    expect(state.section).toBe('notes');
+    expect(state.activeFile).toBeNull();
+    expect(state.activeFolder).toBe('/vault');
+    expect(state.sectionSelection.tasks.file).toBe('/vault/Inbox.md');
+
+    await useVaultStore.getState().setSection('tasks');
+    state = useVaultStore.getState();
+    expect(state.activeFile).toBe('/vault/Inbox.md');
+    expect(state.activeView).toBe('list');
+  });
+
   it('selectFolder aggregates all tasks across all notes inside the folder', async () => {
     const mockTree: VaultNode = {
       name: 'Vault',

@@ -69,6 +69,7 @@ title: 2026-08-28
     // 1. Initial load & switch to Kanban view
     await act(async () => {
       await useVaultStore.getState().loadVault(mockVaultPath);
+      await useVaultStore.getState().setSection('tasks'); // the app opens on Notes
       await useVaultStore.getState().selectFile(ccoFilePath);
       useVaultStore.getState().setActiveView('kanban');
     });

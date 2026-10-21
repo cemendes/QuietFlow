@@ -15,7 +15,9 @@ import {
 import { useVaultStore } from '../../store';
 import { SubtaskItem, TaskComment, TaskPriority, TaskStatus } from '../../store/types';
 import MarkdownEditor from './MarkdownEditor';
+import { DateInput } from '../common/DateInput';
 import { baseName } from '../../utils/paths';
+import { formatIsoDate, useTranslation } from '../../i18n';
 
 export interface TaskDetailPageProps {
   className?: string;
@@ -26,6 +28,7 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
   className = '',
   onBack,
 }) => {
+  const { language } = useTranslation();
   const activeTaskId = useVaultStore((state) => state.activeTaskId);
   const tasks = useVaultStore((state) => state.tasks);
   const activeView = useVaultStore((state) => state.activeView);
@@ -499,11 +502,10 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-stone-500">Due Date</span>
                   <div className="flex items-center gap-1.5">
-                    <input
-                      type="date"
+                    <DateInput
                       data-testid="detail-due-date-input"
-                      value={activeTask.dueDate || ''}
-                      onChange={(e) => handleDueDateChange(e.target.value || undefined)}
+                      value={activeTask.dueDate}
+                      onChange={handleDueDateChange}
                       className="px-2 py-1 text-xs bg-sand-50 border border-sand-200 rounded-lg text-stone-800 focus:outline-none focus:ring-1 focus:ring-forest-500"
                     />
                     {activeTask.dueDate && (
@@ -639,7 +641,7 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] text-stone-400">
-                            {comment.timestamp}
+                            {formatIsoDate(comment.timestamp, language)}
                           </span>
                           <button
                             type="button"

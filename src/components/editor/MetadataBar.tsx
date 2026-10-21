@@ -1,7 +1,8 @@
 import React from 'react';
 import { TaskPriority, TaskStatus } from '../../store/types';
 import { Calendar, Tag, Folder, FileText, ChevronRight } from 'lucide-react';
-import { useTranslation } from '../../i18n';
+import { formatDateName, useTranslation } from '../../i18n';
+import { DateInput } from '../common/DateInput';
 
 export interface MetadataBarProps {
   status: TaskStatus;
@@ -26,7 +27,7 @@ export const MetadataBar: React.FC<MetadataBarProps> = ({
   onDueDateChange,
   className = '',
 }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   // Format clean breadcrumb (e.g. CCO / 2026-08-28)
   const breadcrumb = React.useMemo(() => {
     if (!filePath) return null;
@@ -37,9 +38,9 @@ export const MetadataBar: React.FC<MetadataBarProps> = ({
 
     return {
       folder: isVaultRoot ? null : parentFolder,
-      file: fileName,
+      file: formatDateName(fileName, language),
     };
-  }, [filePath]);
+  }, [filePath, language]);
 
   return (
     <div className={`flex flex-col gap-3 py-3 border-y border-sand-200 text-xs text-slate-600 ${className}`}>
@@ -108,11 +109,11 @@ export const MetadataBar: React.FC<MetadataBarProps> = ({
             <Calendar className="w-3 h-3 text-slate-400" />
             {t('meta.dueDate')}
           </label>
-          <input
-            type="date"
+          <DateInput
             data-testid="due-date-input"
-            value={dueDate || ''}
-            onChange={(e) => onDueDateChange(e.target.value || undefined)}
+            aria-label={t('meta.dueDate')}
+            value={dueDate}
+            onChange={onDueDateChange}
             className="w-full px-2.5 py-1.5 bg-white border border-sand-200 rounded-lg text-slate-700 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-forest-500 hover:border-sand-300 transition-colors"
           />
         </div>
