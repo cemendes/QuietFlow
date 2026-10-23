@@ -134,7 +134,6 @@ export const NotesHome: React.FC = () => {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                        <FileText className="w-4 h-4 text-stone-400 group-hover:text-forest-600 shrink-0" />
                       </div>
                     </>
                   )}

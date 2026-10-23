@@ -332,12 +332,12 @@ export const LensDocumentCanvas: React.FC = () => {
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 shrink-0">
               <h2 className="text-sm font-bold tracking-tight text-slate-800 uppercase flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-emerald-600" />
-                Documentation & Notes
+                {t('editor.docHeading')}
               </h2>
               <div className="text-xs text-slate-400 flex items-center gap-3">
-                <span>{activeDocument.wordCount || 0} words</span>
+                <span>{t('editor.wordCount', { count: activeDocument.wordCount || 0 })}</span>
                 <span>•</span>
-                <span>{activeDocument.readingTimeMinutes || 1} min read</span>
+                <span>{t('editor.readTime', { count: activeDocument.readingTimeMinutes || 1 })}</span>
               </div>
             </div>
 
