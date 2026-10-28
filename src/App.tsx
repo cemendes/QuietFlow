@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useVaultStore } from './store';
 import { ipc } from './store/ipc';
 import { Sidebar } from './components/sidebar';
-import { TaskList } from './components/tasks';
+import { TaskList, TasksHome } from './components/tasks';
 import { KanbanBoard } from './components/kanban';
 import { TaskDetailPage } from './components/editor';
 import { QuickCaptureModal } from './components/capture';
@@ -17,17 +17,17 @@ import { QuickFileSwitcher } from './components/document/QuickFileSwitcher';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 import { useTranslation } from './i18n';
+import { sectionRootPath, sectionSubtree } from './core/vault/sections';
 
 export default function App() {
   const { t } = useTranslation();
   const vaultPath = useVaultStore((state) => state.vaultPath);
   const activeView = useVaultStore((state) => state.activeView);
-  const setActiveView = useVaultStore((state) => state.setActiveView);
   const section = useVaultStore((state) => state.section);
   const openNote = useVaultStore((state) => state.openNote);
+  const openTaskList = useVaultStore((state) => state.openTaskList);
   const activeTaskId = useVaultStore((state) => state.activeTaskId);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
-  const selectFile = useVaultStore((state) => state.selectFile);
   const createFile = useVaultStore((state) => state.createFile);
   const activeFile = useVaultStore((state) => state.activeFile);
 
@@ -79,19 +79,21 @@ export default function App() {
     },
   });
 
-  // Handle new note creation
+  // Handle new note creation (always at the top of Anotações/)
   const handleNewNote = async () => {
     if (!vaultPath) return;
     const now = new Date();
     const baseTitle = t('app.newNoteName');
+    const tree = useVaultStore.getState().vaultTree;
+    const notesRoot = sectionRootPath(tree, vaultPath, 'notes');
     const existing = new Set(
-      (useVaultStore.getState().vaultTree?.children ?? []).map((c) => c.name.toLowerCase()),
+      (sectionSubtree(tree, 'notes')?.children ?? []).map((c) => c.name.toLowerCase()),
     );
     let noteName = baseTitle;
     for (let n = 2; existing.has(`${noteName}.md`.toLowerCase()); n++) {
       noteName = `${baseTitle} ${n}`;
     }
-    const newFilePath = `${vaultPath}/${noteName}.md`;
+    const newFilePath = `${notesRoot}/${noteName}.md`;
     const initialContent = `---\ntitle: ${noteName}\ndate: ${now.toISOString().split('T')[0]}\n---\n\n`;
     await createFile(newFilePath, initialContent);
     await openNote(newFilePath);
@@ -106,8 +108,7 @@ export default function App() {
             openNote(filePath);
           } else {
             // Tasks section: a file is only a scope for its tasks, never a document screen.
-            selectFile(filePath);
-            setActiveView('list');
+            openTaskList(filePath);
           }
         }}
         onNewNote={handleNewNote}
@@ -130,6 +131,8 @@ export default function App() {
             activeFile ? <LensDocumentCanvas /> : <NotesHome />
           ) : activeTaskId ? (
             <TaskDetailPage onBack={() => setActiveTaskId(null)} />
+          ) : activeView === 'home' && !activeFile ? (
+            <TasksHome />
           ) : activeView === 'kanban' ? (
             <KanbanBoard />
           ) : (

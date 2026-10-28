@@ -7,6 +7,8 @@ import FocusHeader from './FocusHeader';
 import ZenTheaterModal from '../zen/ZenTheaterModal';
 import { useTranslation } from '../../i18n';
 import { baseName } from '../../utils/paths';
+import { sectionRootPath } from '../../core/vault/sections';
+import BackToLists from './BackToLists';
 
 export interface TaskListProps {
   title?: string;
@@ -39,6 +41,7 @@ export const TaskList: React.FC<TaskListProps> = ({
 
   const activeFolder = useVaultStore((state) => state.activeFolder);
   const vaultPath = useVaultStore((state) => state.vaultPath);
+  const vaultTree = useVaultStore((state) => state.vaultTree);
   const logoConfig = useVaultStore((state) => state.logoConfig);
   const getFolderIcon = useVaultStore((state) => state.getFolderIcon);
 
@@ -95,6 +98,9 @@ export const TaskList: React.FC<TaskListProps> = ({
   // Determine display title
   const computedTitle = useMemo(() => {
     if (title) return title;
+    if (vaultPath && activeFolder && activeFolder === sectionRootPath(vaultTree, vaultPath, 'tasks')) {
+      return t('focus.all');
+    }
     if (vaultPath && activeFolder === vaultPath) {
       return 'My Vault';
     }
@@ -114,7 +120,7 @@ export const TaskList: React.FC<TaskListProps> = ({
       return folderName.charAt(0).toUpperCase() + folderName.slice(1);
     }
     return t('common.todaysFocus');
-  }, [title, activeFile, activeFolder, vaultPath, t]);
+  }, [title, activeFile, activeFolder, vaultPath, vaultTree, t]);
 
   const [activeFocusBucket, setActiveFocusBucket] = React.useState<'all' | 'now' | 'not-now'>('all');
 
@@ -186,6 +192,7 @@ export const TaskList: React.FC<TaskListProps> = ({
         data-tauri-drag-region
         className="flex flex-col p-6 pb-3 border-b border-sand-200 bg-sand-50/80 backdrop-blur-sm select-none"
       >
+        <BackToLists />
         <FocusHeader
           title={computedTitle === 'My Vault' ? t('sidebar.notes') : computedTitle}
           icon={headerIcon}

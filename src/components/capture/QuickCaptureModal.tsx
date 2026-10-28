@@ -14,6 +14,7 @@ import { VaultNode, TaskPriority, NewTaskInput } from '../../store/types';
 import { addTaskToDocument } from '../../core/markdown';
 import { ipc } from '../../store/ipc';
 import { formatDateTime, formatIsoDate, useTranslation } from '../../i18n';
+import { sectionSubtree } from '../../core/vault/sections';
 
 export type CaptureType = 'task' | 'note';
 
@@ -128,29 +129,42 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const files = useMemo(() => extractAllMarkdownFiles(vaultTree), [vaultTree]);
+  // Tasks are captured into Tarefas/ lists, notes into Anotações/ files.
+  const captureSection = captureType === 'task' ? 'tasks' : 'notes';
+  const files = useMemo(
+    () => extractAllMarkdownFiles(sectionSubtree(vaultTree, captureSection) ?? vaultTree),
+    [vaultTree, captureSection],
+  );
+  const activeFileInScope = activeFile && files.some((f) => f.path === activeFile) ? activeFile : null;
 
   // Set default selected file on open or when files change
   useEffect(() => {
-    if (activeFile) {
-      setSelectedFile(activeFile);
+    if (activeFileInScope) {
+      setSelectedFile(activeFileInScope);
     } else {
       const inboxFile = files.find((f) => f.name.toLowerCase().includes('inbox') || f.path.toLowerCase().endsWith('inbox.md'));
       if (inboxFile) {
         setSelectedFile(inboxFile.path);
-      } else if (files.length > 0 && !selectedFile) {
+      } else if (files.length > 0 && !files.some((f) => f.path === selectedFile)) {
         setSelectedFile(files[0].path);
       }
     }
-  }, [activeFile, files]);
+  }, [activeFileInScope, files]);
 
-  // Focus input automatically when modal opens
+  // Every opening starts a fresh task capture (kept apart from the effect below, which also
+  // re-runs when switching Task / Quick note changes the destination list)
   useEffect(() => {
     if (isOpen) {
       setInputVal('');
       setCaptureType('task');
-      if (activeFile) {
-        setSelectedFile(activeFile);
+    }
+  }, [isOpen]);
+
+  // Focus input automatically when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      if (activeFileInScope) {
+        setSelectedFile(activeFileInScope);
       } else {
         const inboxFile = files.find((f) => f.name.toLowerCase().includes('inbox') || f.path.toLowerCase().endsWith('inbox.md'));
         if (inboxFile) {
@@ -161,7 +175,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
       }
       inputRef.current?.focus();
     }
-  }, [isOpen, activeFile, files]);
+  }, [isOpen, activeFileInScope, files]);
 
   // Keyboard shortcut listener for Esc key
   useEffect(() => {
@@ -189,7 +203,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      const targetFilePath = selectedFile || activeFile || (files[0] ? files[0].path : '');
+      const targetFilePath = selectedFile || activeFileInScope || (files[0] ? files[0].path : '');
 
       const payload: CapturePayload = {
         type: captureType,

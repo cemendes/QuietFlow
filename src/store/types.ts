@@ -30,7 +30,8 @@ export interface VaultNode {
 
 export type VaultTree = VaultNode;
 
-export type ViewMode = 'list' | 'kanban' | 'document';
+/** `home` is the Tasks section's landing grid of task lists (the counterpart of NotesHome). */
+export type ViewMode = 'home' | 'list' | 'kanban' | 'document';
 
 /** Top-level area of the app. Tasks and Notes never share a screen. */
 export type AppSection = 'tasks' | 'notes';
@@ -123,6 +124,8 @@ export interface VaultStoreActions {
   setSection: (section: AppSection) => Promise<void>;
   openNote: (filePath: string) => Promise<void>;
   selectNoteFolder: (folderPath: string | null) => void;
+  openTaskList: (filePath: string) => Promise<void>;
+  selectTaskFolder: (folderPath: string | null) => void;
   setSelectedTag: (tag: string | null) => void;
   setSelectedPriority: (priority: TaskPriority | null) => void;
   setError: (error: string | null) => void;

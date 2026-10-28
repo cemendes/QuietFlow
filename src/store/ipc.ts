@@ -53,7 +53,7 @@ class BrowserMockIpc implements IpcInterface {
   private seedDefaultMockFiles() {
     const today = new Date().toISOString().split('T')[0];
     this.files.set(
-      '/MockVault/today.md',
+      '/MockVault/Tarefas/today.md',
       `---
 id: today-focus
 title: Today's Focus
@@ -73,7 +73,7 @@ Timeline on track for September 15 release.
     );
 
     this.files.set(
-      '/MockVault/Customers/Acme Corp.md',
+      '/MockVault/Tarefas/Customers/Acme Corp.md',
       `---
 id: cust-acme-corp
 title: Acme Corp
@@ -87,7 +87,7 @@ category: Customers
     );
 
     this.files.set(
-      '/MockVault/Customers/Beta Health.md',
+      '/MockVault/Tarefas/Customers/Beta Health.md',
       `---
 id: cust-beta-health
 title: Beta Health
@@ -96,6 +96,19 @@ category: Customers
 
 # Deliverables
 - [ ] Onboarding checklist verification @priority(medium) #support
+`
+    );
+
+    this.files.set(
+      '/MockVault/Anotações/Ideias de projeto.md',
+      `---
+title: Ideias de projeto
+date: ${today}
+---
+
+# Ideias de projeto
+
+Rascunho livre: o que tornaria a revisão semanal mais leve?
 `
     );
   }

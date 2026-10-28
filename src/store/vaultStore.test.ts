@@ -173,33 +173,114 @@ title: Test Note
     expect(ipc.startWatchingVault).toHaveBeenCalledWith('/vault');
   });
 
-  it('starts on the Notes section listing every note, with Inbox kept for the Tasks section', async () => {
-    const mockTree: VaultNode = {
+  describe('section folders', () => {
+    const sectionedTree = (): VaultNode => ({
       name: 'MyVault',
       path: '/vault',
       isDirectory: true,
+      fileCount: 2,
       children: [
-        { name: 'Inbox.md', path: '/vault/Inbox.md', isDirectory: false, children: [], fileCount: 0 },
+        {
+          name: 'Anotações',
+          path: '/vault/Anotações',
+          isDirectory: true,
+          fileCount: 1,
+          children: [
+            { name: 'Ideas.md', path: '/vault/Anotações/Ideas.md', isDirectory: false, children: [], fileCount: 0 },
+          ],
+        },
+        {
+          name: 'Tarefas',
+          path: '/vault/Tarefas',
+          isDirectory: true,
+          fileCount: 1,
+          children: [
+            { name: 'Inbox.md', path: '/vault/Tarefas/Inbox.md', isDirectory: false, children: [], fileCount: 0 },
+          ],
+        },
       ],
-      fileCount: 1,
-    };
-    vi.mocked(ipc.initVault).mockResolvedValue(mockTree);
-    vi.mocked(ipc.startWatchingVault).mockResolvedValue(undefined);
-    vi.mocked(ipc.readFile).mockResolvedValue('# Inbox\n- [ ] First task\n');
-    useVaultStore.getState().reset();
+    });
 
-    await useVaultStore.getState().loadVault('/vault');
+    beforeEach(() => {
+      vi.mocked(ipc.startWatchingVault).mockResolvedValue(undefined);
+      vi.mocked(ipc.readFile).mockResolvedValue('# Inbox\n- [ ] First task\n');
+      useVaultStore.getState().reset();
+    });
 
-    let state = useVaultStore.getState();
-    expect(state.section).toBe('notes');
-    expect(state.activeFile).toBeNull();
-    expect(state.activeFolder).toBe('/vault');
-    expect(state.sectionSelection.tasks.file).toBe('/vault/Inbox.md');
+    it('starts on the Notes section at Anotações, with Tasks remembered at the Tarefas grid', async () => {
+      vi.mocked(ipc.initVault).mockResolvedValue(sectionedTree());
 
-    await useVaultStore.getState().setSection('tasks');
-    state = useVaultStore.getState();
-    expect(state.activeFile).toBe('/vault/Inbox.md');
-    expect(state.activeView).toBe('list');
+      await useVaultStore.getState().loadVault('/vault');
+
+      let state = useVaultStore.getState();
+      expect(state.section).toBe('notes');
+      expect(state.activeFile).toBeNull();
+      expect(state.activeFolder).toBe('/vault/Anotações');
+      expect(state.sectionSelection.tasks).toEqual({ file: null, folder: '/vault/Tarefas' });
+      expect(ipc.moveEntry).not.toHaveBeenCalled();
+
+      await useVaultStore.getState().setSection('tasks');
+      state = useVaultStore.getState();
+      expect(state.activeFolder).toBe('/vault/Tarefas');
+      expect(state.activeFile).toBeNull();
+      expect(state.activeView).toBe('home');
+      expect(state.tasks).toEqual([]);
+    });
+
+    it('creates Tarefas/Inbox.md when the Tarefas folder has no Inbox', async () => {
+      const tree = sectionedTree();
+      tree.children[1].children = [];
+      vi.mocked(ipc.initVault).mockResolvedValue(tree);
+
+      await useVaultStore.getState().loadVault('/vault');
+
+      expect(ipc.writeFileAtomic).toHaveBeenCalledWith('/vault/Tarefas/Inbox.md', expect.stringContaining('title: Inbox'));
+    });
+
+    it('migrates a legacy vault into the section folders on first load', async () => {
+      vi.mocked(ipc.initVault)
+        .mockResolvedValueOnce({
+          name: 'MyVault',
+          path: '/vault',
+          isDirectory: true,
+          fileCount: 1,
+          children: [
+            { name: 'Inbox.md', path: '/vault/Inbox.md', isDirectory: false, children: [], fileCount: 0 },
+          ],
+        })
+        .mockResolvedValue(sectionedTree());
+
+      await useVaultStore.getState().loadVault('/vault');
+
+      expect(ipc.createDirectory).toHaveBeenCalledWith('/vault/Tarefas');
+      expect(ipc.createDirectory).toHaveBeenCalledWith('/vault/Anotações');
+      expect(ipc.moveEntry).toHaveBeenCalledWith('/vault/Inbox.md', '/vault/Tarefas/Inbox.md');
+      expect(useVaultStore.getState().vaultTree).toEqual(sectionedTree());
+    });
+
+    it('selectTaskFolder shows the Tasks grid for a folder without loading tasks', () => {
+      useVaultStore.setState({ vaultPath: '/vault', vaultTree: sectionedTree(), tasks: [{ id: 'x' } as TaskItem] });
+
+      useVaultStore.getState().selectTaskFolder('/vault/Tarefas');
+
+      const state = useVaultStore.getState();
+      expect(state.activeFolder).toBe('/vault/Tarefas');
+      expect(state.activeFile).toBeNull();
+      expect(state.activeView).toBe('home');
+      expect(state.tasks).toEqual([]);
+    });
+
+    it('openTaskList opens one list in the Tasks section', async () => {
+      useVaultStore.setState({ vaultPath: '/vault', vaultTree: sectionedTree(), section: 'notes', activeView: 'document' });
+
+      await useVaultStore.getState().openTaskList('/vault/Tarefas/Inbox.md');
+
+      const state = useVaultStore.getState();
+      expect(state.section).toBe('tasks');
+      expect(state.activeFile).toBe('/vault/Tarefas/Inbox.md');
+      expect(state.activeView).toBe('list');
+      expect(state.tasks.map((t) => t.title)).toEqual(['First task']);
+    });
   });
 
   it('selectFolder aggregates all tasks across all notes inside the folder', async () => {

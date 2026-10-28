@@ -40,15 +40,15 @@ describe('Vault Store Lens & Cognitive Re-entry State', () => {
 
   it('always opens on the Notes overview on loadVault, ignoring the last session location', async () => {
     const { ipc } = await import('../../src/store/ipc');
-    await ipc.writeFileAtomic('/MockVault/Inbox.md', '# Inbox\n');
-    await ipc.writeFileAtomic('/MockVault/Notes/Important.md', '# Important Note\n');
-    localStorage.setItem('quietflow-last-active-file', '/MockVault/Notes/Important.md');
+    await ipc.writeFileAtomic('/MockVault/Tarefas/Inbox.md', '# Inbox\n');
+    await ipc.writeFileAtomic('/MockVault/Anotações/Important.md', '# Important Note\n');
+    localStorage.setItem('quietflow-last-active-file', '/MockVault/Anotações/Important.md');
 
     await useVaultStore.getState().loadVault('/MockVault');
     expect(useVaultStore.getState().section).toBe('notes');
     expect(useVaultStore.getState().activeFile).toBeNull();
-    expect(useVaultStore.getState().activeFolder).toBe('/MockVault');
-    // Inbox stays the Tasks section's landing note
-    expect(useVaultStore.getState().sectionSelection.tasks.file).toBe('/MockVault/Inbox.md');
+    expect(useVaultStore.getState().activeFolder).toBe('/MockVault/Anotações');
+    // Tasks lands on its grid of lists at the top of Tarefas/
+    expect(useVaultStore.getState().sectionSelection.tasks).toEqual({ file: null, folder: '/MockVault/Tarefas' });
   });
 });

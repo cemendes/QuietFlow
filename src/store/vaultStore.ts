@@ -7,6 +7,8 @@ import {
 } from '../core/markdown';
 import { setFrontmatterTitle } from '../core/markdown/frontmatterTitle';
 import { dirName, lastSeparator } from '../utils/paths';
+import { runSectionMigration } from '../core/vault/migrateSections';
+import { sectionRootPath, sectionSubtree } from '../core/vault/sections';
 import {
   loadLogoConfig,
   persistFolderEmoji,
@@ -111,10 +113,32 @@ async function loadVault(vaultPath: string): Promise<void> {
       }
     }
 
-    const [tree, logoConfig] = await Promise.all([
+    let [tree, logoConfig] = await Promise.all([
       ipc.initVault(vaultPath),
       loadLogoConfig(vaultPath),
     ]);
+
+    // Each section lives in its own folder; a vault from before that split is sorted once here.
+    if (!sectionSubtree(tree, 'tasks') || !sectionSubtree(tree, 'notes')) {
+      lastSelfWriteTimestamp = Date.now();
+      await runSectionMigration(tree, vaultPath, ipc);
+      tree = await ipc.initVault(vaultPath);
+    }
+    const tasksRoot = sectionRootPath(tree, vaultPath, 'tasks');
+    const notesRoot = sectionRootPath(tree, vaultPath, 'notes');
+    // Quick Capture drops tasks into Tarefas/Inbox.md, so make sure it exists.
+    const hasInbox = sectionSubtree(tree, 'tasks')?.children?.some(
+      (c) => !c.isDirectory && c.name.toLowerCase() === 'inbox.md',
+    );
+    if (!hasInbox) {
+      try {
+        await writeVaultFile(`${tasksRoot}/Inbox.md`, `---\ntitle: Inbox\n---\n\n# Inbox\n`);
+        tree = await ipc.initVault(vaultPath);
+      } catch {
+        // Read-only or mock vaults: Quick Capture falls back to any task list
+      }
+    }
+
     set((prev) => ({
       ...prev,
       vaultPath,
@@ -123,32 +147,17 @@ async function loadVault(vaultPath: string): Promise<void> {
       isLoading: false,
     }));
 
-    // Always open on the Notes section, listing every note in the vault. The Inbox note (created
-    // if missing) is remembered as the Tasks section's starting point for when the user switches.
+    // Always open on the Notes section listing every note; Tasks starts on its grid of lists.
     if (!getState().activeFile && !getState().activeFolder) {
-      let inboxNode = tree.children?.find((c) => !c.isDirectory && c.name.toLowerCase() === 'inbox.md');
-
-      if (!inboxNode && vaultPath) {
-        try {
-          const inboxPath = `${vaultPath}/Inbox.md`;
-          await writeVaultFile(inboxPath, `---\ntitle: Inbox\n---\n\n# Inbox\n`);
-          await refreshVault();
-          inboxNode = { name: 'Inbox.md', path: inboxPath, isDirectory: false, children: [], fileCount: 0 };
-        } catch {
-          // Safe fallback in mock/read-only vaults
-          inboxNode = tree.children?.find((c) => !c.isDirectory && c.name.endsWith('.md'));
-        }
-      }
-
       set({
         section: 'notes',
         activeView: 'document',
         sectionSelection: {
-          tasks: { file: inboxNode?.path ?? null, folder: inboxNode ? null : vaultPath },
-          notes: { file: null, folder: vaultPath },
+          tasks: { file: null, folder: tasksRoot },
+          notes: { file: null, folder: notesRoot },
         },
       });
-      selectNoteFolder(vaultPath);
+      selectNoteFolder(notesRoot);
     }
 
     // Clean up any existing listener
@@ -165,10 +174,12 @@ async function loadVault(vaultPath: string): Promise<void> {
           await refreshVault();
           // Only refresh active file/folder if this was an external change (not initiated by app save)
           if (!isSelfWrite) {
-            if (getState().activeFile) {
+            const s = getState();
+            if (s.activeFile) {
               await refreshActiveFile();
-            } else if (getState().activeFolder) {
-              await selectFolder(getState().activeFolder!);
+            } else if (s.activeFolder && s.section === 'tasks' && s.activeView !== 'home') {
+              // Only the aggregated task list holds folder tasks; both home grids re-read the tree.
+              await selectFolder(s.activeFolder);
             }
           }
         }
@@ -722,14 +733,10 @@ async function setSection(next: AppSection): Promise<void> {
     activeView: next === 'notes' ? 'document' : 'list',
   });
   const target = memory[next];
-  if (next === 'notes') {
-    if (target.file) await selectFile(target.file);
-    else selectNoteFolder(target.folder ?? s.vaultPath);
-    return;
-  }
+  const root = s.vaultPath ? sectionRootPath(s.vaultTree, s.vaultPath, next) : null;
   if (target.file) await selectFile(target.file);
-  else if (target.folder) await selectFolder(target.folder);
-  else if (s.vaultPath) await selectFolder(s.vaultPath);
+  else if (next === 'notes') selectNoteFolder(target.folder ?? root);
+  else selectTaskFolder(target.folder ?? root);
 }
 
 async function openNote(filePath: string): Promise<void> {
@@ -750,6 +757,30 @@ function selectNoteFolder(folderPath: string | null): void {
     activeFile: null,
     activeDocument: null,
     activeTaskId: null,
+    tasks: [],
+  });
+}
+
+/** Opens one task list (a file under Tarefas/) as the Tasks section's list or kanban. */
+async function openTaskList(filePath: string): Promise<void> {
+  const s = getState();
+  set({
+    section: 'tasks',
+    sectionSelection: s.section === 'tasks' ? s.sectionSelection : rememberSelection(),
+    activeTaskId: null,
+    activeView: s.section === 'tasks' && s.activeView === 'kanban' ? 'kanban' : 'list',
+  });
+  await selectFile(filePath);
+}
+
+/** Tasks-section folder navigation: shows the grid of lists, no tasks are loaded. */
+function selectTaskFolder(folderPath: string | null): void {
+  set({
+    activeFolder: folderPath,
+    activeFile: null,
+    activeDocument: null,
+    activeTaskId: null,
+    activeView: 'home',
     tasks: [],
   });
 }
@@ -963,6 +994,8 @@ const actions = {
   setSection,
   openNote,
   selectNoteFolder,
+  openTaskList,
+  selectTaskFolder,
   setSelectedTag,
   setSelectedPriority,
   setError,

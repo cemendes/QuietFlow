@@ -15,6 +15,7 @@ import { isTauriEnvironment, ipc } from '../../store/ipc';
 import { FolderTree } from './FolderTree';
 import { useTranslation } from '../../i18n';
 import { NAV_ITEM_ACTIVE, NAV_ITEM_IDLE } from './navItemStyles';
+import { sectionRootPath, sectionSubtree } from '../../core/vault/sections';
 
 export interface SidebarProps {
   className?: string;
@@ -50,12 +51,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const section = useVaultStore((state) => state.section);
   const setSection = useVaultStore((state) => state.setSection);
   const selectNoteFolder = useVaultStore((state) => state.selectNoteFolder);
-  const selectFolder = useVaultStore((state) => state.selectFolder);
-  const setActiveView = useVaultStore((state) => state.setActiveView);
+  const selectTaskFolder = useVaultStore((state) => state.selectTaskFolder);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
   const refreshVault = useVaultStore((state) => state.refreshVault);
   const getFolderIcon = useVaultStore((state) => state.getFolderIcon);
   const { t } = useTranslation();
+
+  // Each section only shows its own folder (Tarefas/ or Anotações/); vaults without one show everything.
+  const sectionTree = sectionSubtree(vaultTree, section) ?? vaultTree;
+  const sectionRoot = vaultPath ? sectionRootPath(vaultTree, vaultPath, section) : null;
+  const selectSectionFolder = (path: string | null) =>
+    section === 'notes' ? selectNoteFolder(path) : selectTaskFolder(path);
 
   // Keep activeScope in sync with activeFile and activeFolder
   useEffect(() => {
@@ -107,7 +113,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const handleCreateFolder = async () => {
     if (!newFolderName.trim() || !vaultPath) return;
     const folderName = newFolderName.trim();
-    const folderPath = `${vaultPath}/${folderName}`;
+    const folderPath = `${sectionRoot}/${folderName}`;
     await ipc.createDirectory(folderPath);
 
     // Auto-create a standard initial note inside the new folder
@@ -123,18 +129,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setIsCreatingFolder(false);
   };
 
-  const isVaultActive = activeScope === 'vault' || (!!vaultPath && activeFolder === vaultPath);
+  const isVaultActive =
+    activeScope === 'vault' || (!!activeFolder && (activeFolder === sectionRoot || activeFolder === vaultPath));
 
-  const handleVaultClick = async () => {
+  const handleVaultClick = () => {
     setActiveScope('vault');
     setActiveTaskId(null);
-    if (!vaultPath) return;
-    if (section === 'notes') {
-      selectNoteFolder(vaultPath);
-    } else {
-      setActiveView('list');
-      await selectFolder(vaultPath);
-    }
+    if (!sectionRoot) return;
+    selectSectionFolder(sectionRoot);
   };
 
   const handleFileSelect = (filePath: string) => {
@@ -361,25 +363,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
 
             <FolderTree
-              tree={vaultTree}
+              tree={sectionTree}
               activeFile={activeFile}
               activeFolder={activeFolder}
               onSelectFile={handleFileSelect}
-              onSelectFolder={async (path) => {
+              onSelectFolder={(path) => {
                 setActiveScope(null);
                 setActiveTaskId(null);
-                if (section === 'notes') {
-                  selectNoteFolder(path);
-                } else {
-                  setActiveView('list');
-                  await selectFolder(path);
-                }
+                selectSectionFolder(path);
               }}
             />
           </>
         ) : (
           <div className="flex flex-col items-center py-1 space-y-1">
-            {vaultTree?.children
+            {sectionTree?.children
               ?.filter((c) => c.isDirectory)
               .map((folder) => {
                 const icon = getFolderIcon ? getFolderIcon(folder.path) : (typeof localStorage !== 'undefined' ? localStorage.getItem(`folder-icon-${folder.path}`) : null);

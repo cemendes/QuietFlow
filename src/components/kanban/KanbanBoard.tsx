@@ -6,6 +6,8 @@ import QuickAddBar from '../tasks/QuickAddBar';
 import { useTranslation } from '../../i18n';
 import FocusHeader from '../tasks/FocusHeader';
 import { baseName } from '../../utils/paths';
+import { sectionRootPath } from '../../core/vault/sections';
+import BackToLists from '../tasks/BackToLists';
 
 export interface KanbanBoardProps {
   title?: string;
@@ -36,6 +38,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const { t } = useTranslation();
   const activeFolder = useVaultStore((state) => state.activeFolder);
   const vaultPath = useVaultStore((state) => state.vaultPath);
+  const vaultTree = useVaultStore((state) => state.vaultTree);
   const logoConfig = useVaultStore((state) => state.logoConfig);
   const getFolderIcon = useVaultStore((state) => state.getFolderIcon);
 
@@ -93,6 +96,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   // Determine display title
   const computedTitle = useMemo(() => {
     if (title) return title;
+    if (vaultPath && activeFolder && activeFolder === sectionRootPath(vaultTree, vaultPath, 'tasks')) {
+      return t('focus.all');
+    }
     if (activeFile) {
       const fileName = baseName(activeFile)?.replace(/\.md$/, '') || t('common.tasksFallback');
       if (fileName.toLowerCase() === 'inbox') {
@@ -111,7 +117,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       return folderName.charAt(0).toUpperCase() + folderName.slice(1);
     }
     return t('common.todaysFocus');
-  }, [title, activeFile, activeFolder, vaultPath, t]);
+  }, [title, activeFile, activeFolder, vaultPath, vaultTree, t]);
 
   const [activeFocusBucket, setActiveFocusBucket] = React.useState<'all' | 'now' | 'not-now'>('all');
 
@@ -185,6 +191,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         data-tauri-drag-region
         className="flex flex-col gap-3.5 p-6 pb-3 border-b border-sand-200 bg-sand-50/80 backdrop-blur-sm select-none"
       >
+        <BackToLists />
         <FocusHeader
           title={computedTitle}
           icon={headerIcon}
