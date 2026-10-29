@@ -16,19 +16,24 @@ import { FolderTree } from './FolderTree';
 import { useTranslation } from '../../i18n';
 import { NAV_ITEM_ACTIVE, NAV_ITEM_IDLE } from './navItemStyles';
 import { sectionRootPath, sectionSubtree } from '../../core/vault/sections';
+import type { VaultNode } from '../../store/types';
 
 export interface SidebarProps {
   className?: string;
   onSelectFile?: (filePath: string) => void;
   onNewNote?: () => void;
+  onNewTask?: () => void;
   onOpenSettings?: () => void;
   onOpenArchive?: () => void;
 }
+
+const isInboxNode = (node: VaultNode) => !node.isDirectory && node.name.toLowerCase() === 'inbox.md';
 
 export const Sidebar: React.FC<SidebarProps> = ({
   className = '',
   onSelectFile,
   onNewNote,
+  onNewTask,
   onOpenSettings,
   onOpenArchive,
 }) => {
@@ -58,8 +63,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { t } = useTranslation();
 
   // Each section only shows its own folder (Tarefas/ or Anotações/); vaults without one show everything.
-  const sectionTree = sectionSubtree(vaultTree, section) ?? vaultTree;
+  const fullSectionTree = sectionSubtree(vaultTree, section) ?? vaultTree;
   const sectionRoot = vaultPath ? sectionRootPath(vaultTree, vaultPath, section) : null;
+
+  // In Tasks the root row *is* the Inbox (where New task / Quick Capture land), so Inbox leaves the tree.
+  const inboxPath =
+    section === 'tasks'
+      ? fullSectionTree?.children?.find(isInboxNode)?.path ?? (sectionRoot ? `${sectionRoot}/Inbox.md` : null)
+      : null;
+  const sectionTree =
+    section === 'tasks' && fullSectionTree
+      ? { ...fullSectionTree, children: fullSectionTree.children?.filter((c) => !isInboxNode(c)) }
+      : fullSectionTree;
   const selectSectionFolder = (path: string | null) =>
     section === 'notes' ? selectNoteFolder(path) : selectTaskFolder(path);
 
@@ -130,11 +145,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const isVaultActive =
-    activeScope === 'vault' || (!!activeFolder && (activeFolder === sectionRoot || activeFolder === vaultPath));
+    section === 'tasks'
+      ? !!activeFile && activeFile === inboxPath
+      : activeScope === 'vault' || (!!activeFolder && (activeFolder === sectionRoot || activeFolder === vaultPath));
 
   const handleVaultClick = () => {
     setActiveScope('vault');
     setActiveTaskId(null);
+    if (section === 'tasks') {
+      if (inboxPath) handleFileSelect(inboxPath);
+      return;
+    }
     if (!sectionRoot) return;
     selectSectionFolder(sectionRoot);
   };
@@ -281,13 +302,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         )}
 
+        {section === 'tasks' && onNewTask && (
+          <button
+            type="button"
+            data-testid="new-task-btn"
+            onClick={onNewTask}
+            title={t('sidebar.newTask')}
+            aria-label={t('sidebar.newTaskLabel')}
+            className={`flex w-full items-center ${isCollapsed ? 'justify-center' : 'gap-2'} px-2 py-1.5 mb-1.5 rounded-md text-xs font-semibold text-white bg-forest-700 hover:bg-forest-800 shadow-xs transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-forest-600`}
+          >
+            <Plus className="w-4 h-4 shrink-0" />
+            {!isCollapsed && <span className="truncate">{t('sidebar.newTaskLabel')}</span>}
+          </button>
+        )}
+
         {/* Root of the vault for the current section */}
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={handleVaultClick}
             data-testid="vault-root-btn"
-            title={section === 'notes' ? t('sidebar.notes') : t('focus.all')}
+            title={section === 'notes' ? t('sidebar.notes') : t('nav.tasks')}
             data-active={isVaultActive ? 'true' : 'false'}
             aria-current={isVaultActive ? 'page' : undefined}
             className={`flex flex-1 min-w-0 items-center ${isCollapsed ? 'justify-center' : ''} px-2 py-1.5 rounded-md text-xs transition-colors ${
@@ -306,7 +341,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
               {!isCollapsed && (
                 <span className="truncate">
-                  {section === 'notes' ? t('sidebar.notes') : t('focus.all')}
+                  {section === 'notes' ? t('sidebar.notes') : t('nav.tasks')}
                 </span>
               )}
             </div>

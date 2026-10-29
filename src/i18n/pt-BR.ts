@@ -52,6 +52,8 @@ export const ptBR: Record<TranslationKey, string> = {
   'sidebar.expand': 'Expandir barra lateral',
   'sidebar.newNote': 'Nova nota (Cmd+N)',
   'sidebar.newNoteLabel': 'Nova nota',
+  'sidebar.newTask': 'Nova tarefa (Cmd+N)',
+  'sidebar.newTaskLabel': 'Nova tarefa',
   'sidebar.notes': 'Anotações',
   'sidebar.newFolder': 'Nova pasta',
   'sidebar.folderNamePlaceholder': 'Nome da pasta...',

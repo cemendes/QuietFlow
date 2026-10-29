@@ -112,6 +112,7 @@ export default function App() {
           }
         }}
         onNewNote={handleNewNote}
+        onNewTask={() => setIsQuickCaptureOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenArchive={() => setIsArchiveOpen(true)}
       />

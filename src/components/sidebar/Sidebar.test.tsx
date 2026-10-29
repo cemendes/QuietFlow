@@ -168,6 +168,64 @@ describe('Sidebar Component', () => {
     expect(handleNewNote).toHaveBeenCalledTimes(1);
   });
 
+  describe('Tasks section layout (mirrors Notes)', () => {
+    const inboxPath = '/path/to/vault/Inbox.md';
+    const treeWithInbox: VaultNode = {
+      ...mockVaultTree,
+      children: [
+        ...mockVaultTree.children!,
+        { name: 'Inbox.md', path: inboxPath, isDirectory: false, fileCount: 0, children: [] },
+      ],
+    };
+
+    beforeEach(() => {
+      useVaultStore.setState({ vaultTree: treeWithInbox, vaultPath: '/path/to/vault' });
+    });
+
+    it('offers New task above the Tasks root and calls onNewTask', () => {
+      const handleNewTask = vi.fn();
+      render(<Sidebar onNewTask={handleNewTask} />);
+
+      const newTaskBtn = screen.getByTestId('new-task-btn');
+      expect(newTaskBtn).toHaveTextContent('New task');
+      expect(screen.queryByTestId('new-note-btn')).toBeNull();
+
+      const tasksBtn = screen.getByTestId('vault-root-btn');
+      expect(tasksBtn).toHaveTextContent('Tasks');
+      expect(
+        newTaskBtn.compareDocumentPosition(tasksBtn) & Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+
+      fireEvent.click(newTaskBtn);
+      expect(handleNewTask).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not offer New task in the Notes section', () => {
+      useVaultStore.setState({ section: 'notes' });
+      render(<Sidebar onNewTask={vi.fn()} />);
+      expect(screen.queryByTestId('new-task-btn')).toBeNull();
+    });
+
+    it('opens the Inbox from the Tasks root and hides Inbox from the tree', () => {
+      const handleSelectFile = vi.fn();
+      render(<Sidebar onSelectFile={handleSelectFile} />);
+
+      expect(screen.queryByTestId(`file-item-${inboxPath}`)).toBeNull();
+      fireEvent.click(screen.getByTestId('vault-root-btn'));
+      expect(handleSelectFile).toHaveBeenCalledWith(inboxPath);
+    });
+
+    it('marks the Tasks root as current only while the Inbox is open', () => {
+      render(<Sidebar />);
+      const tasksBtn = screen.getByTestId('vault-root-btn');
+      expect(tasksBtn).toHaveAttribute('data-active', 'false');
+
+      act(() => useVaultStore.setState({ activeFile: inboxPath }));
+      expect(tasksBtn).toHaveAttribute('data-active', 'true');
+      expect(tasksBtn).toHaveAttribute('aria-current', 'page');
+    });
+  });
+
   describe('location cues', () => {
     const inboxPath = '/path/to/vault/Inbox.md';
     const treeWithInbox: VaultNode = {
@@ -178,13 +236,14 @@ describe('Sidebar Component', () => {
       ],
     };
 
-    it('shows an Inbox.md note as an ordinary note inside the tree', () => {
-      useVaultStore.setState({ vaultTree: treeWithInbox });
+    it('shows an Inbox.md note as an ordinary note inside the Notes tree', () => {
+      useVaultStore.setState({ section: 'notes', vaultTree: treeWithInbox });
       render(<Sidebar />);
       expect(screen.getByTestId(`file-item-${inboxPath}`)).toBeInTheDocument();
     });
 
     it('marks the vault root as the current location only when it is selected', () => {
+      useVaultStore.setState({ section: 'notes' });
       render(<Sidebar />);
       const notesBtn = screen.getByTestId('vault-root-btn');
       expect(notesBtn).toHaveAttribute('data-active', 'false');

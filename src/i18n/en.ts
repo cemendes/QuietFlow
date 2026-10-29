@@ -51,6 +51,8 @@ export const en = {
   'sidebar.expand': 'Expand sidebar',
   'sidebar.newNote': 'New note (Cmd+N)',
   'sidebar.newNoteLabel': 'New note',
+  'sidebar.newTask': 'New task (Cmd+N)',
+  'sidebar.newTaskLabel': 'New task',
   'sidebar.notes': 'Notes',
   'sidebar.newFolder': 'New folder',
   'sidebar.folderNamePlaceholder': 'Folder name...',
