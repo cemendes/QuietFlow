@@ -51,15 +51,15 @@ test.describe('QuietFlow Desktop User Journey & Usability E2E Tests', () => {
     await page.locator('[data-testid="focus-bucket-all"]').click();
   });
 
-  test('User Journey 3: Complete task -> triggers 100% progress ring and celebration animation', async ({ page }) => {
+  test('User Journey 3: Complete task -> triggers 100% progress ring and green completion state', async ({ page }) => {
     await page.goto('http://localhost:5173');
     await page.waitForSelector('[data-testid^="task-checkbox-"]');
 
     const firstCheckbox = page.locator('[data-testid^="task-checkbox-"]').first();
     await firstCheckbox.click();
 
-    // Verify celebration canvas is mounted or feedback triggered
-    const step5Path = path.join(ARTIFACT_DIR, 'journey_step5_celebration_complete.png');
+    // The completed row eases into a soft green tint (no full-screen celebration)
+    const step5Path = path.join(ARTIFACT_DIR, 'journey_step5_task_complete.png');
     await page.screenshot({ path: step5Path });
   });
 

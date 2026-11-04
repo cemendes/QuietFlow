@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { TaskItem } from '../../store/types';
-import { triggerCelebration } from '../../utils/celebrations';
 import { triggerCompletionFeedback } from '../../utils/feedback';
 import { useTranslation } from '../../i18n';
 import { baseName } from '../../utils/paths';
@@ -57,7 +56,6 @@ export const ZenTheaterModal: React.FC<ZenTheaterModalProps> = ({
 
   const handleComplete = () => {
     triggerCompletionFeedback();
-    triggerCelebration();
     onCompleteTask(task.id);
     onClose();
   };

@@ -177,8 +177,14 @@ export const TaskList: React.FC<TaskListProps> = ({
   const [isZenOpen, setIsZenOpen] = React.useState(false);
   const [zenTask, setZenTask] = React.useState<TaskItem | null>(null);
 
+  const hasOpenTask = tasks.some((t) => t.status !== 'done');
+
   const handleOpenZen = (specificTask?: TaskItem) => {
-    const candidate = specificTask || filteredTasks.find((t) => t.status !== 'done') || tasks[0] || null;
+    const candidate =
+      specificTask ||
+      filteredTasks.find((t) => t.status !== 'done') ||
+      tasks.find((t) => t.status !== 'done') ||
+      null;
     if (candidate) {
       setZenTask(candidate);
       setIsZenOpen(true);
@@ -202,6 +208,7 @@ export const TaskList: React.FC<TaskListProps> = ({
           onFocusBucketChange={setActiveFocusBucket}
           isSaving={isSaving}
           onOpenZen={() => handleOpenZen()}
+          zenDisabled={!hasOpenTask}
         />
 
         {/* Active Filters Pill Bar (if any filter is active) */}

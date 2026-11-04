@@ -1,8 +1,9 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import Sidebar from './Sidebar';
 import { useVaultStore } from '../../store';
 import { VaultNode } from '../../store/types';
+import { ipc } from '../../store/ipc';
 
 const mockVaultTree: VaultNode = {
   name: 'QuietFlowVault',
@@ -223,6 +224,56 @@ describe('Sidebar Component', () => {
       act(() => useVaultStore.setState({ activeFile: inboxPath }));
       expect(tasksBtn).toHaveAttribute('data-active', 'true');
       expect(tasksBtn).toHaveAttribute('aria-current', 'page');
+    });
+  });
+
+  describe('Tasks under the Tasks root', () => {
+    const inboxPath = '/path/to/vault/Inbox.md';
+    const treeWithInbox: VaultNode = {
+      ...mockVaultTree,
+      children: [
+        ...mockVaultTree.children!,
+        { name: 'Inbox.md', path: inboxPath, isDirectory: false, fileCount: 0, children: [] },
+      ],
+    };
+
+    beforeEach(() => {
+      vi.spyOn(ipc, 'readFile').mockImplementation(async (p: string) =>
+        p === inboxPath ? '# Inbox\n- [ ] Call bank\n- [x] Pay rent\n- [ ] Buy milk\n' : '',
+      );
+      vi.spyOn(ipc, 'listSnapshots').mockResolvedValue([]);
+      useVaultStore.setState({ vaultTree: treeWithInbox, vaultPath: '/path/to/vault', activeTaskId: null, contentRevision: 0 });
+    });
+
+    it('lists the open tasks of Todas as tarefas below the Tasks root', async () => {
+      render(<Sidebar />);
+      const items = await screen.findAllByTestId(/^sidebar-task-/);
+      expect(items.map((i) => i.textContent)).toEqual(['Call bank', 'Buy milk']);
+      expect(screen.queryByText('Pay rent')).toBeNull();
+    });
+
+    it('shows a task created later once the content revision changes', async () => {
+      render(<Sidebar />);
+      await screen.findByText('Call bank');
+      vi.mocked(ipc.readFile).mockImplementation(async () => '# Inbox\n- [ ] Call bank\n- [ ] Fresh task\n');
+      act(() => useVaultStore.setState({ contentRevision: 1 }));
+      expect(await screen.findByText('Fresh task')).toBeInTheDocument();
+    });
+
+    it('opens the task when it is clicked', async () => {
+      render(<Sidebar />);
+      fireEvent.click(await screen.findByText('Buy milk'));
+      await waitFor(() => {
+        expect(useVaultStore.getState().activeFile).toBe(inboxPath);
+        expect(useVaultStore.getState().activeTaskId).toBe('task-buy-milk');
+      });
+    });
+
+    it('does not list tasks in the Notes section', async () => {
+      useVaultStore.setState({ section: 'notes' });
+      render(<Sidebar />);
+      await act(async () => {});
+      expect(screen.queryByTestId(/^sidebar-task-/)).toBeNull();
     });
   });
 

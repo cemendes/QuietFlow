@@ -9,6 +9,7 @@ import {
   Folder,
   FolderPlus,
   CheckSquare,
+  Circle,
 } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { isTauriEnvironment, ipc } from '../../store/ipc';
@@ -16,7 +17,8 @@ import { FolderTree } from './FolderTree';
 import { useTranslation } from '../../i18n';
 import { NAV_ITEM_ACTIVE, NAV_ITEM_IDLE } from './navItemStyles';
 import { sectionRootPath, sectionSubtree } from '../../core/vault/sections';
-import type { VaultNode } from '../../store/types';
+import { parseMarkdownDocument } from '../../core/markdown';
+import type { TaskItem, VaultNode } from '../../store/types';
 
 export interface SidebarProps {
   className?: string;
@@ -59,6 +61,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const selectTaskFolder = useVaultStore((state) => state.selectTaskFolder);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
   const refreshVault = useVaultStore((state) => state.refreshVault);
+  const openTaskList = useVaultStore((state) => state.openTaskList);
+  const activeTaskId = useVaultStore((state) => state.activeTaskId);
+  const contentRevision = useVaultStore((state) => state.contentRevision);
   const getFolderIcon = useVaultStore((state) => state.getFolderIcon);
   const { t } = useTranslation();
 
@@ -75,6 +80,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
     section === 'tasks' && fullSectionTree
       ? { ...fullSectionTree, children: fullSectionTree.children?.filter((c) => !isInboxNode(c)) }
       : fullSectionTree;
+  // Open tasks of Todas as tarefas (Inbox.md) are listed under the Tasks root, like notes under Notes.
+  // Re-read whenever the app writes a file or the tree changes (external edits).
+  const [rootTasks, setRootTasks] = useState<TaskItem[]>([]);
+  useEffect(() => {
+    if (!inboxPath) {
+      setRootTasks([]);
+      return;
+    }
+    let cancelled = false;
+    ipc
+      .readFile(inboxPath)
+      .then((content) => {
+        if (!cancelled) setRootTasks(parseMarkdownDocument(content).tasks.filter((task) => task.status !== 'done'));
+      })
+      .catch(() => {
+        if (!cancelled) setRootTasks([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [inboxPath, contentRevision, vaultTree]);
+
+  const handleRootTaskClick = async (taskId: string) => {
+    if (!inboxPath) return;
+    setActiveScope(null);
+    await openTaskList(inboxPath);
+    setActiveTaskId(taskId);
+  };
+
   const selectSectionFolder = (path: string | null) =>
     section === 'notes' ? selectNoteFolder(path) : selectTaskFolder(path);
 
@@ -360,6 +394,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
       </div>
+
+      {section === 'tasks' && !isCollapsed && rootTasks.length > 0 && (
+        <ul className="px-2 pb-1 space-y-0.5" aria-label={t('tasks.inboxTitle')}>
+          {rootTasks.map((task) => {
+            const isCurrent = activeFile === inboxPath && activeTaskId === task.id;
+            return (
+              <li key={task.id}>
+                <button
+                  type="button"
+                  data-testid={`sidebar-task-${task.id}`}
+                  title={task.title}
+                  aria-current={isCurrent ? 'page' : undefined}
+                  onClick={() => handleRootTaskClick(task.id)}
+                  className={`flex w-full min-w-0 items-center gap-2 pl-7 pr-2 py-1 rounded-md text-xs transition-colors ${
+                    isCurrent ? NAV_ITEM_ACTIVE : NAV_ITEM_IDLE
+                  }`}
+                >
+                  <Circle className="w-3 h-3 shrink-0 text-stone-400" />
+                  <span className="truncate">{task.title}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       <div className="h-1" />
 

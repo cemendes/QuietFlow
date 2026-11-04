@@ -81,6 +81,8 @@ export interface VaultStoreState {
   isLoading: boolean;
   isSaving: boolean;
   error: string | null;
+  /** Bumped after every write the app makes to a vault file, so views that read other files can re-read. */
+  contentRevision: number;
 }
 
 export interface VaultStoreActions {
@@ -106,6 +108,7 @@ export interface VaultStoreActions {
   toggleTask: (taskId: string) => Promise<void>;
   updateTask: (taskId: string, updates: Partial<TaskItem>) => Promise<void>;
   addTask: (task: NewTaskInput, targetSection?: string) => Promise<void>;
+  addTaskToFile: (filePath: string, task: NewTaskInput) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   moveTask: (taskId: string, sourcePath: string, destPath: string) => Promise<void>;
 

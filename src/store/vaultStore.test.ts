@@ -607,3 +607,35 @@ date: 2026-10-19
     expect(Object.keys(files)).toEqual([`${vault}\\Reunião.md`]);
   });
 });
+
+describe('VaultStore content revision & addTaskToFile', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useVaultStore.setState({ activeFile: null, tasks: [], contentRevision: 0, error: null });
+  });
+
+  it('writes a task into a list that is not open and bumps contentRevision', async () => {
+    vi.mocked(ipc.readFile).mockResolvedValue('# Inbox\n- [ ] Existing\n');
+    vi.mocked(ipc.writeFileAtomic).mockResolvedValue(undefined);
+
+    await useVaultStore.getState().addTaskToFile('/vault/Tarefas/Inbox.md', { title: 'Brand new', status: 'todo' });
+
+    expect(ipc.writeFileAtomic).toHaveBeenCalledWith(
+      '/vault/Tarefas/Inbox.md',
+      expect.stringContaining('- [ ] Brand new'),
+    );
+    expect(useVaultStore.getState().contentRevision).toBe(1);
+    expect(useVaultStore.getState().tasks).toEqual([]);
+  });
+
+  it('adds through the open list when the target is the active file', async () => {
+    useVaultStore.setState({ activeFile: '/vault/Tarefas/Inbox.md' });
+    vi.mocked(ipc.readFile).mockResolvedValue('# Inbox\n');
+    vi.mocked(ipc.writeFileAtomic).mockResolvedValue(undefined);
+
+    await useVaultStore.getState().addTaskToFile('/vault/Tarefas/Inbox.md', { title: 'Brand new', status: 'todo' });
+
+    expect(useVaultStore.getState().tasks.map((t) => t.title)).toEqual(['Brand new']);
+    expect(useVaultStore.getState().contentRevision).toBeGreaterThan(0);
+  });
+});

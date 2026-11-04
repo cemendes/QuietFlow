@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Trash2, Wand2, Sparkles, FileText } from 'lucide-react';
 import { TaskItem, TaskPriority } from '../../store/types';
 import { triggerCompletionFeedback } from '../../utils/feedback';
-import { triggerCelebration } from '../../utils/celebrations';
 import { sliceTask } from '../../utils/slicer';
 import { useVaultStore } from '../../store';
 import { Language, formatShortDate, useTranslation } from '../../i18n';
@@ -84,7 +83,6 @@ export const TaskRow: React.FC<TaskRowProps> = ({
     e.stopPropagation();
     if (!isDone) {
       triggerCompletionFeedback();
-      triggerCelebration();
     }
     onToggle(task.id);
   };
@@ -154,12 +152,18 @@ export const TaskRow: React.FC<TaskRowProps> = ({
       draggable
       onDragStart={handleDragStart}
       data-testid={`task-row-${task.id}`}
+      data-done={isDone ? 'true' : 'false'}
       onClick={handleRowClick}
-      className={`group relative flex items-center gap-3 px-3.5 py-2.5 bg-white border rounded-xl transition-all duration-150 cursor-pointer ${
+      // Completing a task is acknowledged quietly: the card eases into a soft green tint.
+      className={`group relative flex items-center gap-3 px-3.5 py-2.5 border rounded-xl transition-colors duration-300 ease-out cursor-pointer ${
+        isDone ? 'bg-forest-50' : 'bg-white'
+      } ${
         isSelected
           ? 'border-forest-600 ring-2 ring-forest-500/20 shadow-sm'
+          : isDone
+          ? 'border-forest-100 hover:shadow-sm'
           : 'border-sand-200 hover:border-sand-300 hover:shadow-sm'
-      } ${isDone ? 'opacity-60 bg-sand-50/50' : ''}`}
+      }`}
     >
       {/* Status Checkbox */}
       <button
@@ -167,7 +171,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({
         data-testid={`task-checkbox-${task.id}`}
         aria-label={t('tasks.toggle', { title: task.title })}
         onClick={handleCheckboxClick}
-        className={`flex items-center justify-center w-5 h-5 rounded border transition-all ${
+        className={`flex items-center justify-center w-5 h-5 rounded border transition-colors duration-300 ease-out ${
           isDone
             ? 'bg-forest-600 border-forest-600 text-white'
             : isInProgress

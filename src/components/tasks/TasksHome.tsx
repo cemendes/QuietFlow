@@ -43,6 +43,7 @@ export const TasksHome: React.FC = () => {
   const selectFolder = useVaultStore((state) => state.selectFolder);
   const createFile = useVaultStore((state) => state.createFile);
   const deleteEntry = useVaultStore((state) => state.deleteEntry);
+  const contentRevision = useVaultStore((state) => state.contentRevision);
   const [counts, setCounts] = useState<Record<string, ListCounts>>({});
 
   const sectionNode = useMemo(() => sectionSubtree(vaultTree, 'tasks'), [vaultTree]);
@@ -78,7 +79,7 @@ export const TasksHome: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [lists, vaultTree]);
+  }, [lists, vaultTree, contentRevision]);
 
   const scopePath = scopeNode?.path ?? (vaultPath ? sectionRootPath(vaultTree, vaultPath, 'tasks') : null);
   const title = scopeNode && scopeNode !== sectionNode ? baseName(scopeNode.path) : t('tasksHome.allLists');

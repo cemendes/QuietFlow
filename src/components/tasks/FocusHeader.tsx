@@ -14,6 +14,8 @@ export interface FocusHeaderProps {
   onFocusBucketChange: (bucket: FocusBucket) => void;
   isSaving?: boolean;
   onOpenZen?: () => void;
+  /** Zen needs an open task to focus on; without one the button stays visible but disabled. */
+  zenDisabled?: boolean;
 }
 
 export const FocusHeader: React.FC<FocusHeaderProps> = ({
@@ -25,6 +27,7 @@ export const FocusHeader: React.FC<FocusHeaderProps> = ({
   onFocusBucketChange,
   isSaving = false,
   onOpenZen,
+  zenDisabled = false,
 }) => {
   const { t } = useTranslation();
   const percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
@@ -104,7 +107,9 @@ export const FocusHeader: React.FC<FocusHeaderProps> = ({
               type="button"
               data-testid="zen-mode-header-btn"
               onClick={onOpenZen}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-forest-50 text-forest-800 border border-forest-600/30 rounded-xl text-xs font-semibold hover:bg-forest-100/80 transition-all hover:scale-105 active:scale-95 shadow-2xs cursor-pointer"
+              disabled={zenDisabled}
+              title={zenDisabled ? t('focus.zenNoTasks') : undefined}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-forest-50 text-forest-800 border border-forest-600/30 rounded-xl text-xs font-semibold hover:bg-forest-100/80 transition-all hover:scale-105 active:scale-95 shadow-2xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:bg-forest-50"
             >
               <Sparkles className="w-3.5 h-3.5 text-forest-600" />
               <span>{t('focus.zen')}</span>

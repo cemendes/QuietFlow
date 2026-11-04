@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { VaultNode, TaskPriority, NewTaskInput } from '../../store/types';
-import { addTaskToDocument } from '../../core/markdown';
 import { ipc } from '../../store/ipc';
 import { formatDateTime, formatIsoDate, useTranslation } from '../../i18n';
 import { sectionSubtree } from '../../core/vault/sections';
@@ -118,7 +117,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
 }) => {
   const vaultTree = useVaultStore((state) => state.vaultTree);
   const activeFile = useVaultStore((state) => state.activeFile);
-  const storeAddTask = useVaultStore((state) => state.addTask);
+  const storeAddTaskToFile = useVaultStore((state) => state.addTaskToFile);
   const refreshActiveFile = useVaultStore((state) => state.refreshActiveFile);
   const { t, language } = useTranslation();
 
@@ -227,13 +226,8 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
             dueDate: parsed.dueDate,
             status: 'todo',
           };
-          if (targetFilePath === activeFile) {
-            await storeAddTask(newTask);
-          } else if (targetFilePath) {
-            // Write directly to file
-            const content = await ipc.readFile(targetFilePath);
-            const updated = addTaskToDocument(content, newTask);
-            await ipc.writeFileAtomic(targetFilePath, updated);
+          if (targetFilePath) {
+            await storeAddTaskToFile(targetFilePath, newTask);
           }
         } else {
           // Quick note: append to target document

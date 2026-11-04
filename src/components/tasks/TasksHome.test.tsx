@@ -78,7 +78,7 @@ describe('TasksHome', () => {
     expect(screen.getByRole('heading', { name: 'Todas as listas' })).toBeInTheDocument();
     const cards = screen.getAllByTestId('task-list-card');
     expect(cards).toHaveLength(2);
-    expect(within(cards[0]).getByText('📥 Caixa de entrada')).toBeInTheDocument();
+    expect(within(cards[0]).getByText('Todas as tarefas')).toBeInTheDocument();
     expect(within(cards[1]).getByText('Cálculo')).toBeInTheDocument();
     expect(within(cards[1]).getByText('UFRJ')).toBeInTheDocument();
     expect(screen.queryByText('Ideia')).not.toBeInTheDocument();

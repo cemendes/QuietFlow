@@ -57,6 +57,7 @@ const INITIAL_STATE: VaultStoreState = {
   isLoading: false,
   isSaving: false,
   error: null,
+  contentRevision: 0,
 };
 
 let state: VaultStoreState = { ...INITIAL_STATE };
@@ -96,6 +97,7 @@ async function writeVaultFile(filePath: string, content: string): Promise<void> 
   lastSelfWriteTimestamp = Date.now();
   await ipc.writeFileAtomic(filePath, content);
   lastSelfWriteTimestamp = Date.now();
+  set((prev) => ({ contentRevision: prev.contentRevision + 1 }));
 }
 
 async function loadVault(vaultPath: string): Promise<void> {
@@ -542,6 +544,20 @@ async function updateTask(taskId: string, updates: Partial<TaskItem>): Promise<v
   }
 }
 
+/** Adds a task to any list: through the open list when it is the target, else straight to the file. */
+async function addTaskToFile(filePath: string, newTask: NewTaskInput): Promise<void> {
+  if (filePath === getState().activeFile) {
+    await addTask(newTask);
+    return;
+  }
+  try {
+    const content = await ipc.readFile(filePath);
+    await writeVaultFile(filePath, addTaskToDocument(content, newTask));
+  } catch (err) {
+    set({ error: `Failed to add task: ${err}` });
+  }
+}
+
 async function addTask(newTask: NewTaskInput, targetSection?: string): Promise<void> {
   const targetFile = getState().activeFile;
   if (!targetFile) {
@@ -980,6 +996,7 @@ const actions = {
   toggleTask,
   updateTask,
   addTask,
+  addTaskToFile,
   deleteTask,
   moveTask,
   setLensViewMode,
