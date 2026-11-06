@@ -141,7 +141,10 @@ export const FolderItem: React.FC<FolderItemProps> = ({
       : `${nameToUse.trim()}.md`;
     const newFilePath = `${node.path}/${formattedName}`;
     const initialContent = `---\ntitle: ${nameToUse.trim().replace(/\.md$/, '')}\n---\n\n`;
-    await createFile(newFilePath, initialContent);
+    // Kept the suggested "New note" name: discard it if it is also left without text.
+    // A name the user typed counts as filling it in, so that note always stays.
+    const keptDefaultName = nameToUse.trim().startsWith(t('app.newNoteName'));
+    await createFile(newFilePath, initialContent, { discardIfUntouched: keptDefaultName });
     await openNote(newFilePath);
     setNewSubName('');
     setIsCreatingFile(false);

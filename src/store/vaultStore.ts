@@ -71,9 +71,49 @@ function notify() {
 }
 
 function set(updater: Partial<VaultStoreState> | ((prev: VaultStoreState) => Partial<VaultStoreState>)) {
+  const prevActive = state.activeFile;
   const next = typeof updater === 'function' ? updater(state) : updater;
   state = { ...state, ...next };
   notify();
+  if (draftNote && prevActive === draftNote.path && state.activeFile !== draftNote.path) {
+    const left = draftNote;
+    draftNote = null;
+    void discardDraftIfUntouched(left);
+  }
+}
+
+/**
+ * A note just created with "New note". If it is left (another note, a folder, the other section)
+ * while still blank — no text and the default title it was created with — it is deleted, so
+ * clicking "New note" by accident never leaves empty notes behind.
+ */
+let draftNote: { path: string; title: string } | null = null;
+
+async function discardDraftIfUntouched(draft: { path: string; title: string }): Promise<void> {
+  let content: string;
+  try {
+    content = await ipc.readFile(draft.path);
+  } catch {
+    return; // Renamed or already gone
+  }
+  const doc = parseMarkdownDocument(content, draft.path);
+  const title = String(doc.frontmatter?.title ?? '').trim();
+  if ((doc.body || '').trim() || title !== draft.title) return;
+
+  try {
+    await ipc.deleteEntry(draft.path);
+  } catch (err) {
+    console.error(`Failed to discard empty note ${draft.path}:`, err);
+    return;
+  }
+  // Forget it wherever it was remembered, so nothing tries to reopen it
+  const memory = state.sectionSelection;
+  const forget = (sel: SectionSelection) => (sel.file === draft.path ? { ...sel, file: null } : sel);
+  set({ sectionSelection: { tasks: forget(memory.tasks), notes: forget(memory.notes) } });
+  if (typeof localStorage !== 'undefined' && localStorage.getItem('quietflow-last-active-file') === draft.path) {
+    localStorage.removeItem('quietflow-last-active-file');
+  }
+  await refreshVault();
 }
 
 function getState(): VaultStoreState {
@@ -417,12 +457,20 @@ async function refreshActiveFile(): Promise<void> {
   }
 }
 
-async function createFile(filePath: string, initialContent = ''): Promise<void> {
+async function createFile(
+  filePath: string,
+  initialContent = '',
+  options: { discardIfUntouched?: boolean } = {},
+): Promise<void> {
   set({ isLoading: true, error: null });
   try {
     await writeVaultFile(filePath, initialContent);
     await refreshVault();
     await selectFile(filePath);
+    if (options.discardIfUntouched) {
+      const title = String(parseMarkdownDocument(initialContent).frontmatter?.title ?? '').trim();
+      draftNote = { path: filePath, title };
+    }
   } catch (err: any) {
     set({
       isLoading: false,
@@ -865,6 +913,7 @@ function reset(): void {
     vaultUnlisten();
     vaultUnlisten = null;
   }
+  draftNote = null;
   set({ ...INITIAL_STATE });
 }
 

@@ -92,7 +92,8 @@ export interface VaultStoreActions {
   selectFile: (filePath: string) => Promise<void>;
   selectFolder: (folderPath: string) => Promise<void>;
   refreshActiveFile: () => Promise<void>;
-  createFile: (filePath: string, initialContent?: string) => Promise<void>;
+  /** `discardIfUntouched`: a "New note" that is deleted if left blank (no text, default title). */
+  createFile: (filePath: string, initialContent?: string, options?: { discardIfUntouched?: boolean }) => Promise<void>;
   deleteEntry: (path: string) => Promise<void>;
   setFolderIcon: (folderPath: string, iconDataOrEmoji: string) => Promise<void>;
   getFolderIcon: (folderPath: string) => string | null;

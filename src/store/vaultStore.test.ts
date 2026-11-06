@@ -670,3 +670,86 @@ describe('VaultStore saveDocumentProse', () => {
     expect(s.activeDocument?.body).toContain('conteudo financeiro');
   });
 });
+
+describe('VaultStore — untouched new notes are discarded', () => {
+  const draft = '/vault/Anotações/Academia/Nova anotação.md';
+  const other = '/vault/Anotações/Academia/PR\'s.md';
+  const initial = '---\ntitle: Nova anotação\n---\n\n';
+  let disk: Record<string, string>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useVaultStore.getState().reset();
+    disk = { [other]: '---\ntitle: PR\'s\n---\n\nsupino 100kg\n' };
+    vi.mocked(ipc.readFile).mockImplementation(async (p: string) => {
+      if (!(p in disk)) throw new Error(`missing ${p}`);
+      return disk[p];
+    });
+    vi.mocked(ipc.writeFileAtomic).mockImplementation(async (p: string, c: string) => {
+      disk[p] = c;
+    });
+    vi.mocked(ipc.deleteEntry).mockImplementation(async (p: string) => {
+      delete disk[p];
+    });
+    vi.mocked(ipc.moveEntry).mockImplementation(async (from: string, to: string) => {
+      disk[to] = disk[from];
+      delete disk[from];
+    });
+    vi.mocked(ipc.initVault).mockResolvedValue({ name: 'vault', path: '/vault', isDirectory: true, fileCount: 0, children: [] });
+    useVaultStore.setState({ vaultPath: '/vault', section: 'notes' });
+  });
+
+  const settle = () => new Promise((r) => setTimeout(r, 0));
+
+  it('deletes a new note left without a title or text', async () => {
+    await useVaultStore.getState().createFile(draft, initial, { discardIfUntouched: true });
+    expect(useVaultStore.getState().activeFile).toBe(draft);
+
+    await useVaultStore.getState().openNote(other);
+    await settle();
+
+    expect(ipc.deleteEntry).toHaveBeenCalledWith(draft);
+    expect(draft in disk).toBe(false);
+    expect(useVaultStore.getState().activeFile).toBe(other);
+  });
+
+  it('also discards it when leaving to the notes home or the other section', async () => {
+    await useVaultStore.getState().createFile(draft, initial, { discardIfUntouched: true });
+    await useVaultStore.getState().setSection('tasks');
+    await settle();
+
+    expect(draft in disk).toBe(false);
+    // Coming back must not try to reopen the discarded note
+    await useVaultStore.getState().setSection('notes');
+    expect(useVaultStore.getState().activeFile).toBeNull();
+  });
+
+  it('keeps the note once it has text', async () => {
+    await useVaultStore.getState().createFile(draft, initial, { discardIfUntouched: true });
+    await useVaultStore.getState().saveDocumentProse(draft, 'agachamento');
+    await useVaultStore.getState().openNote(other);
+    await settle();
+
+    expect(ipc.deleteEntry).not.toHaveBeenCalled();
+    expect(disk[draft]).toContain('agachamento');
+  });
+
+  it('keeps the note once it has a title', async () => {
+    await useVaultStore.getState().createFile(draft, initial, { discardIfUntouched: true });
+    const renamed = await useVaultStore.getState().renameNote(draft, 'Treinos');
+    await useVaultStore.getState().openNote(other);
+    await settle();
+
+    expect(ipc.deleteEntry).not.toHaveBeenCalled();
+    expect(disk[renamed]).toContain('title: Treinos');
+  });
+
+  it('never discards notes that were not just created', async () => {
+    disk[draft] = initial;
+    await useVaultStore.getState().openNote(draft);
+    await useVaultStore.getState().openNote(other);
+    await settle();
+
+    expect(ipc.deleteEntry).not.toHaveBeenCalled();
+  });
+});

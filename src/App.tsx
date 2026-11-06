@@ -95,7 +95,8 @@ export default function App() {
     }
     const newFilePath = `${notesRoot}/${noteName}.md`;
     const initialContent = `---\ntitle: ${noteName}\ndate: ${now.toISOString().split('T')[0]}\n---\n\n`;
-    await createFile(newFilePath, initialContent);
+    // Left blank (no title, no text), the new note is thrown away when the user moves on
+    await createFile(newFilePath, initialContent, { discardIfUntouched: true });
     await openNote(newFilePath);
   };
 
