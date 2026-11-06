@@ -358,13 +358,16 @@ export const LensDocumentCanvas: React.FC = () => {
                 key={activeFile}
                 value={localProse}
                 onChange={handleProseChange}
-                placeholder="Write meeting notes, architecture decisions, or press Cmd+Enter to hoist a task..."
+                onSubmit={isEditing ? () => void handleSaveNow() : undefined}
                 autoGrow
                 readOnly={!isEditing}
                 className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs focus-within:border-emerald-400"
                 footer={
                   isEditing && (
-                  <div className="flex justify-end pt-3">
+                  <div className="flex items-center justify-end gap-3 pt-3">
+                    <span data-testid="note-enter-hint" className="text-xs text-stone-400">
+                      {t('note.enterHint')}
+                    </span>
                     <button
                       type="button"
                       data-testid="save-note-btn"

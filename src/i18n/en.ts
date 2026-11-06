@@ -134,6 +134,7 @@ export const en = {
   'editor.wordCount': '{count} words',
   'editor.readTime': '{count} min read',
   'note.save': 'Save note',
+  'note.enterHint': 'Enter to save · Shift+Enter for a new line',
   'note.saved': 'Note saved',
   'note.titleLabel': 'Note title',
   'meta.status': 'Status',

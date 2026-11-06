@@ -186,6 +186,11 @@ export interface MarkdownEditorProps {
   footer?: React.ReactNode;
   /** Show the content only: no toolbar, no caret, nothing editable. */
   readOnly?: boolean;
+  /**
+   * When set, Enter submits (calls this) and Shift+Enter makes the new line — the chat-style
+   * behaviour notes use. Without it, Enter keeps its usual editor meaning.
+   */
+  onSubmit?: () => void;
 }
 
 export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
@@ -196,8 +201,12 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   autoGrow = false,
   footer,
   readOnly = false,
+  onSubmit,
 }) => {
   const { t, language } = useTranslation();
+  // Tiptap keeps the editorProps it was created with, so read the latest callback through a ref
+  const onSubmitRef = useRef(onSubmit);
+  onSubmitRef.current = onSubmit;
   const placeholder = placeholderProp ?? t('editor.placeholder');
   const [isSourceMode, setIsSourceMode] = useState(false);
   const [sourceText, setSourceText] = useState(value);
@@ -243,6 +252,33 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         'data-placeholder': placeholder,
       },
       handleKeyDown: (view, event) => {
+        // Submit-on-Enter mode: Enter saves, Shift+Enter does what Enter normally does
+        // (new paragraph, or a new item inside a list). IME composition keeps its own Enter.
+        if (
+          onSubmitRef.current &&
+          event.key === 'Enter' &&
+          !event.isComposing &&
+          !event.metaKey &&
+          !event.ctrlKey &&
+          !event.altKey
+        ) {
+          event.preventDefault();
+          if (!event.shiftKey) {
+            onSubmitRef.current();
+            return true;
+          }
+          const ed = editorRef.current;
+          ed?.commands.first(({ commands }: any) => [
+            () => commands.newlineInCode(),
+            () => commands.splitListItem('taskItem'),
+            () => commands.splitListItem('listItem'),
+            () => commands.createParagraphNear(),
+            () => commands.liftEmptyBlock(),
+            () => commands.splitBlock(),
+          ]);
+          return true;
+        }
+
         // Tab / Shift-Tab indentation for list items
         if (event.key === 'Tab') {
           if (editorRef.current) {
@@ -811,6 +847,13 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             data-testid="markdown-source-textarea"
             value={sourceText}
             onChange={handleSourceChange}
+            onKeyDown={(e) => {
+              // Same rule as the rich editor: Enter submits, Shift+Enter is a plain newline
+              if (onSubmit && e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                onSubmit();
+              }
+            }}
             placeholder={placeholder}
             className={`font-mono text-xs text-slate-800 p-4 w-full resize-none focus:outline-none bg-transparent ${
               autoGrow ? 'min-h-[160px] overflow-hidden' : 'h-full min-h-[300px] flex-1'

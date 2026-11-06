@@ -135,6 +135,7 @@ export const ptBR: Record<TranslationKey, string> = {
   'editor.wordCount': '{count} palavras',
   'editor.readTime': '{count} min de leitura',
   'note.save': 'Salvar anotação',
+  'note.enterHint': 'Enter salva · Shift+Enter quebra a linha',
   'note.saved': 'Anotação salva',
   'note.titleLabel': 'Título da anotação',
   'meta.status': 'Status',
