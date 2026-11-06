@@ -17,7 +17,7 @@ import FolderContextMenu from './FolderContextMenu';
 import { formatDateName, useTranslation } from '../../i18n';
 import { NAV_ITEM_ACTIVE, NAV_ITEM_IDLE } from './navItemStyles';
 import { FileHistoryModal } from '../history/FileHistoryModal';
-import { dirName, lastSeparator } from '../../utils/paths';
+import { baseName, dirName, lastSeparator } from '../../utils/paths';
 
 export interface FolderItemProps {
   node: VaultNode;
@@ -219,16 +219,32 @@ export const FolderItem: React.FC<FolderItemProps> = ({
 
     const sourcePath = e.dataTransfer.getData('text/plain');
     if (!sourcePath || sourcePath === node.path) return;
+    // Already in this folder, or a folder dropped into itself / one of its own subfolders
+    if (dirName(sourcePath) === node.path) return;
+    if (/^[\\/]/.test(node.path.slice(sourcePath.length)) && node.path.startsWith(sourcePath)) return;
 
-    const itemName = sourcePath.split('/').pop();
+    // Native Windows paths mix `\` and `/`, so never split on just one of them: doing so took
+    // "QuietFlowVault\Anotações\Note.md" as the "name" and created those folders inside the target.
+    const itemName = baseName(sourcePath);
     if (!itemName) return;
 
-    const destinationPath = `${node.path}/${itemName}`;
-    if (sourcePath === destinationPath) return;
+    // Never overwrite an entry with the same name already in the folder
+    const taken = new Set((node.children ?? []).map((c) => c.name.toLowerCase()));
+    const ext = !/\.md$/i.test(itemName) ? '' : itemName.slice(-3);
+    const stem = ext ? itemName.slice(0, -3) : itemName;
+    let finalName = itemName;
+    for (let n = 2; taken.has(finalName.toLowerCase()); n++) finalName = `${stem} ${n}${ext}`;
+
+    const sep = lastSeparator(node.path);
+    const destinationPath = `${node.path}${sep}${finalName}`;
 
     try {
       await ipc.moveEntry(sourcePath, destinationPath);
       await refreshVault();
+      // The open note moved with the drop: keep it open at its new place
+      if (useVaultStore.getState().activeFile === sourcePath) {
+        await useVaultStore.getState().selectFile(destinationPath);
+      }
     } catch (err) {
       console.error('Failed to move entry:', err);
     }
