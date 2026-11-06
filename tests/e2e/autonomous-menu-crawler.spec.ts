@@ -87,18 +87,10 @@ test.describe('QuietFlow Autonomous Menu & View State Crawler', () => {
     // -------------------------------------------------------------
     // SECTION 1: System Views & Sidebar Navigation
     // -------------------------------------------------------------
-    await recordAction('Navigation', 'System View: My Vault', async () => {
-      const vaultBtn = page.locator('button[title="My Vault"]');
+    await recordAction('Navigation', 'System View: Notes', async () => {
+      const vaultBtn = page.locator('button[title="Notes"]');
       if (await vaultBtn.isVisible()) {
         await vaultBtn.click();
-        await page.waitForTimeout(200);
-      }
-    });
-
-    await recordAction('Navigation', 'System View: Inbox', async () => {
-      const inboxBtn = page.locator('button[title="Inbox"]');
-      if (await inboxBtn.isVisible()) {
-        await inboxBtn.click();
         await page.waitForTimeout(200);
       }
     });

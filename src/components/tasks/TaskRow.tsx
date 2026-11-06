@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Trash2, Wand2, Sparkles, FileText } from 'lucide-react';
 import { TaskItem, TaskPriority } from '../../store/types';
 import { triggerCompletionFeedback } from '../../utils/feedback';
-import { triggerCelebration } from '../../utils/celebrations';
 import { sliceTask } from '../../utils/slicer';
 import { useVaultStore } from '../../store';
+import { Language, formatShortDate, useTranslation } from '../../i18n';
+import { baseName } from '../../utils/paths';
+import { openTaskSource } from '../../utils/openTaskSource';
 
 export interface TaskRowProps {
   task: TaskItem;
@@ -41,7 +43,10 @@ const priorityConfig: Record<
   },
 };
 
-const formatDueDate = (dateStr?: string): { formatted: string; isOverdue: boolean } | null => {
+const formatDueDate = (
+  dateStr: string | undefined,
+  language: Language
+): { formatted: string; isOverdue: boolean } | null => {
   if (!dateStr) return null;
   try {
     const parts = dateStr.split('-');
@@ -51,8 +56,7 @@ const formatDueDate = (dateStr?: string): { formatted: string; isOverdue: boolea
     today.setHours(0, 0, 0, 0);
 
     const isOverdue = date < today;
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const formatted = `${monthNames[date.getMonth()]} ${date.getDate()}`;
+    const formatted = formatShortDate(date, language);
     return { formatted, isOverdue };
   } catch {
     return { formatted: dateStr, isOverdue: false };
@@ -69,17 +73,17 @@ export const TaskRow: React.FC<TaskRowProps> = ({
   onTagClick,
   onOpenZen,
 }) => {
+  const { t, language } = useTranslation();
   const isDone = task.status === 'done';
   const isInProgress = task.status === 'in-progress';
   const subtasks = task.subtasks || [];
   const completedSubtasks = subtasks.filter((s) => s.status === 'done').length;
-  const dueDateInfo = formatDueDate(task.dueDate);
+  const dueDateInfo = formatDueDate(task.dueDate, language);
 
   const handleCheckboxClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isDone) {
       triggerCompletionFeedback();
-      triggerCelebration();
     }
     onToggle(task.id);
   };
@@ -118,6 +122,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({
 
   const [isSlicing, setIsSlicing] = useState(false);
   const updateTask = useVaultStore((state) => state.updateTask);
+  const activeFile = useVaultStore((state) => state.activeFile);
 
   const handleMagicSlice = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -149,20 +154,26 @@ export const TaskRow: React.FC<TaskRowProps> = ({
       draggable
       onDragStart={handleDragStart}
       data-testid={`task-row-${task.id}`}
+      data-done={isDone ? 'true' : 'false'}
       onClick={handleRowClick}
-      className={`group relative flex items-center gap-3 px-3.5 py-2.5 bg-white border rounded-xl transition-all duration-150 cursor-pointer ${
+      // Completing a task is acknowledged quietly: the card eases into a soft green tint.
+      className={`group relative flex items-center gap-3 px-3.5 py-2.5 border rounded-xl transition-colors duration-300 ease-out cursor-pointer ${
+        isDone ? 'bg-forest-50' : 'bg-white'
+      } ${
         isSelected
           ? 'border-forest-600 ring-2 ring-forest-500/20 shadow-sm'
+          : isDone
+          ? 'border-forest-100 hover:shadow-sm'
           : 'border-sand-200 hover:border-sand-300 hover:shadow-sm'
-      } ${isDone ? 'opacity-60 bg-sand-50/50' : ''}`}
+      }`}
     >
       {/* Status Checkbox */}
       <button
         type="button"
         data-testid={`task-checkbox-${task.id}`}
-        aria-label={`Toggle task ${task.title}`}
+        aria-label={t('tasks.toggle', { title: task.title })}
         onClick={handleCheckboxClick}
-        className={`flex items-center justify-center w-5 h-5 rounded border transition-all ${
+        className={`flex items-center justify-center w-5 h-5 rounded border transition-colors duration-300 ease-out ${
           isDone
             ? 'bg-forest-600 border-forest-600 text-white'
             : isInProgress
@@ -196,20 +207,20 @@ export const TaskRow: React.FC<TaskRowProps> = ({
       </div>
 
       {/* Note Backlink Badge */}
-      {task.filePath && (
+      {/* Hidden inside the list the task belongs to: there it would only repeat the title */}
+      {task.filePath && task.filePath !== activeFile && (
         <button
           type="button"
           data-testid={`note-backlink-${task.id}`}
-          title={`Open ${task.filePath.split('/').pop()}`}
+          title={`Open ${baseName(task.filePath)}`}
           onClick={(e) => {
             e.stopPropagation();
-            useVaultStore.getState().selectFile(task.filePath!);
-            useVaultStore.getState().setActiveView('document');
+            void openTaskSource(task.filePath!);
           }}
           className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/60 rounded-md transition-colors truncate max-w-[140px]"
         >
           <FileText className="w-3 h-3 text-emerald-600 shrink-0" />
-          <span className="truncate">{task.filePath.split('/').pop()?.replace(/\.md$/, '')}</span>
+          <span className="truncate">{baseName(task.filePath)?.replace(/\.md$/, '')}</span>
         </button>
       )}
 
@@ -236,7 +247,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({
       {/* Subtask Counter */}
       {subtasks.length > 0 && (
         <div
-          title={`${completedSubtasks} of ${subtasks.length} subtasks completed`}
+          title={t('tasks.subtasksProgress', { completed: completedSubtasks, total: subtasks.length })}
           className="flex items-center gap-1 text-xs text-slate-400 font-medium"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -278,7 +289,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({
             priorityConfig[task.priority].border
           }`}
         >
-          {task.priority}
+          {t(`priorityTag.${task.priority}`)}
         </button>
       )}
 
@@ -288,7 +299,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({
         <button
           type="button"
           data-testid={`task-slice-${task.id}`}
-          title="Magic Slicer (Break into bite-sized steps)"
+          title={t('tasks.magicSlicer')}
           onClick={handleMagicSlice}
           disabled={isSlicing}
           className="p-1 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded transition-colors"
@@ -301,7 +312,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({
           <button
             type="button"
             data-testid={`task-zen-${task.id}`}
-            title="Focus in Zen Theater"
+            title={t('tasks.zenTheater')}
             onClick={(e) => {
               e.stopPropagation();
               onOpenZen(task);
@@ -317,7 +328,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({
           <button
             type="button"
             data-testid={`task-delete-${task.id}`}
-            aria-label={`Delete task ${task.title}`}
+            aria-label={t('tasks.deleteNamed', { title: task.title })}
             onClick={(e) => {
               e.stopPropagation();
               onDelete(task.id);

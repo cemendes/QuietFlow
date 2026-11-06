@@ -22,6 +22,7 @@ describe('Note Creation and Fluid Canvas Integration Tests', () => {
     useVaultStore.getState().reset();
     useVaultStore.setState({
       vaultPath: '/vault',
+      section: 'notes',
     });
   });
 
@@ -98,33 +99,23 @@ title: Product Strategy
 Full width notes content here.
 `;
 
-    it('renders fluid layout without max-w-[850px] restriction in Split View', () => {
+    it('renders fluid layout without max-w-[850px] restriction in the notes editor', () => {
       const doc = parseMarkdownDocument(sampleMarkdown, 'Strategy/Product.md');
       useVaultStore.setState({
         activeFile: 'Strategy/Product.md',
         activeDocument: doc,
         tasks: doc.tasks,
-        lensViewMode: 'split',
       });
 
       const { container } = render(<LensDocumentCanvas />);
 
-      // Ensure max-w-[850px] restriction is removed
-      const constrainedContainer = container.querySelector('.max-w-\\[850px\\]');
-      expect(constrainedContainer).toBeNull();
-
-      // Ensure fluid full width container exists
-      const fluidContainer = container.querySelector('.w-full.flex-1.flex.flex-col');
-      expect(fluidContainer).not.toBeNull();
-
-      // Ensure side-by-side flex split layout is rendered
-      const splitFlex = container.querySelector('.lg\\:flex-row');
-      expect(splitFlex).not.toBeNull();
-      expect(screen.getByTestId('top-tasks-zone')).toBeDefined();
+      expect(container.querySelector('.max-w-\\[850px\\]')).toBeNull();
+      expect(container.querySelector('.w-full.flex-1.flex.flex-col')).not.toBeNull();
+      expect(screen.queryByTestId('top-tasks-zone')).toBeNull();
       expect(screen.getByTestId('bottom-notes-zone')).toBeDefined();
     });
 
-    it('renders viewport-filling notes canvas in Notes Only mode', () => {
+    it('renders a compact notes field that grows with its content instead of scrolling', () => {
       const doc = parseMarkdownDocument(sampleMarkdown, 'Strategy/Product.md');
       useVaultStore.setState({
         activeFile: 'Strategy/Product.md',
@@ -138,10 +129,14 @@ Full width notes content here.
       // Ensure top tasks zone is absent
       expect(screen.queryByTestId('top-tasks-zone')).toBeNull();
 
-      // Ensure bottom notes zone fills available space
+      // The notes zone sizes to its content; the page scrolls, never the field itself
       const notesZone = screen.getByTestId('bottom-notes-zone');
-      expect(notesZone.className).toContain('flex-1');
-      expect(notesZone.className).toContain('h-full');
+      expect(notesZone.className).not.toContain('h-full');
+      const contentArea = screen.getByTestId('tiptap-editor-content').parentElement!;
+      expect(contentArea.className).not.toContain('overflow-y-auto');
+      expect(contentArea.className).not.toContain('h-full');
+      fireEvent.click(screen.getByTestId('edit-note-btn'));
+      expect(screen.getByTestId('save-note-btn')).toBeInTheDocument();
 
       // Ensure WYSIWYG editor content is rendered
       const editorContent = screen.getByTestId('tiptap-editor-content');

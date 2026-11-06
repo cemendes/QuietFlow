@@ -46,7 +46,7 @@ app_output.log
 .trigger_tests
 
 # Local User Vaults & Personal Notes
-notes/
+/notes/
 *.vault/
 local_vault/
 .logos/
@@ -63,6 +63,13 @@ dist-ssr/
 target/
 src-tauri/target/
 
+# Cypress artifacts
+cypress/screenshots/
+cypress/videos/
+cypress/downloads/
+
+# Claude Code local files
+.claude/
 # Test Results & Artifacts
 test-results/
 playwright-report/

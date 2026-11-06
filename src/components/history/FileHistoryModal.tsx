@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { History, X, RotateCcw, FileText, CheckCircle2, Clock, ShieldCheck } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { SnapshotMetadata } from '../../store/types';
+import { baseName } from '../../utils/paths';
+import { formatDateTime, useTranslation } from '../../i18n';
 
 export interface FileHistoryModalProps {
   isOpen: boolean;
@@ -10,6 +12,7 @@ export interface FileHistoryModalProps {
 }
 
 export const FileHistoryModal: React.FC<FileHistoryModalProps> = ({ isOpen, filePath, onClose }) => {
+  const { language } = useTranslation();
   const loadSnapshotsForFile = useVaultStore((state) => state.loadSnapshotsForFile);
   const restoreSnapshotForFile = useVaultStore((state) => state.restoreSnapshotForFile);
   const createManualSnapshot = useVaultStore((state) => state.createManualSnapshot);
@@ -49,7 +52,7 @@ export const FileHistoryModal: React.FC<FileHistoryModalProps> = ({ isOpen, file
 
   if (!isOpen || !filePath) return null;
 
-  const fileName = filePath.split('/').pop() || 'note.md';
+  const fileName = baseName(filePath) || 'note.md';
 
   const handleRestore = async (id: string) => {
     if (!filePath) return;
@@ -75,7 +78,7 @@ export const FileHistoryModal: React.FC<FileHistoryModalProps> = ({ isOpen, file
     const num = parseInt(tsString, 10);
     if (isNaN(num)) return tsString;
     const date = tsString.length > 10 ? new Date(num) : new Date(num * 1000);
-    return date.toLocaleString();
+    return formatDateTime(date, language);
   };
 
   return (

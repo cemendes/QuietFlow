@@ -83,6 +83,7 @@ title: Work Projects
     // 1. Initial load / auto-load vault
     await act(async () => {
       await useVaultStore.getState().loadVault(mockVaultPath);
+      await useVaultStore.getState().setSection('tasks'); // the app opens on Notes
       await useVaultStore.getState().selectFile(todayFilePath);
     });
 

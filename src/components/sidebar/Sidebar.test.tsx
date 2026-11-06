@@ -1,8 +1,9 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import Sidebar from './Sidebar';
 import { useVaultStore } from '../../store';
 import { VaultNode } from '../../store/types';
+import { ipc } from '../../store/ipc';
 
 const mockVaultTree: VaultNode = {
   name: 'QuietFlowVault',
@@ -62,7 +63,9 @@ describe('Sidebar Component', () => {
     if (typeof localStorage !== 'undefined') {
       localStorage.clear();
     }
+    // These cases describe the Tasks section; the app itself starts on Notes.
     useVaultStore.setState({
+      section: 'tasks',
       vaultTree: mockVaultTree,
       activeFile: '/path/to/vault/Customers/Acme Corp.md',
       isLoading: false,
@@ -70,16 +73,21 @@ describe('Sidebar Component', () => {
     });
   });
 
-  it('renders only Inbox in top navigation and removes Today and Starred', () => {
+  it('renders a single Notes entry (no separate Inbox or Vault) and removes Today and Starred', () => {
     render(<Sidebar />);
-    expect(screen.getByRole('button', { name: /inbox/i })).toBeInTheDocument();
+    expect(screen.getByTitle('Notes')).toBeInTheDocument();
+    expect(screen.queryByTitle('Inbox')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('My Vault')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^today$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^starred$/i })).not.toBeInTheDocument();
   });
 
-  it('renders QuietFlow branding and traffic lights', () => {
+  it('renders QuietFlow branding in the same row as the collapse button', () => {
     render(<Sidebar />);
-    expect(screen.getByText(/QuietFlow/i)).toBeInTheDocument();
+    const brand = screen.getByText('QuietFlow');
+    expect(brand).toBeInTheDocument();
+    const topBar = screen.getByTestId('sidebar-toggle-btn').parentElement!;
+    expect(topBar.contains(brand)).toBe(true);
   });
 
   it('renders nested folder tree with folders and files', () => {
@@ -138,6 +146,183 @@ describe('Sidebar Component', () => {
     useVaultStore.setState({ vaultTree: null });
     render(<Sidebar />);
     expect(screen.getByText(/No folder open/i)).toBeInTheDocument();
+  });
+
+  it('only offers New note in the Notes section, above the vault root, and calls onNewNote', () => {
+    const handleNewNote = vi.fn();
+    const { unmount } = render(<Sidebar onNewNote={handleNewNote} />);
+    expect(screen.queryByTestId('new-note-btn')).toBeNull();
+    unmount();
+
+    act(() => useVaultStore.setState({ section: 'notes' }));
+    render(<Sidebar onNewNote={handleNewNote} />);
+
+    const newNoteBtn = screen.getByTestId('new-note-btn');
+    expect(newNoteBtn).toHaveTextContent('New note');
+
+    const notesBtn = screen.getByTestId('vault-root-btn');
+    expect(
+      newNoteBtn.compareDocumentPosition(notesBtn) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
+    fireEvent.click(newNoteBtn);
+    expect(handleNewNote).toHaveBeenCalledTimes(1);
+  });
+
+  describe('Tasks section layout (mirrors Notes)', () => {
+    const rootListPath = '/path/to/vault/Tarefas.md';
+    const treeWithRootList: VaultNode = {
+      ...mockVaultTree,
+      children: [
+        ...mockVaultTree.children!,
+        { name: 'Tarefas.md', path: rootListPath, isDirectory: false, fileCount: 0, children: [] },
+      ],
+    };
+
+    beforeEach(() => {
+      useVaultStore.setState({ vaultTree: treeWithRootList, vaultPath: '/path/to/vault' });
+    });
+
+    it('offers New task above the Tasks root and calls onNewTask', () => {
+      const handleNewTask = vi.fn();
+      render(<Sidebar onNewTask={handleNewTask} />);
+
+      const newTaskBtn = screen.getByTestId('new-task-btn');
+      expect(newTaskBtn).toHaveTextContent('New task');
+      expect(screen.queryByTestId('new-note-btn')).toBeNull();
+
+      const tasksBtn = screen.getByTestId('vault-root-btn');
+      expect(tasksBtn).toHaveTextContent('Tasks');
+      expect(
+        newTaskBtn.compareDocumentPosition(tasksBtn) & Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+
+      fireEvent.click(newTaskBtn);
+      expect(handleNewTask).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not offer New task in the Notes section', () => {
+      useVaultStore.setState({ section: 'notes' });
+      render(<Sidebar onNewTask={vi.fn()} />);
+      expect(screen.queryByTestId('new-task-btn')).toBeNull();
+    });
+
+    it('opens the root list Tarefas.md from the Tasks root and hides it from the tree', () => {
+      const handleSelectFile = vi.fn();
+      render(<Sidebar onSelectFile={handleSelectFile} />);
+
+      expect(screen.queryByTestId(`file-item-${rootListPath}`)).toBeNull();
+      fireEvent.click(screen.getByTestId('vault-root-btn'));
+      expect(handleSelectFile).toHaveBeenCalledWith(rootListPath);
+    });
+
+    it('marks the Tasks root as current only while the root list is open', () => {
+      render(<Sidebar />);
+      const tasksBtn = screen.getByTestId('vault-root-btn');
+      expect(tasksBtn).toHaveAttribute('data-active', 'false');
+
+      act(() => useVaultStore.setState({ activeFile: rootListPath }));
+      expect(tasksBtn).toHaveAttribute('data-active', 'true');
+      expect(tasksBtn).toHaveAttribute('aria-current', 'page');
+    });
+  });
+
+  describe('Tasks under the Tasks root', () => {
+    const rootListPath = '/path/to/vault/Tarefas.md';
+    const treeWithRootList: VaultNode = {
+      ...mockVaultTree,
+      children: [
+        ...mockVaultTree.children!,
+        { name: 'Tarefas.md', path: rootListPath, isDirectory: false, fileCount: 0, children: [] },
+      ],
+    };
+
+    beforeEach(() => {
+      vi.spyOn(ipc, 'readFile').mockImplementation(async (p: string) =>
+        p === rootListPath ? '# Tarefas\n- [ ] Call bank\n- [x] Pay rent\n- [ ] Buy milk\n' : '',
+      );
+      vi.spyOn(ipc, 'listSnapshots').mockResolvedValue([]);
+      useVaultStore.setState({ vaultTree: treeWithRootList, vaultPath: '/path/to/vault', activeTaskId: null, contentRevision: 0 });
+    });
+
+    it('lists the open tasks of the root list below the Tasks root', async () => {
+      render(<Sidebar />);
+      const items = await screen.findAllByTestId(/^sidebar-task-/);
+      expect(items.map((i) => i.textContent)).toEqual(['Call bank', 'Buy milk']);
+      expect(screen.queryByText('Pay rent')).toBeNull();
+    });
+
+    it('shows a task created later once the content revision changes', async () => {
+      render(<Sidebar />);
+      await screen.findByText('Call bank');
+      vi.mocked(ipc.readFile).mockImplementation(async () => '# Tarefas\n- [ ] Call bank\n- [ ] Fresh task\n');
+      act(() => useVaultStore.setState({ contentRevision: 1 }));
+      expect(await screen.findByText('Fresh task')).toBeInTheDocument();
+    });
+
+    it('opens the task when it is clicked', async () => {
+      render(<Sidebar />);
+      fireEvent.click(await screen.findByText('Buy milk'));
+      await waitFor(() => {
+        expect(useVaultStore.getState().activeFile).toBe(rootListPath);
+        expect(useVaultStore.getState().activeTaskId).toBe('task-buy-milk');
+      });
+    });
+
+    it('does not list tasks in the Notes section', async () => {
+      useVaultStore.setState({ section: 'notes' });
+      render(<Sidebar />);
+      await act(async () => {});
+      expect(screen.queryByTestId(/^sidebar-task-/)).toBeNull();
+    });
+  });
+
+  describe('location cues', () => {
+    const inboxPath = '/path/to/vault/Inbox.md';
+    const treeWithInbox: VaultNode = {
+      ...mockVaultTree,
+      children: [
+        ...mockVaultTree.children!,
+        { name: 'Inbox.md', path: inboxPath, isDirectory: false, fileCount: 0, children: [] },
+      ],
+    };
+
+    it('shows an Inbox.md note as an ordinary note inside the Notes tree', () => {
+      useVaultStore.setState({ section: 'notes', vaultTree: treeWithInbox });
+      render(<Sidebar />);
+      expect(screen.getByTestId(`file-item-${inboxPath}`)).toBeInTheDocument();
+    });
+
+    it('marks the vault root as the current location only when it is selected', () => {
+      useVaultStore.setState({ section: 'notes' });
+      render(<Sidebar />);
+      const notesBtn = screen.getByTestId('vault-root-btn');
+      expect(notesBtn).toHaveAttribute('data-active', 'false');
+      expect(notesBtn).not.toHaveAttribute('aria-current');
+
+      act(() => useVaultStore.setState({ activeFolder: '/path/to/vault', vaultPath: '/path/to/vault' }));
+      expect(notesBtn).toHaveAttribute('data-active', 'true');
+      expect(notesBtn).toHaveAttribute('aria-current', 'page');
+    });
+
+    it('gives the active note a visible background and aria-current', () => {
+      render(<Sidebar />);
+      const acmeFile = screen.getByTestId('file-item-/path/to/vault/Customers/Acme Corp.md');
+      expect(acmeFile).toHaveAttribute('aria-current', 'page');
+      expect(acmeFile.className).toContain('bg-[var(--bg-surface)]');
+    });
+
+    it('flags the folder that contains the active note', () => {
+      render(<Sidebar />);
+      expect(screen.getByTestId('folder-row-/path/to/vault/Customers')).toHaveAttribute(
+        'data-contains-active',
+        'true'
+      );
+      expect(screen.getByTestId('folder-row-/path/to/vault/Internal')).toHaveAttribute(
+        'data-contains-active',
+        'false'
+      );
+    });
   });
 
   it('handles sidebar collapse and expand toggle', () => {

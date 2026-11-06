@@ -11,8 +11,9 @@ import {
 } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { VaultNode, TaskPriority, NewTaskInput } from '../../store/types';
-import { addTaskToDocument } from '../../core/markdown';
 import { ipc } from '../../store/ipc';
+import { formatDateTime, formatIsoDate, useTranslation } from '../../i18n';
+import { rootTaskListPath, sectionSubtree } from '../../core/vault/sections';
 
 export type CaptureType = 'task' | 'note';
 
@@ -56,7 +57,8 @@ function extractAllMarkdownFiles(node: VaultNode | null): { name: string; path: 
     }
   }
 
-  traverse(node);
+  // Names are relative to the section folder ("Customers / Acme Corp", "Tarefas"), never prefixed with it
+  for (const child of node.children ?? []) traverse(child);
   return results;
 }
 
@@ -116,8 +118,10 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
 }) => {
   const vaultTree = useVaultStore((state) => state.vaultTree);
   const activeFile = useVaultStore((state) => state.activeFile);
-  const storeAddTask = useVaultStore((state) => state.addTask);
+  const vaultPath = useVaultStore((state) => state.vaultPath);
+  const storeAddTaskToFile = useVaultStore((state) => state.addTaskToFile);
   const refreshActiveFile = useVaultStore((state) => state.refreshActiveFile);
+  const { t, language } = useTranslation();
 
   const [inputVal, setInputVal] = useState('');
   const [captureType, setCaptureType] = useState<CaptureType>('task');
@@ -126,40 +130,56 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const files = useMemo(() => extractAllMarkdownFiles(vaultTree), [vaultTree]);
+  // Tasks are captured into Tarefas/ lists, notes into Anotações/ files.
+  const captureSection = captureType === 'task' ? 'tasks' : 'notes';
+  const files = useMemo(
+    () => extractAllMarkdownFiles(sectionSubtree(vaultTree, captureSection) ?? vaultTree),
+    [vaultTree, captureSection],
+  );
+  const activeFileInScope = activeFile && files.some((f) => f.path === activeFile) ? activeFile : null;
+  // With no list open, a task goes to the root list Tarefas/Tarefas.md
+  const rootList =
+    captureType === 'task' && vaultPath
+      ? files.find((f) => f.path === rootTaskListPath(vaultTree, vaultPath)) ?? null
+      : null;
 
   // Set default selected file on open or when files change
   useEffect(() => {
-    if (activeFile) {
-      setSelectedFile(activeFile);
+    if (activeFileInScope) {
+      setSelectedFile(activeFileInScope);
     } else {
-      const inboxFile = files.find((f) => f.name.toLowerCase().includes('inbox') || f.path.toLowerCase().endsWith('inbox.md'));
-      if (inboxFile) {
-        setSelectedFile(inboxFile.path);
-      } else if (files.length > 0 && !selectedFile) {
+      if (rootList) {
+        setSelectedFile(rootList.path);
+      } else if (files.length > 0 && !files.some((f) => f.path === selectedFile)) {
         setSelectedFile(files[0].path);
       }
     }
-  }, [activeFile, files]);
+  }, [activeFileInScope, files]);
 
-  // Focus input automatically when modal opens
+  // Every opening starts a fresh task capture (kept apart from the effect below, which also
+  // re-runs when switching Task / Quick note changes the destination list)
   useEffect(() => {
     if (isOpen) {
       setInputVal('');
       setCaptureType('task');
-      if (activeFile) {
-        setSelectedFile(activeFile);
+    }
+  }, [isOpen]);
+
+  // Focus input automatically when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      if (activeFileInScope) {
+        setSelectedFile(activeFileInScope);
       } else {
-        const inboxFile = files.find((f) => f.name.toLowerCase().includes('inbox') || f.path.toLowerCase().endsWith('inbox.md'));
-        if (inboxFile) {
-          setSelectedFile(inboxFile.path);
+        if (rootList) {
+          setSelectedFile(rootList.path);
         } else if (files.length > 0) {
           setSelectedFile(files[0].path);
         }
       }
       inputRef.current?.focus();
     }
-  }, [isOpen, activeFile, files]);
+  }, [isOpen, activeFileInScope, files]);
 
   // Keyboard shortcut listener for Esc key
   useEffect(() => {
@@ -187,7 +207,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      const targetFilePath = selectedFile || activeFile || (files[0] ? files[0].path : '');
+      const targetFilePath = selectedFile || activeFileInScope || (files[0] ? files[0].path : '');
 
       const payload: CapturePayload = {
         type: captureType,
@@ -211,19 +231,14 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
             dueDate: parsed.dueDate,
             status: 'todo',
           };
-          if (targetFilePath === activeFile) {
-            await storeAddTask(newTask);
-          } else if (targetFilePath) {
-            // Write directly to file
-            const content = await ipc.readFile(targetFilePath);
-            const updated = addTaskToDocument(content, newTask);
-            await ipc.writeFileAtomic(targetFilePath, updated);
+          if (targetFilePath) {
+            await storeAddTaskToFile(targetFilePath, newTask);
           }
         } else {
           // Quick note: append to target document
           if (targetFilePath) {
             const currentContent = await ipc.readFile(targetFilePath);
-            const noteBlock = `\n\n### Note (${new Date().toLocaleString()})\n${inputVal.trim()}\n`;
+            const noteBlock = `\n\n### Note (${formatDateTime(new Date(), language)})\n${inputVal.trim()}\n`;
             await ipc.writeFileAtomic(targetFilePath, currentContent + noteBlock);
             if (targetFilePath === activeFile) {
               await refreshActiveFile();
@@ -251,7 +266,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
   return (
     <div
       role="dialog"
-      aria-label="Quick Capture"
+      aria-label={t('capture.label')}
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-start justify-center pt-24 sm:pt-28 px-4"
     >
@@ -280,7 +295,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
               }`}
             >
               <CheckSquare className="w-3.5 h-3.5 text-forest-600" />
-              Task
+              {t('capture.task')}
             </button>
             <button
               type="button"
@@ -293,7 +308,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
               }`}
             >
               <FileText className="w-3.5 h-3.5 text-amber-600" />
-              Quick Note
+              {t('capture.note')}
             </button>
           </div>
 
@@ -302,7 +317,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
             <div className="flex items-center gap-1.5 bg-sand-100 px-2.5 py-1 rounded-lg border border-sand-200/60 text-xs text-slate-600">
               <Folder className="w-3.5 h-3.5 text-forest-600 shrink-0" />
               <select
-                aria-label="Destination"
+                aria-label={t('capture.destination')}
                 value={selectedFile}
                 onChange={(e) => setSelectedFile(e.target.value)}
                 className="bg-transparent text-xs font-medium text-slate-700 focus:outline-none cursor-pointer max-w-[180px] truncate"
@@ -313,7 +328,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
                   </option>
                 ))}
                 {files.length === 0 && (
-                  <option value="">(No files in vault)</option>
+                  <option value="">{t('capture.noFiles')}</option>
                 )}
               </select>
             </div>
@@ -321,7 +336,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close"
+              aria-label={t('common.close')}
               className="p-1 text-slate-400 hover:text-slate-600 rounded-md hover:bg-sand-200/50 transition-colors"
             >
               <X className="w-4 h-4" />
@@ -340,8 +355,8 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
             onKeyDown={handleKeyDown}
             placeholder={
               captureType === 'task'
-                ? "What's on your mind? (e.g. Call Alice #sales @high due:2026-09-01)"
-                : "What's on your mind? Write a quick note..."
+                ? t('capture.taskPlaceholder')
+                : t('capture.notePlaceholder')
             }
             className="w-full text-base sm:text-lg text-slate-900 placeholder-slate-400 bg-transparent border-0 focus:outline-none focus:ring-0 leading-relaxed"
           />
@@ -370,14 +385,14 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
                   }`}
                 >
                   <AlertCircle className="w-3 h-3" />
-                  {parsed.priority.toUpperCase()}
+                  {t(`priorityTag.${parsed.priority}`).toUpperCase()}
                 </span>
               )}
 
               {parsed.dueDate && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-50 text-sky-700 border border-sky-200/60">
                   <Calendar className="w-3 h-3 text-sky-500" />
-                  {parsed.dueDate}
+                  {formatIsoDate(parsed.dueDate, language)}
                 </span>
               )}
             </div>
@@ -391,13 +406,13 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
               <kbd className="px-1.5 py-0.5 bg-white border border-sand-200 rounded text-[10px] font-semibold text-slate-600 shadow-2xs">
                 ↵ Enter
               </kbd>
-              Save
+              {t('common.save')}
             </span>
             <span className="flex items-center gap-1">
               <kbd className="px-1.5 py-0.5 bg-white border border-sand-200 rounded text-[10px] font-semibold text-slate-600 shadow-2xs">
                 Esc
               </kbd>
-              Cancel
+              {t('common.cancel')}
             </span>
           </div>
 
@@ -405,11 +420,11 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
             type="button"
             onClick={handleSave}
             disabled={!inputVal.trim() || isSubmitting}
-            aria-label="Save capture"
+            aria-label={t('capture.saveLabel')}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-forest-700 hover:bg-forest-800 disabled:opacity-40 disabled:hover:bg-forest-700 text-white rounded-lg font-medium text-xs shadow-sm transition-all"
           >
             <CornerDownLeft className="w-3.5 h-3.5" />
-            Save
+            {t('common.save')}
           </button>
         </div>
 

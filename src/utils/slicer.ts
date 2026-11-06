@@ -3,6 +3,8 @@
  * Supports Google Generative Language API (Gemini 2.5 Flash / Gemini 3.7 Flash) with offline heuristic fallback.
  */
 
+import { getLanguage, translate } from '../i18n';
+
 export interface SlicerOptions {
   apiKey?: string;
   model?: string;
@@ -13,6 +15,8 @@ export async function sliceTask(taskTitle: string, options: SlicerOptions = {}):
   const model = options.model || (typeof window !== 'undefined' ? localStorage.getItem('gemini_model') || 'gemini-2.5-flash' : 'gemini-2.5-flash');
 
   if (apiKey.trim()) {
+    const languageHint =
+      getLanguage() === 'pt-BR' ? '\nWrite every step in Brazilian Portuguese.' : '';
     try {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
       const response = await fetch(endpoint, {
@@ -26,7 +30,7 @@ export async function sliceTask(taskTitle: string, options: SlicerOptions = {}):
                   text: `You are an ADHD executive dysfunction task breakdown specialist.
 Break down the following task into 3 to 5 tiny, ultra-low-friction, concrete action steps that take under 5 minutes to begin.
 Return ONLY a raw JSON array of strings, with no markdown formatting and no conversational filler.
-Task: "${taskTitle}"`,
+Task: "${taskTitle}"${languageHint}`,
                 },
               ],
             },
@@ -54,39 +58,41 @@ Task: "${taskTitle}"`,
   }
 
   // Offline Heuristic Slicer (Instant Rule-Based Scaffolding)
+  // Keywords cover both English and Portuguese task titles; steps come out in the UI language.
   const lower = taskTitle.toLowerCase();
+  const mentions = (...keywords: string[]) => keywords.some((k) => lower.includes(k));
 
-  if (lower.includes('tax') || lower.includes('financial') || lower.includes('invoice')) {
+  if (mentions('tax', 'financial', 'invoice', 'imposto', 'financeir', 'fatura', 'nota fiscal')) {
     return [
-      'Gather relevant receipts and documents from email',
-      'Open online tax or accounting portal',
-      'Review and enter primary figures',
-      'Double check deductions and submit',
+      translate('slicer.tax.1'),
+      translate('slicer.tax.2'),
+      translate('slicer.tax.3'),
+      translate('slicer.tax.4'),
     ];
   }
 
-  if (lower.includes('proposal') || lower.includes('agreement') || lower.includes('contract') || lower.includes('doc')) {
+  if (mentions('proposal', 'agreement', 'contract', 'doc', 'proposta', 'acordo', 'contrato')) {
     return [
-      'Open document draft template',
-      'Outline key deliverables and terms',
-      'Draft core sections and review pricing',
-      'Export PDF and send for review',
+      translate('slicer.doc.1'),
+      translate('slicer.doc.2'),
+      translate('slicer.doc.3'),
+      translate('slicer.doc.4'),
     ];
   }
 
-  if (lower.includes('audit') || lower.includes('review') || lower.includes('bug') || lower.includes('test')) {
+  if (mentions('audit', 'review', 'bug', 'test', 'revis')) {
     return [
-      'Isolate specific issue or scope checklist',
-      'Run verification reproduction steps',
-      'Apply necessary fixes or corrections',
-      'Confirm tests pass and document outcome',
+      translate('slicer.review.1'),
+      translate('slicer.review.2'),
+      translate('slicer.review.3'),
+      translate('slicer.review.4'),
     ];
   }
 
   // General low-friction starter steps
   return [
-    `Open relevant workspace and gather materials for "${taskTitle}"`,
-    'Complete the first 2-minute starter action',
-    'Review progress and execute remaining step',
+    translate('slicer.general.1', { title: taskTitle }),
+    translate('slicer.general.2'),
+    translate('slicer.general.3'),
   ];
 }

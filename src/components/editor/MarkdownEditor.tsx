@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useCallback, useState, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TaskList from '@tiptap/extension-task-list';
@@ -20,6 +20,8 @@ import {
   Quote,
   CalendarPlus,
 } from 'lucide-react';
+import { formatIsoDate, useTranslation } from '../../i18n';
+import { normalizeLinkUrl, openExternalUrl } from '../../utils/links';
 
 declare module '@tiptap/core' {
   interface Storage {
@@ -178,14 +180,34 @@ export interface MarkdownEditorProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  /** Start compact and grow with the content instead of scrolling inside a fixed box. */
+  autoGrow?: boolean;
+  /** Rendered at the end of the editing area (e.g. a save button). */
+  footer?: React.ReactNode;
+  /** Show the content only: no toolbar, no caret, nothing editable. */
+  readOnly?: boolean;
+  /**
+   * When set, Enter submits (calls this) and Shift+Enter makes the new line — the chat-style
+   * behaviour notes use. Without it, Enter keeps its usual editor meaning.
+   */
+  onSubmit?: () => void;
 }
 
 export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   value = '',
   onChange,
-  placeholder = 'Add notes, checklist items, or details...',
+  placeholder: placeholderProp,
   className = '',
+  autoGrow = false,
+  footer,
+  readOnly = false,
+  onSubmit,
 }) => {
+  const { t, language } = useTranslation();
+  // Tiptap keeps the editorProps it was created with, so read the latest callback through a ref
+  const onSubmitRef = useRef(onSubmit);
+  onSubmitRef.current = onSubmit;
+  const placeholder = placeholderProp ?? t('editor.placeholder');
   const [isSourceMode, setIsSourceMode] = useState(false);
   const [sourceText, setSourceText] = useState(value);
   const isSourceModeRef = useRef(isSourceMode);
@@ -194,9 +216,14 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   sourceTextRef.current = sourceText;
   const sourceTextareaRef = useRef<HTMLTextAreaElement>(null);
   const editorRef = useRef<any>(null);
+  // Inline "insert link" form; remembers the selection it applies to, since focus moves to its inputs.
+  const [linkForm, setLinkForm] = useState<
+    { from: number; to: number; hasSelection: boolean; url: string; text: string } | null
+  >(null);
 
   const editor = useEditor({
     shouldRerenderOnTransaction: true,
+    editable: !readOnly,
     extensions: [
       StarterKit.configure({
         link: {
@@ -221,10 +248,37 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     editorProps: {
       attributes: {
         class:
-          'tiptap prose prose-slate max-w-none focus:outline-none min-h-[300px] p-4 text-slate-800 text-sm leading-relaxed',
+          `tiptap prose prose-slate max-w-none focus:outline-none ${autoGrow ? 'min-h-[160px]' : 'min-h-[300px]'} p-4 text-slate-800 text-sm leading-relaxed`,
         'data-placeholder': placeholder,
       },
       handleKeyDown: (view, event) => {
+        // Submit-on-Enter mode: Enter saves, Shift+Enter does what Enter normally does
+        // (new paragraph, or a new item inside a list). IME composition keeps its own Enter.
+        if (
+          onSubmitRef.current &&
+          event.key === 'Enter' &&
+          !event.isComposing &&
+          !event.metaKey &&
+          !event.ctrlKey &&
+          !event.altKey
+        ) {
+          event.preventDefault();
+          if (!event.shiftKey) {
+            onSubmitRef.current();
+            return true;
+          }
+          const ed = editorRef.current;
+          ed?.commands.first(({ commands }: any) => [
+            () => commands.newlineInCode(),
+            () => commands.splitListItem('taskItem'),
+            () => commands.splitListItem('listItem'),
+            () => commands.createParagraphNear(),
+            () => commands.liftEmptyBlock(),
+            () => commands.splitBlock(),
+          ]);
+          return true;
+        }
+
         // Tab / Shift-Tab indentation for list items
         if (event.key === 'Tab') {
           if (editorRef.current) {
@@ -328,6 +382,12 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   editorRef.current = editor;
 
   useEffect(() => {
+    // Toggling read/edit mode is not a content change: by default Tiptap emits an "update"
+    // here, which fired onChange with whatever text the editor held (e.g. the previous note's)
+    editor?.setEditable(!readOnly, false);
+  }, [editor, readOnly]);
+
+  useEffect(() => {
     if (!isSourceModeRef.current && editor && editor.storage?.markdown) {
       const currentMarkdown = editor.storage.markdown.getMarkdown();
       const isDomFocused =
@@ -343,6 +403,14 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       sourceTextRef.current = value;
     }
   }, [value, editor]);
+
+  // In auto-grow mode the source textarea follows its content height, so it never scrolls
+  useLayoutEffect(() => {
+    const el = sourceTextareaRef.current;
+    if (!autoGrow || !isSourceMode || !el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [autoGrow, isSourceMode, sourceText]);
 
   const handleToggleSourceMode = useCallback(() => {
     if (isSourceModeRef.current) {
@@ -378,25 +446,63 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const handleToggleLink = useCallback(() => {
     if (!editor || isSourceMode) return;
     if (editor.isActive('link')) {
-      editor.chain().focus().unsetLink().run();
-      return;
-    }
-    const previousUrl = (editor.getAttributes('link').href as string) || '';
-    const url = window.prompt('URL', previousUrl);
-    if (url === null) return;
-    if (url === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
       return;
     }
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    const { from, to, empty } = editor.state.selection;
+    setLinkForm({ from, to, hasSelection: !empty, url: '', text: '' });
   }, [editor, isSourceMode]);
+
+  const closeLinkForm = useCallback(() => {
+    setLinkForm(null);
+    editor?.commands.focus();
+  }, [editor]);
+
+  const handleApplyLink = useCallback(
+    (e?: React.FormEvent) => {
+      e?.preventDefault();
+      if (!editor || !linkForm) return;
+      const href = normalizeLinkUrl(linkForm.url);
+      if (!href) {
+        closeLinkForm();
+        return;
+      }
+      const chain = editor.chain().focus().setTextSelection({ from: linkForm.from, to: linkForm.to });
+      if (linkForm.hasSelection) {
+        chain.setLink({ href }).run();
+      } else {
+        // Nothing selected: insert the link text itself, then stop the link mark so typing continues as plain text.
+        const text = linkForm.text.trim() || linkForm.url.trim();
+        chain
+          .insertContent({ type: 'text', text, marks: [{ type: 'link', attrs: { href } }] })
+          .unsetMark('link')
+          .run();
+      }
+      setLinkForm(null);
+    },
+    [editor, linkForm, closeLinkForm]
+  );
+
+  // Links can't be followed by a plain click while editing (that places the cursor), so they open
+  // in the system browser on click in read mode, or Ctrl/Cmd+click while editing.
+  const handleContentClick = useCallback(
+    (e: React.MouseEvent) => {
+      const anchor = (e.target as HTMLElement).closest?.('a[href]');
+      if (!anchor) return;
+      e.preventDefault();
+      if (readOnly || e.metaKey || e.ctrlKey) {
+        void openExternalUrl(anchor.getAttribute('href')!);
+      }
+    },
+    [readOnly]
+  );
 
   const handleAddDateSection = useCallback(() => {
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
-    const dateText = `${yyyy}-${mm}-${dd}`;
+    const dateText = formatIsoDate(`${yyyy}-${mm}-${dd}`, language);
     const dateHeading = `## ${dateText}`;
 
     if (isSourceModeRef.current) {
@@ -473,7 +579,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         onChange(newMarkdown);
       }
     }
-  }, [editor, onChange]);
+  }, [editor, onChange, language]);
 
   const handleConvertOrToggleList = useCallback(
     (targetType: 'bulletList' | 'orderedList' | 'taskList') => {
@@ -500,11 +606,13 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       tabIndex={-1}
       onKeyDown={handleKeyDown}
       data-testid="markdown-editor-container"
-      className={`flex flex-col flex-1 min-h-0 focus:outline-none ${className}`}
+      className={`flex flex-col ${autoGrow ? '' : 'flex-1 min-h-0'} focus:outline-none ${className}`}
     >
+      {!readOnly && (
+      <>
       {/* Editor Header */}
       <div className="flex items-center justify-between mb-2 shrink-0">
-        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Notes</span>
+        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('editor.notes')}</span>
       </div>
 
       {/* Formatting Action Toolbar */}
@@ -573,7 +681,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
         <button
           type="button"
-          title="Add section for today's date (## YYYY-MM-DD)"
+          title={`Add section for today's date (## ${language === 'pt-BR' ? 'DD/MM/YYYY' : 'YYYY-MM-DD'})`}
           data-testid="toolbar-date-btn"
           onMouseDown={(e) => e.preventDefault()}
           onClick={handleAddDateSection}
@@ -670,16 +778,86 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         </div>
       </div>
 
+      {linkForm && (
+        <form
+          data-testid="link-form"
+          onSubmit={handleApplyLink}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              closeLinkForm();
+            }
+          }}
+          className="flex items-center gap-1.5 p-1.5 mb-1.5 bg-white border border-forest-500 rounded-lg flex-wrap shrink-0"
+        >
+          <Link2 className="w-3.5 h-3.5 text-forest-700 ml-1 shrink-0" />
+          <input
+            autoFocus
+            type="text"
+            inputMode="url"
+            data-testid="link-url-input"
+            aria-label="URL"
+            placeholder={t('link.urlPlaceholder')}
+            value={linkForm.url}
+            onChange={(e) => setLinkForm({ ...linkForm, url: e.target.value })}
+            className="flex-1 min-w-[160px] px-2 py-1 text-xs text-slate-800 bg-sand-50 border border-sand-200 rounded-md focus:outline-none focus:ring-1 focus:ring-forest-500"
+          />
+          {!linkForm.hasSelection && (
+            <input
+              type="text"
+              data-testid="link-text-input"
+              aria-label={t('link.textPlaceholder')}
+              placeholder={t('link.textPlaceholder')}
+              value={linkForm.text}
+              onChange={(e) => setLinkForm({ ...linkForm, text: e.target.value })}
+              className="flex-1 min-w-[140px] px-2 py-1 text-xs text-slate-800 bg-sand-50 border border-sand-200 rounded-md focus:outline-none focus:ring-1 focus:ring-forest-500"
+            />
+          )}
+          <button
+            type="submit"
+            data-testid="link-apply-btn"
+            disabled={!linkForm.url.trim()}
+            className="px-2.5 py-1 text-xs font-semibold text-white bg-forest-700 hover:bg-forest-800 disabled:opacity-40 rounded-md cursor-pointer disabled:cursor-default"
+          >
+            {t('link.apply')}
+          </button>
+          <button
+            type="button"
+            onClick={closeLinkForm}
+            className="px-2 py-1 text-xs font-medium text-slate-600 hover:bg-sand-100 rounded-md cursor-pointer"
+          >
+            {t('common.cancel')}
+          </button>
+        </form>
+      )}
+      </>
+      )}
+
       {/* Editor Content Area */}
-      <div className="flex-1 min-h-[140px] h-full bg-white border border-sand-200 rounded-xl overflow-y-auto flex flex-col">
-        {isSourceMode ? (
+      <div
+        onClick={handleContentClick}
+        className={`bg-white rounded-xl flex flex-col ${readOnly ? '[&_.tiptap]:min-h-0' : 'border border-sand-200'} ${
+          autoGrow ? '' : 'flex-1 min-h-[140px] h-full overflow-y-auto'
+        }`}
+      >
+        {isSourceMode && !readOnly ? (
           <textarea
             ref={sourceTextareaRef}
             data-testid="markdown-source-textarea"
             value={sourceText}
             onChange={handleSourceChange}
+            onKeyDown={(e) => {
+              // Same rule as the rich editor: Enter submits, Shift+Enter is a plain newline
+              if (onSubmit && e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                onSubmit();
+              }
+            }}
             placeholder={placeholder}
-            className="font-mono text-xs text-slate-800 p-4 w-full h-full min-h-[300px] flex-1 resize-none focus:outline-none bg-transparent"
+            className={`font-mono text-xs text-slate-800 p-4 w-full resize-none focus:outline-none bg-transparent ${
+              autoGrow ? 'min-h-[160px] overflow-hidden' : 'h-full min-h-[300px] flex-1'
+            }`}
             spellCheck={false}
           />
         ) : (
@@ -690,6 +868,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           />
         )}
       </div>
+      {footer}
     </div>
   );
 };

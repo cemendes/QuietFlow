@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AlertTriangle, RotateCcw, X } from 'lucide-react';
 import { useVaultStore } from '../../store';
 import { SnapshotMetadata } from '../../store/types';
+import { baseName } from '../../utils/paths';
 
 export const CorruptionWarningBanner: React.FC = () => {
   const corruptedFileWarning = useVaultStore((state) => state.corruptedFileWarning);
@@ -22,7 +23,7 @@ export const CorruptionWarningBanner: React.FC = () => {
 
   if (!corruptedFileWarning) return null;
 
-  const fileName = corruptedFileWarning.split('/').pop() || 'note.md';
+  const fileName = baseName(corruptedFileWarning) || 'note.md';
   const latestSnapshot = snapshots.length > 0 ? snapshots[0] : null;
 
   const handleRestoreLatest = async () => {

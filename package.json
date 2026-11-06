@@ -16,7 +16,9 @@
     "test:chaos": "playwright test tests/e2e/autonomous-chaos-monkey.spec.ts",
     "preversion": "npm run test:rust && npm run build && npm run test && npm run test:autonomous",
     "version": "node scripts/sync-tauri-version.mjs && git add src-tauri/tauri.conf.json src-tauri/Cargo.toml",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "cy:open": "cypress open",
+    "cy:run": "cypress run"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
@@ -51,6 +53,7 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "cypress": "^16.1.1",
     "gremlins.js": "^2.2.0",
     "jsdom": "^26.1.0",
     "playwright": "^1.62.1",

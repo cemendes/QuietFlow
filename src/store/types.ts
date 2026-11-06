@@ -30,7 +30,16 @@ export interface VaultNode {
 
 export type VaultTree = VaultNode;
 
-export type ViewMode = 'list' | 'kanban' | 'document';
+/** `home` is the Tasks section's landing grid of task lists (the counterpart of NotesHome). */
+export type ViewMode = 'home' | 'list' | 'kanban' | 'document';
+
+/** Top-level area of the app. Tasks and Notes never share a screen. */
+export type AppSection = 'tasks' | 'notes';
+
+export interface SectionSelection {
+  file: string | null;
+  folder: string | null;
+}
 
 export interface SnapshotMetadata {
   id: string;
@@ -60,6 +69,8 @@ export interface VaultStoreState {
   activeTaskId: string | null;
   searchQuery: string;
   activeView: ViewMode;
+  section: AppSection;
+  sectionSelection: Record<AppSection, SectionSelection>;
   lensViewMode: LensViewMode;
   documentViewState: Record<string, DocumentViewState>;
   selectedTag: string | null;
@@ -70,6 +81,8 @@ export interface VaultStoreState {
   isLoading: boolean;
   isSaving: boolean;
   error: string | null;
+  /** Bumped after every write the app makes to a vault file, so views that read other files can re-read. */
+  contentRevision: number;
 }
 
 export interface VaultStoreActions {
@@ -79,7 +92,8 @@ export interface VaultStoreActions {
   selectFile: (filePath: string) => Promise<void>;
   selectFolder: (folderPath: string) => Promise<void>;
   refreshActiveFile: () => Promise<void>;
-  createFile: (filePath: string, initialContent?: string) => Promise<void>;
+  /** `discardIfUntouched`: a "New note" that is deleted if left blank (no text, default title). */
+  createFile: (filePath: string, initialContent?: string, options?: { discardIfUntouched?: boolean }) => Promise<void>;
   deleteEntry: (path: string) => Promise<void>;
   setFolderIcon: (folderPath: string, iconDataOrEmoji: string) => Promise<void>;
   getFolderIcon: (folderPath: string) => string | null;
@@ -95,6 +109,7 @@ export interface VaultStoreActions {
   toggleTask: (taskId: string) => Promise<void>;
   updateTask: (taskId: string, updates: Partial<TaskItem>) => Promise<void>;
   addTask: (task: NewTaskInput, targetSection?: string) => Promise<void>;
+  addTaskToFile: (filePath: string, task: NewTaskInput) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   moveTask: (taskId: string, sourcePath: string, destPath: string) => Promise<void>;
 
@@ -103,12 +118,18 @@ export interface VaultStoreActions {
   setDocumentScrollPosition: (filePath: string, scrollY: number) => void;
   getDocumentViewState: (filePath: string) => DocumentViewState;
   saveDocumentProse: (filePath: string, newProse: string) => Promise<void>;
+  renameNote: (filePath: string, newTitle: string) => Promise<string>;
   flushActiveDocument: () => Promise<void>;
 
   // UI state
   setActiveTaskId: (taskId: string | null) => void;
   setSearchQuery: (query: string) => void;
   setActiveView: (view: ViewMode) => void;
+  setSection: (section: AppSection) => Promise<void>;
+  openNote: (filePath: string) => Promise<void>;
+  selectNoteFolder: (folderPath: string | null) => void;
+  openTaskList: (filePath: string) => Promise<void>;
+  selectTaskFolder: (folderPath: string | null) => void;
   setSelectedTag: (tag: string | null) => void;
   setSelectedPriority: (priority: TaskPriority | null) => void;
   setError: (error: string | null) => void;

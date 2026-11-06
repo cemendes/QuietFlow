@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useVaultStore } from './store';
 import { ipc } from './store/ipc';
 import { Sidebar } from './components/sidebar';
-import { TaskList } from './components/tasks';
+import { TaskList, TasksHome } from './components/tasks';
 import { KanbanBoard } from './components/kanban';
 import { TaskDetailPage } from './components/editor';
 import { QuickCaptureModal } from './components/capture';
@@ -12,20 +12,23 @@ import { BreadcrumbBanner } from './components/breadcrumb/BreadcrumbBanner';
 import { CorruptionWarningBanner } from './components/history/CorruptionWarningBanner';
 import { UpdateToast } from './components/updater/UpdateToast';
 import { LensDocumentCanvas } from './components/document/LensDocumentCanvas';
+import { NotesHome } from './components/notes/NotesHome';
 import { QuickFileSwitcher } from './components/document/QuickFileSwitcher';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
+import { useTranslation } from './i18n';
+import { sectionRootPath, sectionSubtree } from './core/vault/sections';
 
 export default function App() {
+  const { t } = useTranslation();
   const vaultPath = useVaultStore((state) => state.vaultPath);
   const activeView = useVaultStore((state) => state.activeView);
-  const setActiveView = useVaultStore((state) => state.setActiveView);
+  const section = useVaultStore((state) => state.section);
+  const openNote = useVaultStore((state) => state.openNote);
+  const openTaskList = useVaultStore((state) => state.openTaskList);
   const activeTaskId = useVaultStore((state) => state.activeTaskId);
   const setActiveTaskId = useVaultStore((state) => state.setActiveTaskId);
-  const selectFile = useVaultStore((state) => state.selectFile);
   const createFile = useVaultStore((state) => state.createFile);
-  const lensViewMode = useVaultStore((state) => state.lensViewMode);
-  const setLensViewMode = useVaultStore((state) => state.setLensViewMode);
   const activeFile = useVaultStore((state) => state.activeFile);
 
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
@@ -51,7 +54,7 @@ export default function App() {
     initDefaultVault();
   }, []);
 
-  // Keyboard shortcuts: Cmd+N (Capture), Cmd+O (Quick Switcher), Cmd+E (Lens Cycle), Cmd+, (Settings)
+  // Keyboard shortcuts: Cmd+N (Capture), Cmd+O (Quick Switcher), Cmd+, (Settings)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
@@ -60,11 +63,6 @@ export default function App() {
       } else if ((e.metaKey || e.ctrlKey) && e.key === 'o') {
         e.preventDefault();
         setIsQuickFileSwitcherOpen(true);
-      } else if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
-        e.preventDefault();
-        const nextMode =
-          lensViewMode === 'split' ? 'tasks' : lensViewMode === 'tasks' ? 'notes' : 'split';
-        setLensViewMode(nextMode, activeFile || undefined);
       } else if ((e.metaKey || e.ctrlKey) && e.key === ',') {
         e.preventDefault();
         setIsSettingsOpen(true);
@@ -72,7 +70,7 @@ export default function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lensViewMode, setLensViewMode, activeFile]);
+  }, []);
 
   // Register global / in-app shortcut bindings
   useGlobalShortcuts({
@@ -81,15 +79,25 @@ export default function App() {
     },
   });
 
-  // Handle new note creation
+  // Handle new note creation (always at the top of Anotações/)
   const handleNewNote = async () => {
     if (!vaultPath) return;
     const now = new Date();
-    const fileName = `Note-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.md`;
-    const newFilePath = `${vaultPath}/${fileName}`;
-    const initialContent = `---\ntitle: New Note\ndate: ${now.toISOString().split('T')[0]}\n---\n\n`;
-    await createFile(newFilePath, initialContent);
-    setActiveView('document');
+    const baseTitle = t('app.newNoteName');
+    const tree = useVaultStore.getState().vaultTree;
+    const notesRoot = sectionRootPath(tree, vaultPath, 'notes');
+    const existing = new Set(
+      (sectionSubtree(tree, 'notes')?.children ?? []).map((c) => c.name.toLowerCase()),
+    );
+    let noteName = baseTitle;
+    for (let n = 2; existing.has(`${noteName}.md`.toLowerCase()); n++) {
+      noteName = `${baseTitle} ${n}`;
+    }
+    const newFilePath = `${notesRoot}/${noteName}.md`;
+    const initialContent = `---\ntitle: ${noteName}\ndate: ${now.toISOString().split('T')[0]}\n---\n\n`;
+    // Left blank (no title, no text), the new note is thrown away when the user moves on
+    await createFile(newFilePath, initialContent, { discardIfUntouched: true });
+    await openNote(newFilePath);
   };
 
   return (
@@ -97,10 +105,15 @@ export default function App() {
       {/* 1. Left Sidebar Navigation */}
       <Sidebar
         onSelectFile={(filePath) => {
-          selectFile(filePath);
-          setActiveView('document');
+          if (section === 'notes') {
+            openNote(filePath);
+          } else {
+            // Tasks section: a file is only a scope for its tasks, never a document screen.
+            openTaskList(filePath);
+          }
         }}
         onNewNote={handleNewNote}
+        onNewTask={() => setIsQuickCaptureOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenArchive={() => setIsArchiveOpen(true)}
       />
@@ -116,10 +129,12 @@ export default function App() {
         />
         <CorruptionWarningBanner />
         <ErrorBoundary fallbackTitle="Unable to display this view">
-          {activeTaskId ? (
+          {section === 'notes' ? (
+            activeFile ? <LensDocumentCanvas /> : <NotesHome />
+          ) : activeTaskId ? (
             <TaskDetailPage onBack={() => setActiveTaskId(null)} />
-          ) : activeView === 'document' && activeFile ? (
-            <LensDocumentCanvas />
+          ) : activeView === 'home' && !activeFile ? (
+            <TasksHome />
           ) : activeView === 'kanban' ? (
             <KanbanBoard />
           ) : (

@@ -138,3 +138,37 @@ describe('TaskList Component', () => {
     expect(screen.getByText(/No tasks found/i)).toBeInTheDocument();
   });
 });
+
+describe('TaskList Zen Focus button', () => {
+  beforeEach(() => {
+    useVaultStore.setState({
+      activeTaskId: null,
+      searchQuery: '',
+      activeView: 'list',
+      selectedTag: null,
+      selectedPriority: null,
+      activeFile: '/vault/finance.md',
+    });
+  });
+
+  it('is disabled when the list has no tasks', () => {
+    useVaultStore.setState({ tasks: [] });
+    render(<TaskList />);
+    expect(screen.getByTestId('zen-mode-header-btn')).toBeDisabled();
+  });
+
+  it('is disabled when every task is already done', () => {
+    useVaultStore.setState({ tasks: mockTasks.filter((t) => t.status === 'done') });
+    render(<TaskList />);
+    expect(screen.getByTestId('zen-mode-header-btn')).toBeDisabled();
+  });
+
+  it('opens Zen Theater on the first open task when there is one', () => {
+    useVaultStore.setState({ tasks: mockTasks });
+    render(<TaskList />);
+    const btn = screen.getByTestId('zen-mode-header-btn');
+    expect(btn).not.toBeDisabled();
+    fireEvent.click(btn);
+    expect(screen.getByTestId('zen-theater-modal')).toBeInTheDocument();
+  });
+});

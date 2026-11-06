@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useVaultStore } from '../../store';
 import { NewTaskInput, TaskPriority } from '../../store/types';
+import { useTranslation } from '../../i18n';
 
 export interface QuickAddBarProps {
   placeholder?: string;
@@ -10,11 +11,12 @@ export interface QuickAddBarProps {
 }
 
 export const QuickAddBar: React.FC<QuickAddBarProps> = ({
-  placeholder = 'Add a new task... (e.g. Call Alice tomorrow #client @high)',
+  placeholder,
   defaultSection,
   onAdded,
   onAddTask,
 }) => {
+  const { t } = useTranslation();
   const [value, setValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -147,8 +149,8 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
         onKeyDown={handleKeyDown}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        placeholder={placeholder}
-        aria-label="Quick Add Task"
+        placeholder={placeholder ?? t('quickAdd.placeholder')}
+        aria-label={t('quickAdd.label')}
         className="w-full py-2.5 pr-20 text-sm text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none"
       />
 

@@ -5,6 +5,11 @@ import {
   parseMarkdownDocument,
   updateTaskInDocument,
 } from '../core/markdown';
+import { setFrontmatterTitle } from '../core/markdown/frontmatterTitle';
+import { dirName, lastSeparator } from '../utils/paths';
+import { runSectionMigration } from '../core/vault/migrateSections';
+import { sectionRootPath, sectionSubtree } from '../core/vault/sections';
+import { ensureRootTaskList } from '../core/vault/rootTaskList';
 import {
   loadLogoConfig,
   persistFolderEmoji,
@@ -24,6 +29,8 @@ import {
   VaultStore,
   VaultStoreState,
   ViewMode,
+  AppSection,
+  SectionSelection,
 } from './types';
 
 const INITIAL_STATE: VaultStoreState = {
@@ -36,6 +43,11 @@ const INITIAL_STATE: VaultStoreState = {
   activeTaskId: null,
   searchQuery: '',
   activeView: 'list',
+  section: 'notes',
+  sectionSelection: {
+    tasks: { file: null, folder: null },
+    notes: { file: null, folder: null },
+  },
   lensViewMode: 'split',
   documentViewState: {},
   selectedTag: null,
@@ -46,6 +58,7 @@ const INITIAL_STATE: VaultStoreState = {
   isLoading: false,
   isSaving: false,
   error: null,
+  contentRevision: 0,
 };
 
 let state: VaultStoreState = { ...INITIAL_STATE };
@@ -59,9 +72,49 @@ function notify() {
 }
 
 function set(updater: Partial<VaultStoreState> | ((prev: VaultStoreState) => Partial<VaultStoreState>)) {
+  const prevActive = state.activeFile;
   const next = typeof updater === 'function' ? updater(state) : updater;
   state = { ...state, ...next };
   notify();
+  if (draftNote && prevActive === draftNote.path && state.activeFile !== draftNote.path) {
+    const left = draftNote;
+    draftNote = null;
+    void discardDraftIfUntouched(left);
+  }
+}
+
+/**
+ * A note just created with "New note". If it is left (another note, a folder, the other section)
+ * while still blank — no text and the default title it was created with — it is deleted, so
+ * clicking "New note" by accident never leaves empty notes behind.
+ */
+let draftNote: { path: string; title: string } | null = null;
+
+async function discardDraftIfUntouched(draft: { path: string; title: string }): Promise<void> {
+  let content: string;
+  try {
+    content = await ipc.readFile(draft.path);
+  } catch {
+    return; // Renamed or already gone
+  }
+  const doc = parseMarkdownDocument(content, draft.path);
+  const title = String(doc.frontmatter?.title ?? '').trim();
+  if ((doc.body || '').trim() || title !== draft.title) return;
+
+  try {
+    await ipc.deleteEntry(draft.path);
+  } catch (err) {
+    console.error(`Failed to discard empty note ${draft.path}:`, err);
+    return;
+  }
+  // Forget it wherever it was remembered, so nothing tries to reopen it
+  const memory = state.sectionSelection;
+  const forget = (sel: SectionSelection) => (sel.file === draft.path ? { ...sel, file: null } : sel);
+  set({ sectionSelection: { tasks: forget(memory.tasks), notes: forget(memory.notes) } });
+  if (typeof localStorage !== 'undefined' && localStorage.getItem('quietflow-last-active-file') === draft.path) {
+    localStorage.removeItem('quietflow-last-active-file');
+  }
+  await refreshVault();
 }
 
 function getState(): VaultStoreState {
@@ -85,6 +138,7 @@ async function writeVaultFile(filePath: string, content: string): Promise<void> 
   lastSelfWriteTimestamp = Date.now();
   await ipc.writeFileAtomic(filePath, content);
   lastSelfWriteTimestamp = Date.now();
+  set((prev) => ({ contentRevision: prev.contentRevision + 1 }));
 }
 
 async function loadVault(vaultPath: string): Promise<void> {
@@ -102,10 +156,29 @@ async function loadVault(vaultPath: string): Promise<void> {
       }
     }
 
-    const [tree, logoConfig] = await Promise.all([
+    let [tree, logoConfig] = await Promise.all([
       ipc.initVault(vaultPath),
       loadLogoConfig(vaultPath),
     ]);
+
+    // Each section lives in its own folder; a vault from before that split is sorted once here.
+    if (!sectionSubtree(tree, 'tasks') || !sectionSubtree(tree, 'notes')) {
+      lastSelfWriteTimestamp = Date.now();
+      await runSectionMigration(tree, vaultPath, ipc);
+      tree = await ipc.initVault(vaultPath);
+    }
+    const tasksRoot = sectionRootPath(tree, vaultPath, 'tasks');
+    const notesRoot = sectionRootPath(tree, vaultPath, 'notes');
+    // "New task" lands in Tarefas/Tarefas.md when no other list is open (an old Inbox.md becomes it).
+    try {
+      lastSelfWriteTimestamp = Date.now();
+      if (await ensureRootTaskList(tree, vaultPath, { ...ipc, writeFile: writeVaultFile })) {
+        tree = await ipc.initVault(vaultPath);
+      }
+    } catch {
+      // Read-only vaults: Quick Capture falls back to any task list
+    }
+
     set((prev) => ({
       ...prev,
       vaultPath,
@@ -114,57 +187,17 @@ async function loadVault(vaultPath: string): Promise<void> {
       isLoading: false,
     }));
 
-    // 1. Try to restore saved active file or folder from previous session
-    let restored = false;
-    if (typeof localStorage !== 'undefined') {
-      const savedFile = localStorage.getItem('quietflow-last-active-file');
-      if (savedFile) {
-        const fileNode = findNodeByPath(tree, savedFile);
-        if (fileNode && !fileNode.isDirectory) {
-          await selectFile(savedFile);
-          restored = true;
-        }
-      }
-      if (!restored) {
-        const savedFolder = localStorage.getItem('quietflow-last-active-folder');
-        if (savedFolder) {
-          const folderNode = findNodeByPath(tree, savedFolder);
-          if (folderNode && folderNode.isDirectory) {
-            await selectFolder(savedFolder);
-            restored = true;
-          }
-        }
-      }
-    }
-
-    // 2. Auto-select today.md or first note only if no saved state was restored
-    if (!restored && !getState().activeFile && !getState().activeFolder) {
-      let targetNode =
-        tree.children?.find((c) => !c.isDirectory && c.name.toLowerCase() === 'today.md') ||
-        tree.children?.find((c) => !c.isDirectory && c.name.endsWith('.md'));
-
-      if (!targetNode && vaultPath) {
-        // Auto-create today.md if none exists in this vault
-        try {
-          const todayPath = `${vaultPath}/today.md`;
-          const initialContent = `---\ntitle: Today's Focus\n---\n\n# Tasks\n`;
-          await writeVaultFile(todayPath, initialContent);
-          await refreshVault();
-          targetNode = {
-            name: 'today.md',
-            path: todayPath,
-            isDirectory: false,
-            children: [],
-            fileCount: 0,
-          };
-        } catch {
-          // Safe fallback in mock/read-only vaults
-        }
-      }
-
-      if (targetNode && !getState().activeFile) {
-        await selectFile(targetNode.path);
-      }
+    // Always open on the Notes section listing every note; Tasks starts on its grid of lists.
+    if (!getState().activeFile && !getState().activeFolder) {
+      set({
+        section: 'notes',
+        activeView: 'document',
+        sectionSelection: {
+          tasks: { file: null, folder: tasksRoot },
+          notes: { file: null, folder: notesRoot },
+        },
+      });
+      selectNoteFolder(notesRoot);
     }
 
     // Clean up any existing listener
@@ -181,10 +214,12 @@ async function loadVault(vaultPath: string): Promise<void> {
           await refreshVault();
           // Only refresh active file/folder if this was an external change (not initiated by app save)
           if (!isSelfWrite) {
-            if (getState().activeFile) {
+            const s = getState();
+            if (s.activeFile) {
               await refreshActiveFile();
-            } else if (getState().activeFolder) {
-              await selectFolder(getState().activeFolder!);
+            } else if (s.activeFolder && s.section === 'tasks' && s.activeView !== 'home') {
+              // Only the aggregated task list holds folder tasks; both home grids re-read the tree.
+              await selectFolder(s.activeFolder);
             }
           }
         }
@@ -406,7 +441,7 @@ async function refreshActiveFile(): Promise<void> {
 
   try {
     const content = await ipc.readFile(currentFile);
-    const doc = parseMarkdownDocument(content);
+    const doc = parseMarkdownDocument(content, currentFile);
     const tasksWithFile = doc.tasks.map((t) => ({
       ...t,
       filePath: currentFile,
@@ -420,12 +455,20 @@ async function refreshActiveFile(): Promise<void> {
   }
 }
 
-async function createFile(filePath: string, initialContent = ''): Promise<void> {
+async function createFile(
+  filePath: string,
+  initialContent = '',
+  options: { discardIfUntouched?: boolean } = {},
+): Promise<void> {
   set({ isLoading: true, error: null });
   try {
     await writeVaultFile(filePath, initialContent);
     await refreshVault();
     await selectFile(filePath);
+    if (options.discardIfUntouched) {
+      const title = String(parseMarkdownDocument(initialContent).frontmatter?.title ?? '').trim();
+      draftNote = { path: filePath, title };
+    }
   } catch (err: any) {
     set({
       isLoading: false,
@@ -544,6 +587,20 @@ async function updateTask(taskId: string, updates: Partial<TaskItem>): Promise<v
     }
   } catch (err: any) {
     set({ tasks: currentTasks, error: `Failed to update task: ${err}`, isSaving: false });
+  }
+}
+
+/** Adds a task to any list: through the open list when it is the target, else straight to the file. */
+async function addTaskToFile(filePath: string, newTask: NewTaskInput): Promise<void> {
+  if (filePath === getState().activeFile) {
+    await addTask(newTask);
+    return;
+  }
+  try {
+    const content = await ipc.readFile(filePath);
+    await writeVaultFile(filePath, addTaskToDocument(content, newTask));
+  } catch (err) {
+    set({ error: `Failed to add task: ${err}` });
   }
 }
 
@@ -718,6 +775,78 @@ function setActiveView(activeView: ViewMode): void {
   set({ activeView });
 }
 
+/** Remembers what each section had selected so switching back restores it. */
+function rememberSelection(): Record<AppSection, SectionSelection> {
+  const s = getState();
+  return {
+    ...s.sectionSelection,
+    [s.section]: { file: s.activeFile, folder: s.activeFolder },
+  };
+}
+
+async function setSection(next: AppSection): Promise<void> {
+  const s = getState();
+  if (s.section === next) return;
+  const memory = rememberSelection();
+  set({
+    section: next,
+    sectionSelection: memory,
+    activeTaskId: null,
+    activeView: next === 'notes' ? 'document' : 'list',
+  });
+  const target = memory[next];
+  const root = s.vaultPath ? sectionRootPath(s.vaultTree, s.vaultPath, next) : null;
+  if (target.file) await selectFile(target.file);
+  else if (next === 'notes') selectNoteFolder(target.folder ?? root);
+  else selectTaskFolder(target.folder ?? root);
+}
+
+async function openNote(filePath: string): Promise<void> {
+  const s = getState();
+  set({
+    section: 'notes',
+    sectionSelection: s.section === 'notes' ? s.sectionSelection : rememberSelection(),
+    activeTaskId: null,
+    activeView: 'document',
+  });
+  await selectFile(filePath);
+}
+
+/** Notes-section folder navigation: no tasks are loaded, only the folder is focused. */
+function selectNoteFolder(folderPath: string | null): void {
+  set({
+    activeFolder: folderPath,
+    activeFile: null,
+    activeDocument: null,
+    activeTaskId: null,
+    tasks: [],
+  });
+}
+
+/** Opens one task list (a file under Tarefas/) as the Tasks section's list or kanban. */
+async function openTaskList(filePath: string): Promise<void> {
+  const s = getState();
+  set({
+    section: 'tasks',
+    sectionSelection: s.section === 'tasks' ? s.sectionSelection : rememberSelection(),
+    activeTaskId: null,
+    activeView: s.section === 'tasks' && s.activeView === 'kanban' ? 'kanban' : 'list',
+  });
+  await selectFile(filePath);
+}
+
+/** Tasks-section folder navigation: shows the grid of lists, no tasks are loaded. */
+function selectTaskFolder(folderPath: string | null): void {
+  set({
+    activeFolder: folderPath,
+    activeFile: null,
+    activeDocument: null,
+    activeTaskId: null,
+    activeView: 'home',
+    tasks: [],
+  });
+}
+
 function setSelectedTag(selectedTag: string | null): void {
   set({ selectedTag });
 }
@@ -782,6 +911,7 @@ function reset(): void {
     vaultUnlisten();
     vaultUnlisten = null;
   }
+  draftNote = null;
   set({ ...INITIAL_STATE });
 }
 
@@ -817,29 +947,72 @@ function getDocumentViewState(filePath: string): DocumentViewState {
 }
 
 async function saveDocumentProse(filePath: string, newProse: string): Promise<void> {
-  const currentDoc = state.activeDocument;
   let newContent = newProse;
 
-  // Preserve frontmatter block if present in current document
-  if (currentDoc && currentDoc.rawContent) {
-    const fmMatch = currentDoc.rawContent.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
+  set({ isSaving: true });
+  try {
+    // Preserve the frontmatter of *this* file. A late auto-save can arrive after another
+    // note was opened, so the active document may belong to a different file.
+    const ownDoc = state.activeDocument?.filePath === filePath ? state.activeDocument : null;
+    const currentRaw = ownDoc ? ownDoc.rawContent : await ipc.readFile(filePath).catch(() => '');
+    const fmMatch = currentRaw?.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
     if (fmMatch) {
       const frontmatterBlock = fmMatch[0].trim();
       newContent = `${frontmatterBlock}\n\n${newProse.trim()}\n`;
     }
-  }
 
-  set({ isSaving: true });
-  try {
     await writeVaultFile(filePath, newContent);
     const parsed = parseMarkdownDocument(newContent, filePath);
-    set({
-      activeDocument: parsed,
-      tasks: state.activeFile === filePath ? parsed.tasks : state.tasks,
-      isSaving: false,
-    });
+    // Only refresh the open document if it is still the file we just saved
+    set(
+      state.activeFile === filePath
+        ? { activeDocument: parsed, tasks: parsed.tasks, isSaving: false }
+        : { isSaving: false },
+    );
   } catch (err: any) {
     set({ error: err?.message || 'Failed to save document prose', isSaving: false });
+  }
+}
+
+/**
+ * Rename a note: updates its frontmatter `title` and renames the `.md` file to match,
+ * so the sidebar shows the new name too. Returns the note's (possibly new) path.
+ */
+async function renameNote(filePath: string, newTitle: string): Promise<string> {
+  const title = newTitle.trim();
+  if (!title) return filePath;
+
+  // Stay in the note's own folder, reusing its separator (native Windows paths use "\")
+  const dir = dirName(filePath);
+  const sep = lastSeparator(filePath);
+  const safeName = title.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim() || 'note';
+
+  // Avoid overwriting another note that already has this name
+  const taken = new Set(
+    collectMarkdownFiles(state.vaultTree).map((p) => p.toLowerCase()),
+  );
+  taken.delete(filePath.toLowerCase());
+  let candidate = `${dir}${sep}${safeName}.md`;
+  for (let n = 2; taken.has(candidate.toLowerCase()); n++) {
+    candidate = `${dir}${sep}${safeName} ${n}.md`;
+  }
+
+  set({ isSaving: true, error: null });
+  try {
+    const raw = state.activeFile === filePath && state.activeDocument
+      ? state.activeDocument.rawContent
+      : await ipc.readFile(filePath);
+    await writeVaultFile(filePath, setFrontmatterTitle(raw, title));
+    if (candidate !== filePath) {
+      await ipc.moveEntry(filePath, candidate);
+    }
+    await refreshVault();
+    await selectFile(candidate);
+    set({ isSaving: false });
+    return candidate;
+  } catch (err: any) {
+    set({ error: err?.message || 'Failed to rename note', isSaving: false });
+    return filePath;
   }
 }
 
@@ -871,16 +1044,23 @@ const actions = {
   toggleTask,
   updateTask,
   addTask,
+  addTaskToFile,
   deleteTask,
   moveTask,
   setLensViewMode,
   setDocumentScrollPosition,
   getDocumentViewState,
   saveDocumentProse,
+  renameNote,
   flushActiveDocument,
   setActiveTaskId,
   setSearchQuery,
   setActiveView,
+  setSection,
+  openNote,
+  selectNoteFolder,
+  openTaskList,
+  selectTaskFolder,
   setSelectedTag,
   setSelectedPriority,
   setError,

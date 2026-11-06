@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, FileText, Folder, CornerDownLeft, X } from 'lucide-react';
 import { useVaultStore } from '../../store/vaultStore';
 import { VaultNode } from '../../store/types';
+import { sectionOfPath } from '../../core/vault/sections';
 
 interface QuickFileSwitcherProps {
   isOpen: boolean;
@@ -44,8 +45,9 @@ function flattenVaultFiles(node: VaultNode | null, currentFolder: string = ''): 
 export const QuickFileSwitcher: React.FC<QuickFileSwitcherProps> = ({ isOpen, onClose }) => {
   const vaultTree = useVaultStore((state) => state.vaultTree);
   const activeFile = useVaultStore((state) => state.activeFile);
-  const selectFile = useVaultStore((state) => state.selectFile);
-  const setActiveView = useVaultStore((state) => state.setActiveView);
+  const openNote = useVaultStore((state) => state.openNote);
+  const openTaskList = useVaultStore((state) => state.openTaskList);
+  const vaultPath = useVaultStore((state) => state.vaultPath);
 
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -72,8 +74,9 @@ export const QuickFileSwitcher: React.FC<QuickFileSwitcherProps> = ({ isOpen, on
   }, [query]);
 
   const handleSelect = async (filePath: string) => {
-    await selectFile(filePath);
-    setActiveView('document');
+    // A task list opens in Tasks; anything else (notes, files outside both sections) opens as a note.
+    if (sectionOfPath(filePath, vaultPath) === 'tasks') await openTaskList(filePath);
+    else await openNote(filePath);
     onClose();
   };
 
