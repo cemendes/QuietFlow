@@ -403,7 +403,7 @@ async function refreshActiveFile(): Promise<void> {
 
   try {
     const content = await ipc.readFile(currentFile);
-    const doc = parseMarkdownDocument(content);
+    const doc = parseMarkdownDocument(content, currentFile);
     const tasksWithFile = doc.tasks.map((t) => ({
       ...t,
       filePath: currentFile,
@@ -900,27 +900,28 @@ function getDocumentViewState(filePath: string): DocumentViewState {
 }
 
 async function saveDocumentProse(filePath: string, newProse: string): Promise<void> {
-  const currentDoc = state.activeDocument;
   let newContent = newProse;
 
-  // Preserve frontmatter block if present in current document
-  if (currentDoc && currentDoc.rawContent) {
-    const fmMatch = currentDoc.rawContent.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
+  set({ isSaving: true });
+  try {
+    // Preserve the frontmatter of *this* file. A late auto-save can arrive after another
+    // note was opened, so the active document may belong to a different file.
+    const ownDoc = state.activeDocument?.filePath === filePath ? state.activeDocument : null;
+    const currentRaw = ownDoc ? ownDoc.rawContent : await ipc.readFile(filePath).catch(() => '');
+    const fmMatch = currentRaw?.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
     if (fmMatch) {
       const frontmatterBlock = fmMatch[0].trim();
       newContent = `${frontmatterBlock}\n\n${newProse.trim()}\n`;
     }
-  }
 
-  set({ isSaving: true });
-  try {
     await writeVaultFile(filePath, newContent);
     const parsed = parseMarkdownDocument(newContent, filePath);
-    set({
-      activeDocument: parsed,
-      tasks: state.activeFile === filePath ? parsed.tasks : state.tasks,
-      isSaving: false,
-    });
+    // Only refresh the open document if it is still the file we just saved
+    set(
+      state.activeFile === filePath
+        ? { activeDocument: parsed, tasks: parsed.tasks, isSaving: false }
+        : { isSaving: false },
+    );
   } catch (err: any) {
     set({ error: err?.message || 'Failed to save document prose', isSaving: false });
   }

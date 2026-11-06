@@ -346,7 +346,9 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   editorRef.current = editor;
 
   useEffect(() => {
-    editor?.setEditable(!readOnly);
+    // Toggling read/edit mode is not a content change: by default Tiptap emits an "update"
+    // here, which fired onChange with whatever text the editor held (e.g. the previous note's)
+    editor?.setEditable(!readOnly, false);
   }, [editor, readOnly]);
 
   useEffect(() => {

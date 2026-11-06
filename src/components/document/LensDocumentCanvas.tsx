@@ -40,8 +40,11 @@ export const LensDocumentCanvas: React.FC = () => {
   const { t } = useTranslation();
 
   const [localProse, setLocalProse] = useState<string>('');
+  // The note whose body `localProse` holds. Right after a note switch it still points at the
+  // previous note, and nothing may be saved (or edited) until it catches up with activeFile.
+  const [proseFile, setProseFile] = useState<string | null>(null);
+  const proseReady = !!activeFile && proseFile === activeFile;
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastLoadedFileRef = useRef<string | null>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const [justSaved, setJustSaved] = useState(false);
   // Notes open for reading; editing is an explicit choice (except a brand-new note)
@@ -81,27 +84,29 @@ export const LensDocumentCanvas: React.FC = () => {
 
   // Sync active document body into local edit state only on file transition
   useEffect(() => {
-    if (activeDocument && activeFile && activeDocument.filePath === activeFile && lastLoadedFileRef.current !== activeFile) {
-      lastLoadedFileRef.current = activeFile;
+    if (activeDocument && activeFile && activeDocument.filePath === activeFile && proseFile !== activeFile) {
+      setProseFile(activeFile);
       setLocalProse(activeDocument.body || '');
     }
-  }, [activeFile, activeDocument]);
+  }, [activeFile, activeDocument, proseFile]);
 
   // Debounced auto-save for prose
   const handleProseChange = (text: string) => {
+    if (!proseReady || !activeFile) return;
+    const targetFile = activeFile;
     setLocalProse(text);
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
     saveTimeoutRef.current = setTimeout(() => {
-      if (activeFile) {
-        saveDocumentProse(activeFile, text);
-      }
+      saveDocumentProse(targetFile, text);
     }, 500);
   };
 
   // Synchronous flush on blur / unmount
   const handleProseBlur = useCallback(() => {
+    // Mid-switch the pending save still belongs to the previous note: let it run
+    if (!proseReady) return;
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = null;
@@ -109,7 +114,7 @@ export const LensDocumentCanvas: React.FC = () => {
     if (activeFile && localProse !== (activeDocument?.body || '')) {
       saveDocumentProse(activeFile, localProse);
     }
-  }, [activeFile, localProse, activeDocument?.body, saveDocumentProse]);
+  }, [proseReady, activeFile, localProse, activeDocument?.body, saveDocumentProse]);
 
   useEffect(() => {
     return () => {
@@ -128,7 +133,7 @@ export const LensDocumentCanvas: React.FC = () => {
       clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = null;
     }
-    if (!activeFile) return;
+    if (!activeFile || !proseReady) return;
     await saveDocumentProse(activeFile, localProse);
     setIsEditing(false);
     setJustSaved(true);
@@ -147,7 +152,7 @@ export const LensDocumentCanvas: React.FC = () => {
       clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = null;
     }
-    if (localProse !== (activeDocument?.body || '')) {
+    if (proseReady && localProse !== (activeDocument?.body || '')) {
       await saveDocumentProse(activeFile, localProse);
     }
     keepEditingOnSwitchRef.current = true;
@@ -347,6 +352,8 @@ export const LensDocumentCanvas: React.FC = () => {
               </p>
             )}
             <div onBlur={handleProseBlur} className={`flex flex-col ${!isEditing && !localProse.trim() ? 'hidden' : ''}`}>
+              {/* Mount the editor only once it holds this note's text, never the previous note's */}
+              {proseReady && (
               <MarkdownEditor
                 key={activeFile}
                 value={localProse}
@@ -372,6 +379,7 @@ export const LensDocumentCanvas: React.FC = () => {
                   )
                 }
               />
+              )}
             </div>
           </section>
         )}

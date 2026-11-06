@@ -639,3 +639,34 @@ describe('VaultStore content revision & addTaskToFile', () => {
     expect(useVaultStore.getState().contentRevision).toBeGreaterThan(0);
   });
 });
+
+describe('VaultStore saveDocumentProse', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useVaultStore.setState({ activeFile: null, activeDocument: null, tasks: [], error: null });
+  });
+
+  it("saving a note that is not the active one keeps that note's own frontmatter and leaves the active document alone", async () => {
+    const academia = '/vault/Anotações/Academia/Nova anotação.md';
+    const financeiro = '/vault/Anotações/Financeiro/Nova anotação.md';
+    const disk: Record<string, string> = {
+      [academia]: '---\ntitle: Treino\n---\n\ntexto da academia\n',
+      [financeiro]: '---\ntitle: Contas\n---\n\nconteudo financeiro\n',
+    };
+    vi.mocked(ipc.readFile).mockImplementation(async (p: string) => disk[p] ?? '');
+    vi.mocked(ipc.writeFileAtomic).mockImplementation(async (p: string, c: string) => {
+      disk[p] = c;
+    });
+
+    await useVaultStore.getState().selectFile(financeiro);
+    // A late auto-save for the note that was open before
+    await useVaultStore.getState().saveDocumentProse(academia, 'texto da academia editado');
+
+    expect(disk[academia]).toBe('---\ntitle: Treino\n---\n\ntexto da academia editado\n');
+    expect(disk[financeiro]).toBe('---\ntitle: Contas\n---\n\nconteudo financeiro\n');
+    const s = useVaultStore.getState();
+    expect(s.activeFile).toBe(financeiro);
+    expect(s.activeDocument?.filePath).toBe(financeiro);
+    expect(s.activeDocument?.body).toContain('conteudo financeiro');
+  });
+});
