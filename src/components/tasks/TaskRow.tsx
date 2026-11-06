@@ -6,6 +6,7 @@ import { sliceTask } from '../../utils/slicer';
 import { useVaultStore } from '../../store';
 import { Language, formatShortDate, useTranslation } from '../../i18n';
 import { baseName } from '../../utils/paths';
+import { openTaskSource } from '../../utils/openTaskSource';
 
 export interface TaskRowProps {
   task: TaskItem;
@@ -121,6 +122,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({
 
   const [isSlicing, setIsSlicing] = useState(false);
   const updateTask = useVaultStore((state) => state.updateTask);
+  const activeFile = useVaultStore((state) => state.activeFile);
 
   const handleMagicSlice = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -205,14 +207,15 @@ export const TaskRow: React.FC<TaskRowProps> = ({
       </div>
 
       {/* Note Backlink Badge */}
-      {task.filePath && (
+      {/* Hidden inside the list the task belongs to: there it would only repeat the title */}
+      {task.filePath && task.filePath !== activeFile && (
         <button
           type="button"
           data-testid={`note-backlink-${task.id}`}
           title={`Open ${baseName(task.filePath)}`}
           onClick={(e) => {
             e.stopPropagation();
-            useVaultStore.getState().openNote(task.filePath!);
+            void openTaskSource(task.filePath!);
           }}
           className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/60 rounded-md transition-colors truncate max-w-[140px]"
         >

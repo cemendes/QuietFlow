@@ -16,9 +16,9 @@ import { isTauriEnvironment, ipc } from '../../store/ipc';
 import { FolderTree } from './FolderTree';
 import { useTranslation } from '../../i18n';
 import { NAV_ITEM_ACTIVE, NAV_ITEM_IDLE } from './navItemStyles';
-import { sectionRootPath, sectionSubtree } from '../../core/vault/sections';
+import { isRootTaskListNode, rootTaskListPath, sectionRootPath, sectionSubtree } from '../../core/vault/sections';
 import { parseMarkdownDocument } from '../../core/markdown';
-import type { TaskItem, VaultNode } from '../../store/types';
+import type { TaskItem } from '../../store/types';
 
 export interface SidebarProps {
   className?: string;
@@ -29,7 +29,6 @@ export interface SidebarProps {
   onOpenArchive?: () => void;
 }
 
-const isInboxNode = (node: VaultNode) => !node.isDirectory && node.name.toLowerCase() === 'inbox.md';
 
 export const Sidebar: React.FC<SidebarProps> = ({
   className = '',
@@ -71,26 +70,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const fullSectionTree = sectionSubtree(vaultTree, section) ?? vaultTree;
   const sectionRoot = vaultPath ? sectionRootPath(vaultTree, vaultPath, section) : null;
 
-  // In Tasks the root row *is* the Inbox (where New task / Quick Capture land), so Inbox leaves the tree.
-  const inboxPath =
+  // In Tasks the root row *is* the root list Tarefas.md (where New task lands), so that file leaves the tree.
+  const rootListPath =
     section === 'tasks'
-      ? fullSectionTree?.children?.find(isInboxNode)?.path ?? (sectionRoot ? `${sectionRoot}/Inbox.md` : null)
+      ? fullSectionTree?.children?.find(isRootTaskListNode)?.path ??
+        (vaultPath ? rootTaskListPath(vaultTree, vaultPath) : null)
       : null;
   const sectionTree =
     section === 'tasks' && fullSectionTree
-      ? { ...fullSectionTree, children: fullSectionTree.children?.filter((c) => !isInboxNode(c)) }
+      ? { ...fullSectionTree, children: fullSectionTree.children?.filter((c) => !isRootTaskListNode(c)) }
       : fullSectionTree;
-  // Open tasks of Todas as tarefas (Inbox.md) are listed under the Tasks root, like notes under Notes.
+  // Open tasks of the root list (Tarefas.md) are listed under the Tasks root, like notes under Notes.
   // Re-read whenever the app writes a file or the tree changes (external edits).
   const [rootTasks, setRootTasks] = useState<TaskItem[]>([]);
   useEffect(() => {
-    if (!inboxPath) {
+    if (!rootListPath) {
       setRootTasks([]);
       return;
     }
     let cancelled = false;
     ipc
-      .readFile(inboxPath)
+      .readFile(rootListPath)
       .then((content) => {
         if (!cancelled) setRootTasks(parseMarkdownDocument(content).tasks.filter((task) => task.status !== 'done'));
       })
@@ -100,12 +100,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [inboxPath, contentRevision, vaultTree]);
+  }, [rootListPath, contentRevision, vaultTree]);
 
   const handleRootTaskClick = async (taskId: string) => {
-    if (!inboxPath) return;
+    if (!rootListPath) return;
     setActiveScope(null);
-    await openTaskList(inboxPath);
+    await openTaskList(rootListPath);
     setActiveTaskId(taskId);
   };
 
@@ -180,14 +180,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const isVaultActive =
     section === 'tasks'
-      ? !!activeFile && activeFile === inboxPath
+      ? !!activeFile && activeFile === rootListPath
       : activeScope === 'vault' || (!!activeFolder && (activeFolder === sectionRoot || activeFolder === vaultPath));
 
   const handleVaultClick = () => {
     setActiveScope('vault');
     setActiveTaskId(null);
     if (section === 'tasks') {
-      if (inboxPath) handleFileSelect(inboxPath);
+      if (rootListPath) handleFileSelect(rootListPath);
       return;
     }
     if (!sectionRoot) return;
@@ -396,9 +396,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {section === 'tasks' && !isCollapsed && rootTasks.length > 0 && (
-        <ul className="px-2 pb-1 space-y-0.5" aria-label={t('tasks.inboxTitle')}>
+        <ul className="px-2 pb-1 space-y-0.5" aria-label={t('nav.tasks')}>
           {rootTasks.map((task) => {
-            const isCurrent = activeFile === inboxPath && activeTaskId === task.id;
+            const isCurrent = activeFile === rootListPath && activeTaskId === task.id;
             return (
               <li key={task.id}>
                 <button

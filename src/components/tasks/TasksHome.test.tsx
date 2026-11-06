@@ -7,7 +7,7 @@ import type { VaultNode } from '../../store/types';
 import { ipc } from '../../store/ipc';
 
 const FILES: Record<string, string> = {
-  '/vault/Tarefas/Inbox.md': '# Inbox\n- [ ] Call bank\n- [x] Pay rent\n',
+  '/vault/Tarefas/Tarefas.md': '# Tarefas\n- [ ] Call bank\n- [x] Pay rent\n',
   '/vault/Tarefas/UFRJ/Cálculo.md': '# Cálculo\n- [ ] Lista 3\n- [ ] Lista 4\n- [x] Lista 2\n',
 };
 
@@ -48,7 +48,7 @@ const tree: VaultNode = {
       fileCount: 2,
       children: [
         { name: 'UFRJ', path: '/vault/Tarefas/UFRJ', isDirectory: true, fileCount: 1, children: [file('/vault/Tarefas/UFRJ/Cálculo.md')] },
-        file('/vault/Tarefas/Inbox.md'),
+        file('/vault/Tarefas/Tarefas.md'),
       ],
     },
   ],
@@ -72,13 +72,13 @@ describe('TasksHome', () => {
     act(() => setLanguage('en'));
   });
 
-  it('shows one card per task list of Tarefas, never notes, with Inbox first', () => {
+  it('shows one card per task list of Tarefas, never notes, with the root list Tarefas first', () => {
     render(<TasksHome />);
 
     expect(screen.getByRole('heading', { name: 'Todas as listas' })).toBeInTheDocument();
     const cards = screen.getAllByTestId('task-list-card');
     expect(cards).toHaveLength(2);
-    expect(within(cards[0]).getByText('Todas as tarefas')).toBeInTheDocument();
+    expect(within(cards[0]).getByText('Tarefas')).toBeInTheDocument();
     expect(within(cards[1]).getByText('Cálculo')).toBeInTheDocument();
     expect(within(cards[1]).getByText('UFRJ')).toBeInTheDocument();
     expect(screen.queryByText('Ideia')).not.toBeInTheDocument();

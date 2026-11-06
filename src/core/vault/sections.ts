@@ -39,3 +39,22 @@ export function sectionOfPath(path: string | null | undefined, vaultPath: string
   if (isSectionFolderName(first, 'notes')) return 'notes';
   return null;
 }
+
+/**
+ * The task list that lives directly in Tarefas/: where "New task" lands when no other list is
+ * open. It is just a list called "Tarefas" — there is no separate "Inbox" concept.
+ */
+export const ROOT_TASK_LIST_FILE = 'Tarefas.md';
+/** Name the root list had before; migrated once to ROOT_TASK_LIST_FILE when the vault loads. */
+export const LEGACY_ROOT_TASK_LIST_FILE = 'Inbox.md';
+
+/** Whether `node` is the root task list (a direct child of Tarefas/, so pass that folder's children). */
+export function isRootTaskListNode(node: VaultNode): boolean {
+  return !node.isDirectory && node.name.normalize('NFC').toLowerCase() === ROOT_TASK_LIST_FILE.toLowerCase();
+}
+
+/** Path of the root task list: the scanned path when it exists, else joined onto Tarefas/. */
+export function rootTaskListPath(tree: VaultNode | null, vaultPath: string): string {
+  const existing = sectionSubtree(tree, 'tasks')?.children?.find(isRootTaskListNode);
+  return existing?.path ?? `${sectionRootPath(tree, vaultPath, 'tasks')}/${ROOT_TASK_LIST_FILE}`;
+}

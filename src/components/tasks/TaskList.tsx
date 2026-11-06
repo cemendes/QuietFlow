@@ -6,7 +6,7 @@ import QuickAddBar from './QuickAddBar';
 import FocusHeader from './FocusHeader';
 import ZenTheaterModal from '../zen/ZenTheaterModal';
 import { useTranslation } from '../../i18n';
-import { baseName } from '../../utils/paths';
+import { baseName, dirName } from '../../utils/paths';
 import { sectionRootPath } from '../../core/vault/sections';
 import BackToLists from './BackToLists';
 
@@ -50,7 +50,7 @@ export const TaskList: React.FC<TaskListProps> = ({
   const currentFolderPath = useMemo(() => {
     if (activeFolder) return activeFolder;
     if (activeFile) {
-      const parent = activeFile.substring(0, activeFile.lastIndexOf('/'));
+      const parent = dirName(activeFile);
       return parent || null;
     }
     return null;
@@ -64,8 +64,8 @@ export const TaskList: React.FC<TaskListProps> = ({
       return;
     }
 
-    // Don't show folder icon for Inbox
-    if (activeFile?.toLowerCase().includes('inbox')) {
+    // The root list sits directly in Tarefas/, which has no folder icon of its own
+    if (vaultPath && currentFolderPath === sectionRootPath(vaultTree, vaultPath, 'tasks')) {
       setHeaderIcon(null);
       return;
     }
@@ -93,7 +93,7 @@ export const TaskList: React.FC<TaskListProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [currentFolderPath, vaultPath, logoConfig, getFolderIcon]);
+  }, [currentFolderPath, vaultPath, vaultTree, logoConfig, getFolderIcon]);
 
   // Determine display title
   const computedTitle = useMemo(() => {
@@ -106,9 +106,6 @@ export const TaskList: React.FC<TaskListProps> = ({
     }
     if (activeFile) {
       const fileName = baseName(activeFile)?.replace(/\.md$/, '') || t('common.tasksFallback');
-      if (fileName.toLowerCase() === 'inbox') {
-        return t('tasks.inboxTitle');
-      }
       if (fileName.toLowerCase() === 'today') {
         return t('common.todaysFocus');
       }

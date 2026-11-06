@@ -4,7 +4,7 @@ import { useVaultStore } from '../../store';
 import { ipc } from '../../store/ipc';
 import type { VaultNode } from '../../store/types';
 import { parseMarkdownDocument } from '../../core/markdown';
-import { sectionRootPath, sectionSubtree } from '../../core/vault/sections';
+import { ROOT_TASK_LIST_FILE, sectionRootPath, sectionSubtree } from '../../core/vault/sections';
 import { formatDateName, useTranslation } from '../../i18n';
 import { baseName } from '../../utils/paths';
 import { HomeCard } from '../common/HomeCard';
@@ -21,7 +21,9 @@ interface ListCounts {
   done: number;
 }
 
-const isInbox = (entry: ListEntry) => entry.name.toLowerCase() === 'inbox';
+// The root list (Tarefas/Tarefas.md) is where "New task" lands, so it leads the grid
+const isRootList = (entry: ListEntry) =>
+  entry.folder === '' && `${entry.name}.md`.toLowerCase() === ROOT_TASK_LIST_FILE.toLowerCase();
 
 /** Every task list (`.md` file) under `node`, labelled with its parent folder (never the section root). */
 function collectLists(node: VaultNode, rootPath: string, parentLabel = ''): ListEntry[] {
@@ -53,11 +55,11 @@ export const TasksHome: React.FC = () => {
     return activeFolder ? findNode(sectionNode, activeFolder) ?? sectionNode : sectionNode;
   }, [sectionNode, activeFolder]);
 
-  // Inbox is where Quick Capture lands, so it leads the grid; the rest keeps the tree order.
+  // The root list leads the grid; the rest keeps the tree order.
   const lists = useMemo(() => {
     if (!scopeNode || !sectionNode) return [];
     const all = collectLists(scopeNode, sectionNode.path);
-    return [...all.filter(isInbox), ...all.filter((l) => !isInbox(l))];
+    return [...all.filter(isRootList), ...all.filter((l) => !isRootList(l))];
   }, [scopeNode, sectionNode]);
 
   // Count open / done tasks per list; re-read whenever the tree changes (saves, external edits).
@@ -97,8 +99,7 @@ export const TasksHome: React.FC = () => {
     await openTaskList(filePath);
   };
 
-  const displayName = (list: ListEntry) =>
-    isInbox(list) ? t('tasks.inboxTitle') : formatDateName(list.name, language);
+  const displayName = (list: ListEntry) => formatDateName(list.name, language);
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden" data-testid="tasks-home">

@@ -91,7 +91,6 @@ export const ptBR: Record<TranslationKey, string> = {
   'filters.search': 'Busca: "{query}"',
   'filters.priority': 'Prioridade: {priority}',
   'filters.clearAll': 'Limpar tudo',
-  'tasks.inboxTitle': 'Todas as tarefas',
   'tasks.noneFound': 'Nenhuma tarefa encontrada',
   'tasks.emptyFiltered': 'Tente ajustar a busca ou limpar os filtros ativos.',
   'tasks.emptyAllClear': 'Tudo em dia! Pressione ⌘N ou use o campo acima para capturar uma nova tarefa.',

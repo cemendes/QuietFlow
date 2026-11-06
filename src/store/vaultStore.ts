@@ -9,6 +9,7 @@ import { setFrontmatterTitle } from '../core/markdown/frontmatterTitle';
 import { dirName, lastSeparator } from '../utils/paths';
 import { runSectionMigration } from '../core/vault/migrateSections';
 import { sectionRootPath, sectionSubtree } from '../core/vault/sections';
+import { ensureRootTaskList } from '../core/vault/rootTaskList';
 import {
   loadLogoConfig,
   persistFolderEmoji,
@@ -168,17 +169,14 @@ async function loadVault(vaultPath: string): Promise<void> {
     }
     const tasksRoot = sectionRootPath(tree, vaultPath, 'tasks');
     const notesRoot = sectionRootPath(tree, vaultPath, 'notes');
-    // Quick Capture drops tasks into Tarefas/Inbox.md, so make sure it exists.
-    const hasInbox = sectionSubtree(tree, 'tasks')?.children?.some(
-      (c) => !c.isDirectory && c.name.toLowerCase() === 'inbox.md',
-    );
-    if (!hasInbox) {
-      try {
-        await writeVaultFile(`${tasksRoot}/Inbox.md`, `---\ntitle: Inbox\n---\n\n# Inbox\n`);
+    // "New task" lands in Tarefas/Tarefas.md when no other list is open (an old Inbox.md becomes it).
+    try {
+      lastSelfWriteTimestamp = Date.now();
+      if (await ensureRootTaskList(tree, vaultPath, { ...ipc, writeFile: writeVaultFile })) {
         tree = await ipc.initVault(vaultPath);
-      } catch {
-        // Read-only or mock vaults: Quick Capture falls back to any task list
       }
+    } catch {
+      // Read-only vaults: Quick Capture falls back to any task list
     }
 
     set((prev) => ({

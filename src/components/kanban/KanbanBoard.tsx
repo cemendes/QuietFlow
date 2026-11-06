@@ -5,7 +5,7 @@ import KanbanColumn from './KanbanColumn';
 import QuickAddBar from '../tasks/QuickAddBar';
 import { useTranslation } from '../../i18n';
 import FocusHeader from '../tasks/FocusHeader';
-import { baseName } from '../../utils/paths';
+import { baseName, dirName } from '../../utils/paths';
 import { sectionRootPath } from '../../core/vault/sections';
 import BackToLists from '../tasks/BackToLists';
 
@@ -48,7 +48,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const currentFolderPath = useMemo(() => {
     if (activeFolder) return activeFolder;
     if (activeFile) {
-      const parent = activeFile.substring(0, activeFile.lastIndexOf('/'));
+      const parent = dirName(activeFile);
       return parent || null;
     }
     return null;
@@ -62,8 +62,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       return;
     }
 
-    // Don't show folder icon for Inbox
-    if (activeFile?.toLowerCase().includes('inbox')) {
+    // The root list sits directly in Tarefas/, which has no folder icon of its own
+    if (vaultPath && currentFolderPath === sectionRootPath(vaultTree, vaultPath, 'tasks')) {
       setHeaderIcon(null);
       return;
     }
@@ -91,7 +91,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [currentFolderPath, vaultPath, logoConfig, getFolderIcon]);
+  }, [currentFolderPath, vaultPath, vaultTree, logoConfig, getFolderIcon]);
 
   // Determine display title
   const computedTitle = useMemo(() => {
@@ -101,9 +101,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     }
     if (activeFile) {
       const fileName = baseName(activeFile)?.replace(/\.md$/, '') || t('common.tasksFallback');
-      if (fileName.toLowerCase() === 'inbox') {
-        return t('tasks.inboxTitle');
-      }
       if (fileName.toLowerCase() === 'today') {
         return t('common.todaysFocus');
       }

@@ -4,6 +4,7 @@ import { TaskItem, TaskPriority, TaskStatus } from '../../store/types';
 import { Language, formatShortDate, useTranslation } from '../../i18n';
 import { useVaultStore } from '../../store';
 import { baseName } from '../../utils/paths';
+import { openTaskSource } from '../../utils/openTaskSource';
 
 export interface KanbanCardProps {
   task: TaskItem;
@@ -67,6 +68,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
 }) => {
   const { t, language } = useTranslation();
   const isDone = task.status === 'done';
+  const activeFile = useVaultStore((state) => state.activeFile);
   const subtasks = task.subtasks || [];
   const completedSubtasks = subtasks.filter((s) => s.status === 'done').length;
   const dueDateInfo = formatDueDate(task.dueDate, language);
@@ -172,14 +174,15 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
           )}
 
           {/* Note Backlink Badge */}
-          {task.filePath && (
+          {/* Hidden inside the list the task belongs to: there it would only repeat the title */}
+      {task.filePath && task.filePath !== activeFile && (
             <button
               type="button"
               data-testid={`kanban-note-backlink-${task.id}`}
               title={`Open ${baseName(task.filePath)}`}
               onClick={(e) => {
                 e.stopPropagation();
-                useVaultStore.getState().openNote(task.filePath!);
+                void openTaskSource(task.filePath!);
               }}
               className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/60 rounded-md transition-colors truncate max-w-[120px]"
             >

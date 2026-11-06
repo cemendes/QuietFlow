@@ -13,7 +13,7 @@ import { useVaultStore } from '../../store';
 import { VaultNode, TaskPriority, NewTaskInput } from '../../store/types';
 import { ipc } from '../../store/ipc';
 import { formatDateTime, formatIsoDate, useTranslation } from '../../i18n';
-import { sectionSubtree } from '../../core/vault/sections';
+import { rootTaskListPath, sectionSubtree } from '../../core/vault/sections';
 
 export type CaptureType = 'task' | 'note';
 
@@ -57,7 +57,8 @@ function extractAllMarkdownFiles(node: VaultNode | null): { name: string; path: 
     }
   }
 
-  traverse(node);
+  // Names are relative to the section folder ("Customers / Acme Corp", "Tarefas"), never prefixed with it
+  for (const child of node.children ?? []) traverse(child);
   return results;
 }
 
@@ -117,6 +118,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
 }) => {
   const vaultTree = useVaultStore((state) => state.vaultTree);
   const activeFile = useVaultStore((state) => state.activeFile);
+  const vaultPath = useVaultStore((state) => state.vaultPath);
   const storeAddTaskToFile = useVaultStore((state) => state.addTaskToFile);
   const refreshActiveFile = useVaultStore((state) => state.refreshActiveFile);
   const { t, language } = useTranslation();
@@ -135,15 +137,19 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
     [vaultTree, captureSection],
   );
   const activeFileInScope = activeFile && files.some((f) => f.path === activeFile) ? activeFile : null;
+  // With no list open, a task goes to the root list Tarefas/Tarefas.md
+  const rootList =
+    captureType === 'task' && vaultPath
+      ? files.find((f) => f.path === rootTaskListPath(vaultTree, vaultPath)) ?? null
+      : null;
 
   // Set default selected file on open or when files change
   useEffect(() => {
     if (activeFileInScope) {
       setSelectedFile(activeFileInScope);
     } else {
-      const inboxFile = files.find((f) => f.name.toLowerCase().includes('inbox') || f.path.toLowerCase().endsWith('inbox.md'));
-      if (inboxFile) {
-        setSelectedFile(inboxFile.path);
+      if (rootList) {
+        setSelectedFile(rootList.path);
       } else if (files.length > 0 && !files.some((f) => f.path === selectedFile)) {
         setSelectedFile(files[0].path);
       }
@@ -165,9 +171,8 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
       if (activeFileInScope) {
         setSelectedFile(activeFileInScope);
       } else {
-        const inboxFile = files.find((f) => f.name.toLowerCase().includes('inbox') || f.path.toLowerCase().endsWith('inbox.md'));
-        if (inboxFile) {
-          setSelectedFile(inboxFile.path);
+        if (rootList) {
+          setSelectedFile(rootList.path);
         } else if (files.length > 0) {
           setSelectedFile(files[0].path);
         }

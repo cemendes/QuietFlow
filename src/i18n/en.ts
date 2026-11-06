@@ -90,7 +90,6 @@ export const en = {
   'filters.search': 'Search: "{query}"',
   'filters.priority': 'Priority: {priority}',
   'filters.clearAll': 'Clear all',
-  'tasks.inboxTitle': 'All tasks',
   'tasks.noneFound': 'No tasks found',
   'tasks.emptyFiltered': 'Try adjusting your search query or clearing active filters.',
   'tasks.emptyAllClear': 'All clear! Press ⌘N or use the input above to capture a new task.',

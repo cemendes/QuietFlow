@@ -170,17 +170,17 @@ describe('Sidebar Component', () => {
   });
 
   describe('Tasks section layout (mirrors Notes)', () => {
-    const inboxPath = '/path/to/vault/Inbox.md';
-    const treeWithInbox: VaultNode = {
+    const rootListPath = '/path/to/vault/Tarefas.md';
+    const treeWithRootList: VaultNode = {
       ...mockVaultTree,
       children: [
         ...mockVaultTree.children!,
-        { name: 'Inbox.md', path: inboxPath, isDirectory: false, fileCount: 0, children: [] },
+        { name: 'Tarefas.md', path: rootListPath, isDirectory: false, fileCount: 0, children: [] },
       ],
     };
 
     beforeEach(() => {
-      useVaultStore.setState({ vaultTree: treeWithInbox, vaultPath: '/path/to/vault' });
+      useVaultStore.setState({ vaultTree: treeWithRootList, vaultPath: '/path/to/vault' });
     });
 
     it('offers New task above the Tasks root and calls onNewTask', () => {
@@ -207,45 +207,45 @@ describe('Sidebar Component', () => {
       expect(screen.queryByTestId('new-task-btn')).toBeNull();
     });
 
-    it('opens the Inbox from the Tasks root and hides Inbox from the tree', () => {
+    it('opens the root list Tarefas.md from the Tasks root and hides it from the tree', () => {
       const handleSelectFile = vi.fn();
       render(<Sidebar onSelectFile={handleSelectFile} />);
 
-      expect(screen.queryByTestId(`file-item-${inboxPath}`)).toBeNull();
+      expect(screen.queryByTestId(`file-item-${rootListPath}`)).toBeNull();
       fireEvent.click(screen.getByTestId('vault-root-btn'));
-      expect(handleSelectFile).toHaveBeenCalledWith(inboxPath);
+      expect(handleSelectFile).toHaveBeenCalledWith(rootListPath);
     });
 
-    it('marks the Tasks root as current only while the Inbox is open', () => {
+    it('marks the Tasks root as current only while the root list is open', () => {
       render(<Sidebar />);
       const tasksBtn = screen.getByTestId('vault-root-btn');
       expect(tasksBtn).toHaveAttribute('data-active', 'false');
 
-      act(() => useVaultStore.setState({ activeFile: inboxPath }));
+      act(() => useVaultStore.setState({ activeFile: rootListPath }));
       expect(tasksBtn).toHaveAttribute('data-active', 'true');
       expect(tasksBtn).toHaveAttribute('aria-current', 'page');
     });
   });
 
   describe('Tasks under the Tasks root', () => {
-    const inboxPath = '/path/to/vault/Inbox.md';
-    const treeWithInbox: VaultNode = {
+    const rootListPath = '/path/to/vault/Tarefas.md';
+    const treeWithRootList: VaultNode = {
       ...mockVaultTree,
       children: [
         ...mockVaultTree.children!,
-        { name: 'Inbox.md', path: inboxPath, isDirectory: false, fileCount: 0, children: [] },
+        { name: 'Tarefas.md', path: rootListPath, isDirectory: false, fileCount: 0, children: [] },
       ],
     };
 
     beforeEach(() => {
       vi.spyOn(ipc, 'readFile').mockImplementation(async (p: string) =>
-        p === inboxPath ? '# Inbox\n- [ ] Call bank\n- [x] Pay rent\n- [ ] Buy milk\n' : '',
+        p === rootListPath ? '# Tarefas\n- [ ] Call bank\n- [x] Pay rent\n- [ ] Buy milk\n' : '',
       );
       vi.spyOn(ipc, 'listSnapshots').mockResolvedValue([]);
-      useVaultStore.setState({ vaultTree: treeWithInbox, vaultPath: '/path/to/vault', activeTaskId: null, contentRevision: 0 });
+      useVaultStore.setState({ vaultTree: treeWithRootList, vaultPath: '/path/to/vault', activeTaskId: null, contentRevision: 0 });
     });
 
-    it('lists the open tasks of Todas as tarefas below the Tasks root', async () => {
+    it('lists the open tasks of the root list below the Tasks root', async () => {
       render(<Sidebar />);
       const items = await screen.findAllByTestId(/^sidebar-task-/);
       expect(items.map((i) => i.textContent)).toEqual(['Call bank', 'Buy milk']);
@@ -255,7 +255,7 @@ describe('Sidebar Component', () => {
     it('shows a task created later once the content revision changes', async () => {
       render(<Sidebar />);
       await screen.findByText('Call bank');
-      vi.mocked(ipc.readFile).mockImplementation(async () => '# Inbox\n- [ ] Call bank\n- [ ] Fresh task\n');
+      vi.mocked(ipc.readFile).mockImplementation(async () => '# Tarefas\n- [ ] Call bank\n- [ ] Fresh task\n');
       act(() => useVaultStore.setState({ contentRevision: 1 }));
       expect(await screen.findByText('Fresh task')).toBeInTheDocument();
     });
@@ -264,7 +264,7 @@ describe('Sidebar Component', () => {
       render(<Sidebar />);
       fireEvent.click(await screen.findByText('Buy milk'));
       await waitFor(() => {
-        expect(useVaultStore.getState().activeFile).toBe(inboxPath);
+        expect(useVaultStore.getState().activeFile).toBe(rootListPath);
         expect(useVaultStore.getState().activeTaskId).toBe('task-buy-milk');
       });
     });

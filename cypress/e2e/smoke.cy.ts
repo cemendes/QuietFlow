@@ -10,10 +10,10 @@ describe('QuietFlow smoke test', () => {
   });
 
   it('lands on the grid of task lists, never on notes', () => {
-    // Mock vault: Tarefas/ holds Inbox, today and Customers/{Acme Corp, Beta Health}.
+    // Mock vault: Tarefas/ holds the root list Tarefas, today and Customers/{Acme Corp, Beta Health}.
     cy.get('[data-testid="tasks-home"]').should('be.visible');
     cy.get('[data-testid="task-list-card"]').should('have.length', 4);
-    cy.get('[data-testid="task-list-card"]').first().should('contain.text', 'Inbox');
+    cy.get('[data-testid="task-list-card"]').first().should('contain.text', 'Tarefas');
     cy.contains('[data-testid="task-list-card"]', 'Ideias de projeto').should('not.exist');
   });
 

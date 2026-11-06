@@ -195,7 +195,7 @@ title: Test Note
           isDirectory: true,
           fileCount: 1,
           children: [
-            { name: 'Inbox.md', path: '/vault/Tarefas/Inbox.md', isDirectory: false, children: [], fileCount: 0 },
+            { name: 'Tarefas.md', path: '/vault/Tarefas/Tarefas.md', isDirectory: false, children: [], fileCount: 0 },
           ],
         },
       ],
@@ -203,7 +203,7 @@ title: Test Note
 
     beforeEach(() => {
       vi.mocked(ipc.startWatchingVault).mockResolvedValue(undefined);
-      vi.mocked(ipc.readFile).mockResolvedValue('# Inbox\n- [ ] First task\n');
+      vi.mocked(ipc.readFile).mockResolvedValue('# Tarefas\n- [ ] First task\n');
       useVaultStore.getState().reset();
     });
 
@@ -227,14 +227,31 @@ title: Test Note
       expect(state.tasks).toEqual([]);
     });
 
-    it('creates Tarefas/Inbox.md when the Tarefas folder has no Inbox', async () => {
+    it('creates the root task list Tarefas/Tarefas.md when Tarefas/ has none', async () => {
       const tree = sectionedTree();
       tree.children[1].children = [];
       vi.mocked(ipc.initVault).mockResolvedValue(tree);
 
       await useVaultStore.getState().loadVault('/vault');
 
-      expect(ipc.writeFileAtomic).toHaveBeenCalledWith('/vault/Tarefas/Inbox.md', expect.stringContaining('title: Inbox'));
+      expect(ipc.writeFileAtomic).toHaveBeenCalledWith('/vault/Tarefas/Tarefas.md', expect.stringContaining('title: Tarefas'));
+    });
+
+    it('turns an old Tarefas/Inbox.md into Tarefas/Tarefas.md, keeping its tasks', async () => {
+      const tree = sectionedTree();
+      tree.children[1].children = [
+        { name: 'Inbox.md', path: '/vault/Tarefas/Inbox.md', isDirectory: false, children: [], fileCount: 0 },
+      ];
+      vi.mocked(ipc.initVault).mockResolvedValue(tree);
+      vi.mocked(ipc.readFile).mockResolvedValue('---\ntitle: Inbox\n---\n\n# Inbox\n- [ ] First task\n');
+
+      await useVaultStore.getState().loadVault('/vault');
+
+      expect(ipc.moveEntry).toHaveBeenCalledWith('/vault/Tarefas/Inbox.md', '/vault/Tarefas/Tarefas.md');
+      expect(ipc.writeFileAtomic).toHaveBeenCalledWith(
+        '/vault/Tarefas/Tarefas.md',
+        '---\ntitle: Tarefas\n---\n\n# Tarefas\n- [ ] First task\n',
+      );
     });
 
     it('migrates a legacy vault into the section folders on first load', async () => {
